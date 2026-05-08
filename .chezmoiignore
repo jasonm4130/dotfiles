@@ -1,0 +1,9 @@
+# === Repo metadata (never deploy to $HOME) ===
+LICENSE
+README.md
+docs
+docs/**
+bootstrap.sh
+.gitignore
+
+# (placeholder) `~/.claude/` allowlist appended in Task 10

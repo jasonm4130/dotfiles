@@ -1,0 +1,10 @@
+{{- /* Template for ~/.config/chezmoi/chezmoi.toml on a fresh machine. */ -}}
+{{- /* The seed machine has its own hand-written config (sourceDir override). */ -}}
+{{- $hostname := promptStringOnce . "hostname_tag" "Hostname tag (personal/work)" "personal" -}}
+{{- $email    := promptStringOnce . "git_email"    "Git email"                    "jasonm4130@gmail.com" -}}
+{{- $github   := promptStringOnce . "github_user"  "GitHub username"              "jasonm4130" -}}
+
+[data]
+  hostname_tag = {{ $hostname | quote }}
+  git_email    = {{ $email    | quote }}
+  github_user  = {{ $github   | quote }}
