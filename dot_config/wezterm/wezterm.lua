@@ -9,8 +9,8 @@ config.font = wezterm.font_with_fallback {
 config.font_size = 14.0
 config.line_height = 1.3
 
--- Theme
-config.color_scheme = 'Catppuccin Mocha'
+-- Theme (matches Zed's Monokai Pro (CE))
+config.color_scheme = 'Monokai Pro (Gogh)'
 
 -- Window chrome
 config.window_decorations = 'RESIZE'
