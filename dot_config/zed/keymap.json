@@ -8,5 +8,18 @@
     "bindings": {
       "shift-enter": ["terminal::SendText", "\u001b\r"]
     }
+  },
+  {
+    "context": "Editor && mode == full",
+    "bindings": {
+      "cmd-k cmd-d": "editor::ToggleInlineDiagnostics"
+    }
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "cmd-k m": "editor::ToggleMinimap",
+      "cmd-k p": "zed::OpenProjectSettings"
+    }
   }
 ]
