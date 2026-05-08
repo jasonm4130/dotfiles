@@ -49,6 +49,9 @@ The current machine has working configs for Zsh + Oh My Zsh + Powerlevel10k, Zed
 | Bootstrap entry | **`sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply jasonm4130`** | Canonical chezmoi pattern. |
 | Runtime version manager | **mise** (replaces Volta + pyenv) | Single polyglot tool; one config; faster shims; idiomatic 2025–26 choice. |
 | Secret scanning | **gitleaks** (pre-commit hook + manual) | Pre-commit blocks accidental secret commits; config allowlists `op://` URIs (references, not secrets). |
+| License | **MIT** | Most common for public personal dotfiles; GitHub auto-detects; permissive, well-understood. |
+| Pre-apply backup | **rsync + Time Machine** | Explicit rsync of affected files into `~/dotfiles-backup-<date>/` before any `chezmoi apply`; Time Machine as second line. |
+| Bootstrap reproducibility test | **VM test before public push** (UTM or Tart) | Clean macOS VM running the bootstrap one-liner end-to-end. Catches issues the seed machine masks (already-installed fonts, app integrations, brews). |
 
 ## 5. Architecture
 
@@ -526,35 +529,47 @@ Verify with `chezmoi ignored | grep claude` after each change.
 
 Order matters; each step is verifiable before the next.
 
-1. **Repo scaffold** (this spec lives in `docs/specs/`)
-2. **Brewfile seed**: `brew bundle dump` → manually shaped into `.chezmoidata/packages.yaml`
-3. **Add chezmoi to Brewfile**, `brew install chezmoi` locally
-4. **Configure chezmoi source directory** to `~/Work/Git/dotfiles` (honors user's "repos in `~/Work/Git/`" preference). Create `~/.config/chezmoi/chezmoi.toml` with:
+1. **Repo scaffold** (this spec lives in `docs/specs/`); add MIT `LICENSE` and seed `README.md` with bootstrap one-liner placeholder
+2. **Pre-flight backup** of seed machine before any chezmoi work touches `$HOME`:
+   ```bash
+   BACKUP=~/dotfiles-backup-$(date +%Y-%m-%d)
+   mkdir -p "$BACKUP"
+   rsync -aR ~/.zshrc ~/.zshenv ~/.zprofile ~/.gitconfig ~/.gitignore_global ~/.p10k.zsh "$BACKUP/"
+   rsync -aR ~/.config/zed "$BACKUP/"
+   rsync -aR --exclude='sessions' --exclude='paste-cache' --exclude='file-history' \
+              --exclude='shell-snapshots' --exclude='session-env' --exclude='history.jsonl' \
+              ~/.claude "$BACKUP/"
+   echo "backup at $BACKUP ($(du -sh "$BACKUP" | cut -f1))"
+   ```
+   Confirm Time Machine ran in the last 24h (`tmutil latestbackup`).
+3. **Brewfile seed**: `brew bundle dump` → manually shaped into `.chezmoidata/packages.yaml`
+4. **Add chezmoi to Brewfile**, `brew install chezmoi` locally
+5. **Configure chezmoi source directory** to `~/Work/Git/dotfiles` (honors user's "repos in `~/Work/Git/`" preference). Create `~/.config/chezmoi/chezmoi.toml` with:
    ```toml
    sourceDir = "/Users/jasonmatthew/Work/Git/dotfiles"
    ```
    Then `chezmoi init` (no remote yet) recognises the existing source dir. (On a fresh machine, the bootstrap one-liner uses chezmoi's default `~/.local/share/chezmoi`; the seed machine is the only place we override `sourceDir`. Future machines simply clone via `chezmoi init https://github.com/jasonm4130/dotfiles --apply`.)
-5. **Add files to chezmoi one tool at a time** with `chezmoi add <path>`: zsh first, verify; then gitconfig, verify; then Zed; then Claude allowlist; then WezTerm/Starship (these are NEW so no risk)
-6. **Test `chezmoi apply --dry-run`** after each addition; investigate any non-empty diff
-7. **1Password vault setup**: create items for each Keychain secret in 1Password GUI
-8. **Migrate Keychain → 1Password** via `scripts/migrate-keychain-to-1password.sh`
-9. **Switch `.zshrc` from Keychain to `op inject`**: drop `_ks` function and Keychain-sourced exports; add `op inject` block. Open new shell, verify env vars
-10. **Delete Keychain entries** after confirming all shell sessions work
-11. **Switch p10k → Starship**: source `starship init zsh` instead of `.p10k.zsh`. Keep p10k archived
-12. **mise migration + toolchain cleanup** (per Section 7.8.1 matrix and 7.8.2 sequence): install mise, migrate Node from Volta and Python from pyenv, update `CLOUDSDK_PYTHON`, verify all repos resolve correct versions, then delete `~/.volta`, `brew uninstall pyenv`, and `rm -rf ~/.pyenv`. Rust, Bun, Flutter, gcloud SDK stay as-is.
-13. **Add WezTerm config**, restart WezTerm, verify
-14. **macOS defaults script**: write, run, observe; iterate
-15. **AGENTS.md split**: extract LSP-first rules from current `CLAUDE.md` into `~/.ai/AGENTS.md`; graphify section into `claude-extras.md`; render; verify `~/.claude/CLAUDE.md` is identical
-16. **gitleaks pre-commit hook**: install gitleaks, create `~/.config/gitleaks/gitleaks.toml` (with `op://` allowlist), set `core.hooksPath`, install `pre-commit` script (per Section 7.9). Verify the hook fires by attempting to commit a fake secret in a sandbox branch
-17. **Final repo-wide secret scan**: `gitleaks detect --redact` against full repo + history
-18. **First commit + push public** to `github.com/jasonm4130/dotfiles`
-19. **Bootstrap test**: optionally test via fresh user account or VM; otherwise validate next time a clean macOS install happens
+6. **Add files to chezmoi one tool at a time** with `chezmoi add <path>`: zsh first, verify; then gitconfig, verify; then Zed; then Claude allowlist; then WezTerm/Starship (these are NEW so no risk)
+7. **Test `chezmoi apply --dry-run`** after each addition; investigate any non-empty diff
+8. **1Password vault setup**: create items for each Keychain secret in 1Password GUI
+9. **Migrate Keychain → 1Password** via `scripts/migrate-keychain-to-1password.sh`
+10. **Switch `.zshrc` from Keychain to `op inject`**: drop `_ks` function and Keychain-sourced exports; add `op inject` block. Open new shell, verify env vars
+11. **Delete Keychain entries** after confirming all shell sessions work
+12. **Switch p10k → Starship**: source `starship init zsh` instead of `.p10k.zsh`. Keep p10k archived
+13. **mise migration + toolchain cleanup** (per Section 7.8.1 matrix and 7.8.2 sequence): install mise, migrate Node from Volta and Python from pyenv, update `CLOUDSDK_PYTHON`, verify all repos resolve correct versions, then delete `~/.volta`, `brew uninstall pyenv`, and `rm -rf ~/.pyenv`. Rust, Bun, Flutter, gcloud SDK stay as-is.
+14. **Add WezTerm config**, restart WezTerm, verify
+15. **macOS defaults script**: write, run, observe; iterate
+16. **AGENTS.md split**: extract LSP-first rules from current `CLAUDE.md` into `~/.ai/AGENTS.md`; graphify section into `claude-extras.md`; render; verify `~/.claude/CLAUDE.md` is identical
+17. **gitleaks pre-commit hook**: install gitleaks, create `~/.config/gitleaks/gitleaks.toml` (with `op://` allowlist), set `core.hooksPath`, install `pre-commit` script (per Section 7.9). Verify the hook fires by attempting to commit a fake secret in a sandbox branch
+18. **Final repo-wide secret scan**: `gitleaks detect --redact` against full repo + history
+19. **VM bootstrap test**: spin up a clean macOS VM via [UTM](https://mac.getutm.app/) or [Tart](https://tart.run/), run the bootstrap one-liner against the unpushed branch (use a private fork or local serve to test before public). Confirm the bootstrap completes without manual intervention beyond the documented one-time steps (1Password CLI integration enable, App Store sign-in). Fix anything that breaks.
+20. **First commit + push public** to `github.com/jasonm4130/dotfiles` with MIT license, README, and the validated bootstrap one-liner
 
 ## 10. Open questions & risks
 
 ### Risks
 
-1. **First `chezmoi apply` on the seed machine is destructive** — overwrites `~/.zshrc`, `~/.gitconfig`, etc. Mitigation: snapshot home dir / use `chezmoi diff` aggressively, apply one file at a time at first.
+1. **First `chezmoi apply` on the seed machine is destructive** — overwrites `~/.zshrc`, `~/.gitconfig`, etc. Mitigation: pre-flight rsync backup (Section 9 step 2), Time Machine confirmation, `chezmoi diff` aggressively, apply one file at a time at first.
 2. **brew bundle cleanup bug** ([Homebrew/brew#21350](https://github.com/homebrew/brew/issues/21350)) — addressed via opt-in alias.
 3. **Public repo + Brewfile leakage** — Brewfile lists installed software, low-stakes but visible. Acceptable.
 4. **AGENTS.md drift** — every push updates AGENTS.md publicly. Not a security risk; awareness only.
