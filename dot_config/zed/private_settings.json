@@ -1,0 +1,123 @@
+{
+  // Migrated from VSCode settings.json
+  // See ~/.config/zed/settings.json for full Zed docs: https://zed.dev/docs/configuring-zed
+
+  // Use VSCode-compatible keybindings as a base
+  "cli_default_open_behavior": "existing_window",
+  "project_panel": {
+    "dock": "left"
+  },
+  "outline_panel": {
+    "dock": "left"
+  },
+  "collaboration_panel": {
+    "dock": "left"
+  },
+  "agent": {
+    "dock": "right",
+    "favorite_models": [],
+    "model_parameters": []
+  },
+  "git_panel": {
+    "dock": "left"
+  },
+  "base_keymap": "VSCode",
+
+  // Font — Monaspace Neon (GitHub Next superfamily)
+  // Alternatives in the family: Argon, Xenon, Radon, Krypton
+  "buffer_font_family": "Monaspace Neon",
+  "buffer_font_size": 14,
+  "buffer_font_features": {
+    "calt": true,  // Texture healing + contextual ligatures
+    "liga": true,  // Standard ligatures
+    "ss01": true,  // Coding ligatures set 1 (!=, ==, ===, !==)
+    "ss02": true,  // Coding ligatures set 2 (>=, <=, ->)
+    "ss03": true,  // Coding ligatures set 3 (//, /*)
+    "ss04": true,  // Coding ligatures set 4 (***)
+    "ss05": true   // Coding ligatures set 5 (|||, &&&)
+  },
+  // VSCode line_height was 18px (absolute). 18/14 ≈ 1.3x relative
+  "buffer_line_height": { "custom": 1.3 },
+
+  // Editor behaviour
+  "tab_size": 2,
+  "hard_tabs": false,
+  "soft_wrap": "editor_width",
+  "show_completions_on_input": true,
+  "snippet_sort_order": "top",
+
+  // Saving
+  "format_on_save": "on",
+  "remove_trailing_whitespace_on_save": true,
+  "ensure_final_newline_on_save": true,
+
+  // Default formatter: Prettier (requires prettier installed in project or globally)
+  "formatter": {
+    "external": {
+      "command": "prettier",
+      "arguments": ["--stdin-filepath", "{buffer_path}"]
+    }
+  },
+
+  // Theme — requires the "monokai-pro-ce" extension
+  // Install: Cmd+Shift+P → "zed: extensions" → search "Monokai Pro"
+  // Variants available after install: Classic, Machine, Octagon, Ristretto, Spectrum
+  "theme": "Monokai Pro (CE)",
+
+  // Terminal
+  "terminal": {
+    "font_family": "Monaspace Neon",
+    "font_size": 14,
+    "font_features": {
+      "calt": true,
+      "liga": true
+    }
+  },
+
+  // Git — replaces GitLens inline blame (built into Zed)
+  "git": {
+    "inline_blame": {
+      "enabled": true
+    }
+  },
+
+  // AI — GitHub Copilot (replaces Copilot extension)
+  "features": {
+    "edit_prediction_provider": "copilot"
+  },
+
+  // Language-specific overrides
+  "languages": {
+    // JS/TS: format on save was explicitly disabled in VSCode
+    "JavaScript": {
+      "format_on_save": "off"
+    },
+    "JSX": {
+      "format_on_save": "off"
+    },
+    "TypeScript": {
+      "format_on_save": "off"
+    },
+    "TSX": {
+      "format_on_save": "off"
+    },
+    // JSONC: Prettier formatter (matches VSCode)
+    "JSONC": {
+      "formatter": {
+        "external": {
+          "command": "prettier",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      }
+    },
+    // Dart: format on save enabled, dartfmt handles this via LSP
+    "Dart": {
+      "format_on_save": "on",
+      "tab_size": 2
+    },
+    // SCSS
+    "SCSS": {
+      "format_on_save": "on"
+    }
+  }
+}

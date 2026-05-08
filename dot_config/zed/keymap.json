@@ -1,0 +1,12 @@
+[
+  // Migrated from VSCode keybindings.json
+  // VSCode base keybindings are handled by "base_keymap": "VSCode" in settings.json
+
+  // Replicate VSCode's shift+enter in terminal sending escape+newline (for multiline shell input)
+  {
+    "context": "Terminal",
+    "bindings": {
+      "shift-enter": ["terminal::SendText", "\u001b\r"]
+    }
+  }
+]
