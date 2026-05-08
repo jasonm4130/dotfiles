@@ -1,6 +1,9 @@
 # Homebrew
 eval "$(/opt/homebrew/bin/brew shellenv)"
 
+# mise shims for GUI-launched processes (Zed MCP servers etc.)
+eval "$(mise activate zsh --shims)"
+
 # pyenv (must be in .zprofile so login shells / brew cask installers see it)
 export PYENV_ROOT="$HOME/.pyenv"
 [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"

@@ -4,6 +4,9 @@ ZSH_THEME=""
 plugins=(git npm node zsh-autosuggestions zsh-syntax-highlighting docker docker-compose gcloud)
 source $ZSH/oh-my-zsh.sh
 
+# mise — version manager (replaces Volta + pyenv)
+eval "$(mise activate zsh)"
+
 # PATH — Volta (Node version manager)
 export VOLTA_HOME="$HOME/.volta"
 export PATH="$VOLTA_HOME/bin:$PATH"
