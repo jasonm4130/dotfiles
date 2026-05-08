@@ -6,4 +6,42 @@ docs/**
 bootstrap.sh
 .gitignore
 
-# (placeholder) `~/.claude/` allowlist appended in Task 10
+# === ~/.claude/ allowlist (chezmoi#4916 pattern) ===
+# Default: ignore everything under .claude
+.claude/**
+
+# Re-allow ancestor + tracked files/dirs (deep paths use **/**)
+!.claude/
+!.claude/CLAUDE.md
+!.claude/settings.json
+!.claude/.mcp.json
+!.claude/hooks/
+!.claude/hooks/**/**
+!.claude/skills/
+!.claude/skills/**/**
+!.claude/mcp-servers/
+!.claude/mcp-servers/**/**
+
+# Belt-and-braces: explicit re-ignores (parent ignore covers them, but be loud)
+.claude/.claude.json
+.claude/settings.local.json
+.claude/sessions/
+.claude/projects/
+.claude/tasks/
+.claude/history.jsonl
+.claude/compaction-log.jsonl
+.claude/paste-cache/
+.claude/file-history/
+.claude/shell-snapshots/
+.claude/session-env/
+.claude/backups/
+.claude/cache/
+.claude/debug/
+.claude/downloads/
+.claude/ide/
+.claude/plugins/
+.claude/.last-cleanup
+.claude/mcp-needs-auth-cache.json
+
+# === Other ignores ===
+.cache/secrets/
