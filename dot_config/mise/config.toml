@@ -1,0 +1,7 @@
+[tools]
+node   = "lts"
+python = "3.13"
+
+[settings]
+experimental         = true
+legacy_version_file  = true
