@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Pre-commit secret scan via gitleaks. Pipes the staged diff through stdin
+# (more reliable than `gitleaks git --pre-commit` which under-detects on macOS).
+set -e
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "⚠ gitleaks not installed — skipping secret scan"
+  exit 0
+fi
+
+# Capture staged diff (additions only, no context). Empty diff = nothing to scan.
+DIFF=$(git diff --cached --no-ext-diff -U0)
+if [ -z "$DIFF" ]; then
+  exit 0
+fi
+
+# Run gitleaks against the diff via stdin
+if ! echo "$DIFF" | gitleaks stdin --redact --no-banner \
+     --config "$HOME/.config/gitleaks/gitleaks.toml" >/dev/null 2>&1; then
+  echo ""
+  echo "❌ gitleaks blocked the commit — secret detected."
+  echo "   Review with: git diff --cached -U0 | gitleaks stdin --verbose --no-banner"
+  echo "   If false positive, allowlist in ~/.config/gitleaks/gitleaks.toml"
+  exit 1
+fi
