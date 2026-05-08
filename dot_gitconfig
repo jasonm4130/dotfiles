@@ -1,0 +1,27 @@
+[user]
+	name = Jason Matthew
+	email = jasonm4130@gmail.com
+
+[init]
+	defaultBranch = main
+
+[push]
+	autoSetupRemote = true
+
+[pull]
+	rebase = false
+
+[core]
+	editor = nvim
+	excludesfile = ~/.gitignore_global
+
+[alias]
+	st = status
+	co = checkout
+	br = branch
+	lg = log --oneline --graph --decorate --all
+[filter "lfs"]
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
