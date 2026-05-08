@@ -27,7 +27,6 @@ The current machine has working configs for Zsh + Oh My Zsh + Powerlevel10k, Zed
 - Cross-platform support (macOS only; Linux is a future possibility, not in scope)
 - Whole-system declarative management (Nix/home-manager — too heavyweight)
 - Replacing 1Password as secrets backend
-- Migrating from Volta/pyenv to mise (deferred; current works fine)
 - Migrating from Oh My Zsh to a leaner framework (deferred; Starship swap is enough)
 
 ## 4. Decisions (locked)
@@ -48,6 +47,8 @@ The current machine has working configs for Zsh + Oh My Zsh + Powerlevel10k, Zed
 | AI in Zed | **Off** (predictions and agent panel) | User uses Claude Code in terminal; reduces editor noise. |
 | Vim mode in Zed | **Off** | VSCode keymap base preferred. |
 | Bootstrap entry | **`sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply jasonm4130`** | Canonical chezmoi pattern. |
+| Runtime version manager | **mise** (replaces Volta + pyenv) | Single polyglot tool; one config; faster shims; idiomatic 2025–26 choice. |
+| Secret scanning | **gitleaks** (pre-commit hook + manual) | Pre-commit blocks accidental secret commits; config allowlists `op://` URIs (references, not secrets). |
 
 ## 5. Architecture
 
@@ -92,7 +93,9 @@ dotfiles/                                       # github.com/jasonm4130/dotfiles
 │   │   ├── prompts/
 │   │   └── themes/
 │   ├── wezterm/wezterm.lua                     # NEW — written from scratch
-│   └── git/ignore                              # XDG path
+│   ├── git/{ignore,hooks/pre-commit}           # XDG path; pre-commit hook for gitleaks
+│   ├── gitleaks/gitleaks.toml                  # secret-scan rules + op:// allowlist
+│   └── mise/config.toml                        # global tool versions (replaces Volta + pyenv)
 │
 ├── private_dot_claude/                         # see .chezmoiignore for allowlist
 │   ├── CLAUDE.md.tmpl                          # generated from AGENTS.md
@@ -208,6 +211,8 @@ brew:
     - chezmoi
     - age
     - starship
+    - mise          # replaces Volta + pyenv
+    - gitleaks      # secret scanning
     - jq
     - gh
     - bat
@@ -311,7 +316,140 @@ Existing `~/.claude/CLAUDE.md` content splits as:
 - **AGENTS.md**: LSP-first navigation rules (tool-agnostic)
 - **claude-extras.md**: graphify trigger (Claude-Code-specific)
 
-### 7.8 `~/.claude/` allowlist
+### 7.8 Runtime version manager (mise)
+
+**mise** replaces both Volta (Node) and pyenv (Python). Single tool, single config file, faster shim resolution, polyglot (Node/Python/Ruby/Go/Rust/Java/etc. all in one place).
+
+**Global config** at `~/.config/mise/config.toml` (chezmoi-tracked):
+
+```toml
+[tools]
+node   = "lts"
+python = "3.13"
+# Pin specific versions per project via local mise.toml at the repo root.
+
+[settings]
+experimental = true
+legacy_version_file = true   # respects .nvmrc, .python-version, .tool-versions
+```
+
+**Shell activation** in `dot_zshrc.tmpl`:
+```bash
+eval "$(mise activate zsh)"
+```
+
+**`dot_zprofile`** (login shells, for GUI launchers):
+```bash
+eval "$(mise activate zsh --shims)"
+```
+
+**Per-project pinning** uses `mise.toml` at repo root (committed) or `.tool-versions` (compatible with asdf, nvm).
+
+#### 7.8.1 Toolchain cleanup matrix
+
+Audited on the seed machine 2026-05-08:
+
+| Tool | Status / location | Action |
+|---|---|---|
+| **Volta** v1.0.8 (`~/.volta/`) | Manages node, npm, pnpm, yarn, pyright, typescript-language-server, sanity, tsc, tsserver | **Remove.** Migrate to mise. LSPs (pyright, typescript-language-server) handled by Zed automatic LSP install or brew. |
+| **pyenv** (brew formula, `~/.pyenv/`, Python 3.13.12) | Active, single Python version installed | **Remove.** Migrate to mise. |
+| **rust** (brew-installed `cargo`/`rustc`, `~/.cargo/`, no rustup) | Active | **Keep.** No version manager to remove. mise can install rust but rustup remains the canonical Rust toolchain manager — brew + cargo is fine for casual use. Reassess only if multi-version Rust becomes a need. |
+| **bun** v1.3.12 (`~/.bun/`) | Self-managed | **Keep.** Bun manages itself via `bun upgrade`. |
+| **Flutter / Dart** (brew) | Active | **Keep.** Flutter ships its own SDK and toolchain manager (`flutter sdk-tool`). |
+| **gcloud SDK** (`~/google-cloud-sdk/`, Google's bash installer) | Active | **Keep.** Update `CLOUDSDK_PYTHON` env var to mise shim path during migration. |
+| **nvm / fnm / n / asdf / jenv / rbenv** | Not installed | n/a |
+
+#### 7.8.2 Migration sequence
+
+Each step is reversible until the final delete; verify before proceeding.
+
+**Migrate Node (Volta → mise)**:
+1. List Volta-managed globals: `ls ~/.volta/bin` (excluding `volta`, `volta-shim`, `volta-migrate`)
+2. Install mise + Node: `mise use --global node@lts pnpm@latest yarn@latest`
+3. Open a new shell; verify `which node` resolves to `~/.local/share/mise/shims/node`
+4. Reinstall Volta-managed npm globals as needed via `mise exec node -- npm install -g <pkg>` OR per-project (preferred). Skip LSPs (`pyright`, `typescript-language-server`, `tsc`) — Zed auto-installs them; Claude Code plugins ship their own
+5. Test all repos with `package.json`: `cd <repo> && node --version && pnpm --version`
+6. Remove Volta init from `dot_zshrc` (`VOLTA_HOME` block)
+7. Verify in fresh shell: `which volta` returns nothing; `which node` is mise shim
+8. Delete Volta data: `rm -rf ~/.volta` (no first-class uninstaller exists)
+
+**Migrate Python (pyenv → mise)**:
+1. Note current Python version: `pyenv version` (3.13.12)
+2. `mise use --global python@3.13`
+3. Verify: `which python` resolves to mise shim, `python --version` returns 3.13.x
+4. Update `dot_zprofile`: `CLOUDSDK_PYTHON="$(mise which python)"` replacing `$PYENV_ROOT/shims/python3`
+5. Test gcloud: `gcloud --version` runs cleanly
+6. Test any Python projects in `~/Work/Git/`
+7. Remove pyenv blocks from `dot_zshrc` and `dot_zprofile`
+8. `brew uninstall pyenv`
+9. `rm -rf ~/.pyenv` (data dir; gone with `pyenv uninstall` was per-version, this removes all)
+
+**Update gcloud SDK Python**:
+- Already covered above in pyenv migration step 4. The `CLOUDSDK_PYTHON` change is the only gcloud-related dotfile update; SDK itself stays at `~/google-cloud-sdk/`.
+
+**Rollback (if mise misbehaves)**:
+- Volta data is `rm -rf`'d in step 8; before that, `which volta` keeps working. Until step 8, you can revert by re-adding `VOLTA_HOME` to `.zshrc`.
+- pyenv data deleted in step 9; before that, `brew install pyenv` would restore the formula but not installed Python builds. Mitigation: don't delete `~/.pyenv` until you've used mise-managed Python in every active project for at least a few days.
+
+### 7.9 Secret scanning (gitleaks + pre-commit hook)
+
+**Defence-in-depth**: even with the no-plaintext design, a pre-commit hook catches accidents (a hardcoded token pasted while debugging, a `.env` file `git add`ed by reflex).
+
+**Tool**: gitleaks. Single Go binary via brew, fast, well-maintained, default rules cover OpenAI/Anthropic/AWS/GCP/GitHub/Stripe/Slack patterns.
+
+**Hook approach**: native git `core.hooksPath`, NOT the `pre-commit` framework. Simpler for a personal repo, no Python dependency.
+
+`dot_gitconfig.tmpl` adds:
+```ini
+[core]
+    hooksPath = ~/.config/git/hooks
+```
+
+`private_dot_config/git/hooks/pre-commit` (chezmoi-tracked, +x):
+```bash
+#!/usr/bin/env bash
+set -e
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --redact --config "$HOME/.config/gitleaks/gitleaks.toml" || {
+    echo ""
+    echo "❌ gitleaks blocked the commit — secret detected."
+    echo "   Review with: gitleaks protect --staged --verbose"
+    echo "   If false positive, allowlist in ~/.config/gitleaks/gitleaks.toml"
+    exit 1
+  }
+else
+  echo "⚠ gitleaks not installed — skipping secret scan"
+fi
+```
+
+`private_dot_config/gitleaks/gitleaks.toml`:
+```toml
+title = "Personal gitleaks config"
+
+# Inherit gitleaks default ruleset
+[extend]
+useDefault = true
+
+# Allowlist op:// URIs — these are references, not secrets
+[allowlist]
+description = "1Password URIs and well-known false positives"
+regexes = [
+  '''op://[A-Za-z0-9_/-]+''',          # op://Vault/Item/field
+]
+paths = [
+  '''docs/specs/.*\.md''',             # spec docs may contain example secrets
+  '''.*\.example''',                   # *.example placeholder files
+]
+```
+
+**Repo-wide scan** (manual, for sanity-check before public push):
+```bash
+gitleaks detect --redact --config ~/.config/gitleaks/gitleaks.toml
+```
+
+**Migration plan reflection**: section 9 step 15 ("scan for accidentally committed secrets") becomes a `gitleaks detect` run.
+
+### 7.10 `~/.claude/` allowlist
 
 `.chezmoiignore` pattern (per [chezmoi#4916](https://github.com/twpayne/chezmoi/issues/4916)) — ignore everything, then un-ignore allowed paths, with `**/**` for deep unignores:
 
@@ -403,11 +541,14 @@ Order matters; each step is verifiable before the next.
 9. **Switch `.zshrc` from Keychain to `op inject`**: drop `_ks` function and Keychain-sourced exports; add `op inject` block. Open new shell, verify env vars
 10. **Delete Keychain entries** after confirming all shell sessions work
 11. **Switch p10k → Starship**: source `starship init zsh` instead of `.p10k.zsh`. Keep p10k archived
-12. **Add WezTerm config**, restart WezTerm, verify
-13. **macOS defaults script**: write, run, observe; iterate
-14. **AGENTS.md split**: extract LSP-first rules from current `CLAUDE.md` into `~/.ai/AGENTS.md`; graphify section into `claude-extras.md`; render; verify `~/.claude/CLAUDE.md` is identical
-15. **First commit + push public** (after final scan for accidentally committed secrets — `gitleaks detect` or `grep -r 'op://\|ghp_\|sk-' .`)
-16. **Bootstrap test**: optionally test via fresh user account or VM; otherwise validate next time a clean macOS install happens
+12. **mise migration + toolchain cleanup** (per Section 7.8.1 matrix and 7.8.2 sequence): install mise, migrate Node from Volta and Python from pyenv, update `CLOUDSDK_PYTHON`, verify all repos resolve correct versions, then delete `~/.volta`, `brew uninstall pyenv`, and `rm -rf ~/.pyenv`. Rust, Bun, Flutter, gcloud SDK stay as-is.
+13. **Add WezTerm config**, restart WezTerm, verify
+14. **macOS defaults script**: write, run, observe; iterate
+15. **AGENTS.md split**: extract LSP-first rules from current `CLAUDE.md` into `~/.ai/AGENTS.md`; graphify section into `claude-extras.md`; render; verify `~/.claude/CLAUDE.md` is identical
+16. **gitleaks pre-commit hook**: install gitleaks, create `~/.config/gitleaks/gitleaks.toml` (with `op://` allowlist), set `core.hooksPath`, install `pre-commit` script (per Section 7.9). Verify the hook fires by attempting to commit a fake secret in a sandbox branch
+17. **Final repo-wide secret scan**: `gitleaks detect --redact` against full repo + history
+18. **First commit + push public** to `github.com/jasonm4130/dotfiles`
+19. **Bootstrap test**: optionally test via fresh user account or VM; otherwise validate next time a clean macOS install happens
 
 ## 10. Open questions & risks
 
@@ -422,11 +563,11 @@ Order matters; each step is verifiable before the next.
 
 ### Deferred / not in v1
 
-- `mise` migration from Volta + pyenv
 - `age`-encrypted files (no immediate use case)
 - Linux support
 - Work / personal machine templating (will become relevant when 2nd machine arrives)
 - Cursor / Codex / Gemini config files (placeholders in `~/.ai/` only)
+- CI-level secret scanning (GitHub Actions running gitleaks on push) — pre-commit covers locally; CI is belt-and-braces for if a hook is bypassed
 
 ### Open questions
 
