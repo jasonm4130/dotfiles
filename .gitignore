@@ -1,0 +1,20 @@
+# chezmoi state
+.chezmoistate.boltdb
+
+# Local-only secrets (belt-and-braces — these should never be added)
+*.local.json
+*.cache
+key.txt
+secrets/
+.env
+.env.local
+
+# macOS noise
+.DS_Store
+
+# Editor cruft
+.vscode/
+.idea/
+
+# Brewfile lockfile (we use --no-lock)
+Brewfile.lock.json
