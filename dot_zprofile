@@ -7,11 +7,7 @@ eval "$(mise activate zsh --shims)"
 # Google Cloud SDK — use mise-managed Python
 export CLOUDSDK_PYTHON="$(mise which python 2>/dev/null || echo /usr/bin/python3)"
 
-# MCP secrets — VS Code reads env at launch, must be set here (login shell)
-_ks() { security find-generic-password -s "zsh-secrets" -a "$1" -w 2>/dev/null; }
-export TAVILY_API_KEY=$(_ks TAVILY_API_KEY)
-# Add your Cloudflare and Stripe tokens to Keychain then uncomment:
-# security add-generic-password -s "zsh-secrets" -a "CLOUDFLARE_API_TOKEN" -w "<token>"
-# security add-generic-password -s "zsh-secrets" -a "STRIPE_SECRET_KEY" -w "<key>"
-export CLOUDFLARE_API_TOKEN=$(_ks CLOUDFLARE_API_TOKEN)
-export STRIPE_SECRET_KEY=$(_ks STRIPE_SECRET_KEY)
+# MCP secrets via 1Password (login shell, so GUI launchers see env vars)
+if command -v op >/dev/null 2>&1 && [ -r "$HOME/.config/op/env.tmpl" ]; then
+  eval "$(op inject -i "$HOME/.config/op/env.tmpl" 2>/dev/null)" || true
+fi

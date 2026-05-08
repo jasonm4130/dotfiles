@@ -14,11 +14,11 @@ source "$HOME/google-cloud-sdk/completion.zsh.inc" 2>/dev/null
 # PATH — LM Studio
 export PATH="$PATH:$HOME/.cache/lm-studio/bin"
 
-# Secrets from macOS Keychain
-_ks() { security find-generic-password -s "zsh-secrets" -a "$1" -w 2>/dev/null; }
-export TURBO_TOKEN=$(_ks TURBO_TOKEN)
-export TURBO_TEAM=$(_ks TURBO_TEAM)
-export TURBO_REMOTE_CACHE_SIGNATURE_KEY=$(_ks TURBO_REMOTE_CACHE_SIGNATURE_KEY)
+# Secrets via 1Password CLI — single inject covers all secrets, ~300ms with biometric unlock
+if command -v op >/dev/null 2>&1 && [ -r "$HOME/.config/op/env.tmpl" ]; then
+  eval "$(op inject -i "$HOME/.config/op/env.tmpl" 2>/dev/null)" || \
+    echo "⚠ 1Password not loaded — unlock the app or run \`op signin\`"
+fi
 
 # Aliases
 alias zshconfig="code ~/.zshrc"
@@ -38,9 +38,6 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 
 alias claude-mem='bun "/Users/jasonmatthew/.claude/plugins/marketplaces/thedotmack/plugin/scripts/worker-service.cjs"'
 export PATH="$HOME/.local/bin:$PATH"
-
-# Refresh the cached Moonshot key from 1Password (run when key is rotated; one Touch ID prompt)
-alias refresh-moonshot='op read "op://Private/Moonshot AI/credential" --no-newline > ~/.cache/moonshot-key && chmod 600 ~/.cache/moonshot-key && echo "moonshot key refreshed ($(wc -c < ~/.cache/moonshot-key) bytes)"'
 
 # Starship prompt
 eval "$(starship init zsh)"
