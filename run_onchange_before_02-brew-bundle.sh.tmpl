@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Brewfile hash: {{ include "Brewfile.tmpl" | sha256sum }}
+set -euo pipefail
+echo "📥 Running brew bundle..."
+eval "$(/opt/homebrew/bin/brew shellenv)"
+brew bundle --file="$HOME/Brewfile" --no-lock
+echo "✅ brew bundle complete"

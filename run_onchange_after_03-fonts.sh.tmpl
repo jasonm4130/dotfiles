@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Fonts list hash: {{ list .brew.casks | toString | sha256sum }}
+set -euo pipefail
+echo "🔤 Reloading font cache..."
+atsutil databases -remove 2>/dev/null || true
+echo "✅ font cache reloaded"

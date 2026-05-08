@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# AGENTS.md hash:        {{ include "dot_ai/AGENTS.md" | sha256sum }}
+# claude-extras hash:    {{ include "dot_ai/claude-extras.md" | sha256sum }}
+# codex-extras hash:     {{ include "dot_ai/codex-extras.md" | sha256sum }}
+set -euo pipefail
+"$HOME/.ai/render.sh"
