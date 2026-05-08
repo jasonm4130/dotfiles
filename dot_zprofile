@@ -1,0 +1,19 @@
+# Homebrew
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# pyenv (must be in .zprofile so login shells / brew cask installers see it)
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+
+# Google Cloud SDK — use pyenv-managed Python
+export CLOUDSDK_PYTHON="$PYENV_ROOT/shims/python3"
+
+# MCP secrets — VS Code reads env at launch, must be set here (login shell)
+_ks() { security find-generic-password -s "zsh-secrets" -a "$1" -w 2>/dev/null; }
+export TAVILY_API_KEY=$(_ks TAVILY_API_KEY)
+# Add your Cloudflare and Stripe tokens to Keychain then uncomment:
+# security add-generic-password -s "zsh-secrets" -a "CLOUDFLARE_API_TOKEN" -w "<token>"
+# security add-generic-password -s "zsh-secrets" -a "STRIPE_SECRET_KEY" -w "<key>"
+export CLOUDFLARE_API_TOKEN=$(_ks CLOUDFLARE_API_TOKEN)
+export STRIPE_SECRET_KEY=$(_ks STRIPE_SECRET_KEY)

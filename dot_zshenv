@@ -1,0 +1,13 @@
+# Sourced by every zsh invocation (interactive, non-interactive, scripts, subshells).
+# Keep this file FAST — no network/op calls, no Touch ID prompts.
+
+# Ensure homebrew bin is on PATH so tools like `op` resolve from any shell context
+[[ ":$PATH:" != *":/opt/homebrew/bin:"* ]] && export PATH="/opt/homebrew/bin:$PATH"
+
+# Moonshot AI key for graphify (Kimi K2.6 backend) — read from local cache.
+# Refresh the cache from 1Password (one Touch ID prompt) by running:
+#   refresh-moonshot
+# (alias defined in .zshrc)
+if [ -z "$MOONSHOT_API_KEY" ] && [ -r "$HOME/.cache/moonshot-key" ]; then
+    export MOONSHOT_API_KEY="$(cat "$HOME/.cache/moonshot-key")"
+fi
