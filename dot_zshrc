@@ -7,11 +7,6 @@ source $ZSH/oh-my-zsh.sh
 # mise — version manager (replaces Volta + pyenv)
 eval "$(mise activate zsh)"
 
-# PATH — pyenv (Python version manager)
-export PYENV_ROOT="$HOME/.pyenv"
-[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
-
 # PATH — Google Cloud SDK
 export PATH="$HOME/google-cloud-sdk/bin:$PATH"
 source "$HOME/google-cloud-sdk/completion.zsh.inc" 2>/dev/null

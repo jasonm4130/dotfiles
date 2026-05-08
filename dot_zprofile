@@ -4,13 +4,8 @@ eval "$(/opt/homebrew/bin/brew shellenv)"
 # mise shims for GUI-launched processes (Zed MCP servers etc.)
 eval "$(mise activate zsh --shims)"
 
-# pyenv (must be in .zprofile so login shells / brew cask installers see it)
-export PYENV_ROOT="$HOME/.pyenv"
-[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
-
-# Google Cloud SDK — use pyenv-managed Python
-export CLOUDSDK_PYTHON="$PYENV_ROOT/shims/python3"
+# Google Cloud SDK — use mise-managed Python
+export CLOUDSDK_PYTHON="$(mise which python 2>/dev/null || echo /usr/bin/python3)"
 
 # MCP secrets — VS Code reads env at launch, must be set here (login shell)
 _ks() { security find-generic-password -s "zsh-secrets" -a "$1" -w 2>/dev/null; }
