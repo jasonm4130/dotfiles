@@ -45,3 +45,7 @@ bootstrap.sh
 
 # === Other ignores ===
 .cache/secrets/
+
+# Archive — kept in repo for reference but never deploy to $HOME
+archive
+archive/**
