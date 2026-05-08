@@ -29,9 +29,6 @@ alias vim="nvim"
 alias vi="nvim"
 alias g="git"
 
-# iTerm2 shell integration
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
-
 # bun completions
 [ -s "/Users/jasonmatthew/.bun/_bun" ] && source "/Users/jasonmatthew/.bun/_bun"
 
