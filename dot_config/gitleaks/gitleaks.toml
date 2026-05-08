@@ -1,0 +1,15 @@
+title = "Personal gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "1Password URIs and known false positives"
+regexes = [
+  '''op://[A-Za-z0-9 _/-]+''',
+]
+paths = [
+  '''docs/specs/.*\.md''',
+  '''docs/plans/.*\.md''',
+  '''.*\.example''',
+]
