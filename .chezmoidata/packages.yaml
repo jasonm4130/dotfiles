@@ -6,6 +6,7 @@ brew:
   taps:
   - 1password/tap
   - cloudflare/cloudflare
+  - getagentseal/codeburn
   - hashicorp/tap
   - jasonm4130/tap
   - mingrammer/flog
@@ -14,6 +15,7 @@ brew:
   - automake
   - chezmoi
   - cloudflare/cloudflare/cf-terraforming
+  - getagentseal/codeburn/codeburn
   - cmake
   - coreutils
   - diffutils
@@ -35,6 +37,7 @@ brew:
   - jasonm4130/tap/pipespy
   - libffi
   - libyaml
+  - llmfit
   - make
   - mingrammer/flog/flog
   - mise
