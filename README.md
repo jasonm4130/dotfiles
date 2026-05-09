@@ -27,6 +27,20 @@ That command installs chezmoi, clones this repo to `~/.local/share/chezmoi`, run
 2. Sign in to the App Store (so `mas` entries install)
 3. Open a new terminal — secrets resolve via `op inject` at shell start
 
+## chezmoi cheat-sheet
+
+| Task | Command |
+|---|---|
+| See what would change | `chezmoi diff` |
+| Apply changes | `chezmoi apply` |
+| Add a file from `$HOME` | `chezmoi add ~/.somefile` |
+| Edit a tracked file (opens in `$EDITOR`) | `chezmoi edit ~/.somefile` |
+| Re-add after editing in `$HOME` | `chezmoi re-add ~/.somefile` |
+| Open the source dir | `chezmoi cd` |
+| Check what's ignored | `chezmoi ignored \| grep <pattern>` |
+| Render a template | `chezmoi execute-template --file <path>` |
+| Pull + apply remote changes | `chezmoi update` |
+
 ## Design
 
 See [`docs/specs/2026-05-08-dotfiles-design.md`](docs/specs/2026-05-08-dotfiles-design.md).
