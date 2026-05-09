@@ -37,6 +37,8 @@ config.keys = {
   { key = 'l', mods = 'CMD|ALT',   action = act.ActivatePaneDirection 'Right' },
   { key = 'k', mods = 'CMD|ALT',   action = act.ActivatePaneDirection 'Up' },
   { key = 'j', mods = 'CMD|ALT',   action = act.ActivatePaneDirection 'Down' },
+  { key = ']', mods = 'CMD',       action = act.ActivatePaneDirection 'Next' },
+  { key = '[', mods = 'CMD',       action = act.ActivatePaneDirection 'Prev' },
   { key = 'p', mods = 'CMD|SHIFT', action = act.ActivateCommandPalette },
 }
 
