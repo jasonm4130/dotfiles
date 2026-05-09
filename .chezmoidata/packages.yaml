@@ -68,6 +68,7 @@ brew:
   - caffeine
   - claude-code
   - discord
+  - displaylink
   - figma
   - firefox@developer-edition
   - flux-app
@@ -92,6 +93,7 @@ brew:
   - rectangle
   - signal
   - spotify
+  - steam
   - textmate
   - tunnelblick
   - via
