@@ -1,48 +1,184 @@
+# Monokai Pro (CE) palette — matches Zed + WezTerm.
+# Palette ref: bg #2D2A2E · fg #FCFCFA · red #FF6188 · green #A9DC76
+#              yellow #FFD866 · orange #FC9867 · blue #78DCE8 · purple #AB9DF2
+
 add_newline = true
+palette     = "monokai_pro"
 
 format = """
 $username\
 $hostname\
 $directory\
 $git_branch\
+$git_state\
 $git_status\
+$fill\
 $nodejs\
+$bun\
+$deno\
 $python\
 $rust\
+$golang\
+$ruby\
+$java\
+$kotlin\
+$lua\
+$package\
 $cmd_duration\
 $line_break\
+$jobs\
 $character"""
+
+[palettes.monokai_pro]
+bg     = "#2D2A2E"
+fg     = "#FCFCFA"
+red    = "#FF6188"
+green  = "#A9DC76"
+yellow = "#FFD866"
+orange = "#FC9867"
+blue   = "#78DCE8"
+purple = "#AB9DF2"
+muted  = "#727072"
 
 [character]
 success_symbol = "[❯](bold green)"
 error_symbol   = "[❯](bold red)"
+vimcmd_symbol  = "[❮](bold green)"
+
+[username]
+style_user     = "bold yellow"
+style_root     = "bold red"
+format         = "[$user]($style)"
+disabled       = false
+show_always    = false
+
+[hostname]
+ssh_only = true
+format   = "[@$hostname](bold orange) "
 
 [directory]
-truncation_length = 3
-truncate_to_repo  = true
-style             = "bold cyan"
+truncation_length        = 3
+truncate_to_repo         = true
+style                    = "bold blue"
+read_only                = " 󰌾"
+read_only_style          = "red"
+home_symbol              = "~"
+truncation_symbol        = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙"
+"Downloads" = ""
+"Pictures"  = ""
+"Music"     = ""
+"Movies"    = ""
+"Work"      = "󰓻"
+"Git"       = ""
 
 [git_branch]
-symbol = " "
-style  = "bold purple"
+symbol             = " "
+style              = "bold purple"
+truncation_length  = 24
+truncation_symbol  = "…"
+format             = "on [$symbol$branch]($style) "
+
+[git_state]
+format         = "[$state( $progress_current/$progress_total)]($style) "
+style          = "bold yellow"
+rebase         = "REBASING"
+merge          = "MERGING"
+revert         = "REVERTING"
+cherry_pick    = "CHERRY-PICKING"
+bisect         = "BISECTING"
+am             = "AM"
+am_or_rebase   = "AM/REBASE"
 
 [git_status]
-ahead     = "⇡${count}"
-behind    = "⇣${count}"
-diverged  = "⇕⇡${ahead_count}⇣${behind_count}"
-modified  = "*${count}"
-untracked = "?${count}"
-stashed   = "$${count}"
+style       = "bold red"
+ahead       = "⇡${count}"
+behind      = "⇣${count}"
+diverged    = "⇕⇡${ahead_count}⇣${behind_count}"
+conflicted  = "[ ${count}](bold red)"
+untracked   = "[?${count}](muted)"
+modified    = "[!${count}](yellow)"
+staged      = "[+${count}](green)"
+renamed     = "[»${count}](blue)"
+deleted     = "[✘${count}](red)"
+stashed     = "[\\$${count}](purple)"
+format      = "[$all_status$ahead_behind]($style) "
+
+[fill]
+symbol = " "
 
 [cmd_duration]
 min_time = 2000
-format   = "took [$duration](yellow)"
+format   = "[took $duration](yellow) "
+
+# --- Languages (only show when relevant project file present) ---
 
 [nodejs]
-format = "via [⬢ $version](bold green) "
+symbol             = " "
+style              = "bold green"
+format             = "[$symbol($version )]($style)"
+detect_extensions  = ["js", "mjs", "cjs", "ts", "mts", "cts", "jsx", "tsx"]
+detect_files       = ["package.json", ".node-version", ".nvmrc"]
+detect_folders     = ["node_modules"]
+
+[bun]
+symbol = "🥟 "
+style  = "bold yellow"
+format = "[$symbol($version )]($style)"
+
+[deno]
+symbol = " "
+style  = "bold green"
+format = "[$symbol($version )]($style)"
 
 [python]
-format = "via [🐍 $version](yellow bold) "
+symbol             = " "
+style              = "bold yellow"
+format             = "[$symbol($version )(\\($virtualenv\\) )]($style)"
+detect_extensions  = ["py"]
+detect_files       = ["requirements.txt", "pyproject.toml", "setup.py", "Pipfile", ".python-version"]
 
 [rust]
-format = "via [⚙ $version](red bold) "
+symbol = " "
+style  = "bold red"
+format = "[$symbol($version )]($style)"
+
+[golang]
+symbol = " "
+style  = "bold blue"
+format = "[$symbol($version )]($style)"
+
+[ruby]
+symbol = " "
+style  = "bold red"
+format = "[$symbol($version )]($style)"
+
+[java]
+symbol = " "
+style  = "bold red"
+format = "[$symbol($version )]($style)"
+
+[kotlin]
+symbol = " "
+style  = "bold purple"
+format = "[$symbol($version )]($style)"
+
+[lua]
+symbol = " "
+style  = "bold blue"
+format = "[$symbol($version )]($style)"
+
+[package]
+symbol            = "󰏗 "
+style             = "bold orange"
+format            = "[$symbol$version]($style) "
+display_private   = false
+disabled          = false
+
+[jobs]
+symbol     = "✦"
+style      = "bold purple"
+threshold  = 1
+format     = "[$symbol $number]($style) "
