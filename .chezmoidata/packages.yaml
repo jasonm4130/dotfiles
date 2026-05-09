@@ -5,21 +5,16 @@
 brew:
   taps:
   - 1password/tap
-  - billabel/brew
   - cloudflare/cloudflare
   - hashicorp/tap
   - jasonm4130/tap
   - mingrammer/flog
   formulae:
-  - 1password-cli
   - age
   - automake
-  - bison
   - chezmoi
-  - chruby
   - cloudflare/cloudflare/cf-terraforming
   - cmake
-  - cocoapods
   - codex
   - coreutils
   - diffutils
@@ -28,7 +23,6 @@ brew:
   - findutils
   - gawk
   - gdbm
-  - gdrive
   - gh
   - git-extras
   - git-filter-repo
@@ -36,13 +30,12 @@ brew:
   - gitleaks
   - gnu-getopt
   - gnu-tar
-  - gradle
+  - go
   - grep
   - hashicorp/tap/terraform
   - jasonm4130/tap/pipespy
   - libffi
   - libyaml
-  - llvm
   - make
   - mingrammer/flog/flog
   - mise
@@ -51,25 +44,18 @@ brew:
   - opencode
   - openjdk@17
   - openjdk@21
-  - openssl@1.1
   - pandoc
   - pkgconf
   - pre-commit
-  - protobuf
   - python@3.10
   - python@3.11
-  - quilt
-  - r
   - rclone
   - rsync
-  - ruby-install
   - rust
   - semgrep
   - starship
-  - subversion
   - tflint
   - uv
-  - vhs
   - weasyprint
   - wget
   - zsh
@@ -78,16 +64,12 @@ brew:
   - 1password/tap/1password-cli
   - android-studio
   - arc
-  - audacity
   - balenaetcher
   - caffeine
   - claude-code
-  - diffusionbee
   - discord
-  - displaylink
   - figma
   - firefox@developer-edition
-  - flutter
   - flux-app
   - font-fira-code-nerd-font
   - font-hack-nerd-font
@@ -96,25 +78,20 @@ brew:
   - font-monaspace
   - font-monaspice-nerd-font
   - font-roboto
+  - gcloud-cli
   - google-chrome
   - hot
-  - inkscape
-  - iriunwebcam
   - lm-studio
   - maccy
-  - obs
   - obsidian
   - omnidisksweeper
   - openaudible
   - opencode-desktop
-  - openscad
   - postman
-  - qgis
   - qmk-toolbox
   - rectangle
   - signal
   - spotify
-  - steam
   - textmate
   - tunnelblick
   - via
@@ -123,7 +100,6 @@ brew:
   - vlc
   - wezterm
   - zed
-  - zwift
   mas: []
   vscode:
   - aaron-bond.better-comments
