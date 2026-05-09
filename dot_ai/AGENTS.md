@@ -16,7 +16,7 @@ Past ~70% of the context window, prefer `/clear` and re-prime over pushing throu
 
 ## When corrected, update this file
 
-If you make a mistake the user has to correct, propose an edit to `~/.ai/AGENTS.md` so the same mistake doesn't recur. End such suggestions with: "Update your AGENTS.md so you don't make that mistake again." This file grows by correction, not by speculation.
+These instructions are global — loaded into every session of every tool from a single source-of-truth file managed by chezmoi. If you make a mistake the user has to correct, edit the chezmoi source (run `chezmoi source-path ~/.ai/AGENTS.md` to locate it) and then `chezmoi apply` to propagate to `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Do not edit the rendered copies directly — they get clobbered on next apply. End such suggestions with: "Update your AGENTS.md so you don't make that mistake again." This file grows by correction, not by speculation.
 
 ## LSP-First Code Navigation
 

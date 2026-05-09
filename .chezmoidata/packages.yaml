@@ -47,8 +47,6 @@ brew:
   - pandoc
   - pkgconf
   - pre-commit
-  - python@3.10
-  - python@3.11
   - rclone
   - rsync
   - rust
@@ -79,7 +77,6 @@ brew:
   - font-monaspace
   - font-monaspice-nerd-font
   - font-roboto
-  - gcloud-cli
   - google-chrome
   - hot
   - lm-studio
