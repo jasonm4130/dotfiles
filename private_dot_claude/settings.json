@@ -2,9 +2,6 @@
   "attribution": {
     "commit": ""
   },
-  "disabledMcpjsonServers": [
-    "context7"
-  ],
   "permissions": {
     "allow": [
       "Read",
@@ -65,8 +62,12 @@
       "mcp__buffer__*",
       "mcp__reddit__*",
       "mcp__x-twitter__*"
-    ]
+    ],
+    "defaultMode": "auto"
   },
+  "disabledMcpjsonServers": [
+    "context7"
+  ],
   "hooks": {
     "PreToolUse": [
       {
@@ -75,6 +76,15 @@
           {
             "type": "command",
             "command": "node ~/.claude/hooks/lsp-first-guard.js"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/secrets-scan.js"
           }
         ]
       },
@@ -124,7 +134,6 @@
     "context7@claude-plugins-official": true,
     "playwright@claude-plugins-official": true
   },
-  "autoCompactWindow": 400000,
   "extraKnownMarketplaces": {
     "thedotmack": {
       "source": {
@@ -139,5 +148,7 @@
       }
     }
   },
-  "theme": "dark-daltonized"
+  "autoCompactWindow": 400000,
+  "theme": "dark-daltonized",
+  "skipAutoPermissionPrompt": true
 }
