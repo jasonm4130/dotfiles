@@ -132,7 +132,8 @@
     "ralph-loop@claude-plugins-official": true,
     "cloudflare@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
-    "playwright@claude-plugins-official": true
+    "playwright@claude-plugins-official": true,
+    "jm-skills@jasonm4130-claude-skills": true
   },
   "extraKnownMarketplaces": {
     "thedotmack": {
@@ -145,6 +146,12 @@
       "source": {
         "source": "github",
         "repo": "jasonm4130/session-retro"
+      }
+    },
+    "jasonm4130-claude-skills": {
+      "source": {
+        "source": "github",
+        "repo": "jasonm4130/claude-skills"
       }
     }
   },
