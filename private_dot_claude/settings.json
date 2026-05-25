@@ -128,12 +128,14 @@
     "typescript-lsp@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
-    "session-retro@jasonm4130-session-retro": true,
     "ralph-loop@claude-plugins-official": true,
     "cloudflare@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
     "playwright@claude-plugins-official": true,
-    "jm-skills@jasonm4130-claude-skills": true
+    "adversarial-agents@jasonm4130-claude-skills": true,
+    "deep-research@jasonm4130-claude-skills": true,
+    "handoff@jasonm4130-claude-skills": true,
+    "session-retro@jasonm4130-claude-skills": true
   },
   "extraKnownMarketplaces": {
     "thedotmack": {
@@ -142,20 +144,23 @@
         "repo": "thedotmack/claude-mem"
       }
     },
-    "jasonm4130-session-retro": {
-      "source": {
-        "source": "github",
-        "repo": "jasonm4130/session-retro"
-      }
-    },
     "jasonm4130-claude-skills": {
       "source": {
         "source": "github",
         "repo": "jasonm4130/claude-skills"
-      }
+      },
+      "autoUpdate": true
     }
   },
   "autoCompactWindow": 400000,
+  "env": {
+    "HANDOFF_EFFECTIVE_MAX_TOKENS": "400000"
+  },
   "theme": "dark-daltonized",
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "remoteControlAtStartup": true,
+  "statusLine": {
+    "type": "command",
+    "command": "node \"/Users/jasonmatthew/.claude/plugins/cache/jasonm4130-claude-skills/handoff/0.2.0/scripts/status-and-flag.mjs\""
+  }
 }
