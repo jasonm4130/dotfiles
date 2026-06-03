@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Reloads when the plist changes: {{ include "private_Library/private_LaunchAgents/com.jasonmatthew.disk-maintenance.plist.tmpl" | sha256sum }}
+set -euo pipefail
+
+PLIST="$HOME/Library/LaunchAgents/com.jasonmatthew.disk-maintenance.plist"
+
+# Best-effort: the maintenance job uses cargo-sweep; install it if Rust is present.
+if command -v cargo >/dev/null 2>&1 && ! command -v cargo-sweep >/dev/null 2>&1; then
+  echo "📥 Installing cargo-sweep..."
+  cargo install cargo-sweep || true
+fi
+
+echo "🔁 (Re)loading disk-maintenance launchd agent"
+launchctl unload "$PLIST" 2>/dev/null || true
+launchctl load -w "$PLIST"
+echo "✅ disk-maintenance agent loaded"

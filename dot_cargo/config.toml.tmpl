@@ -1,0 +1,4 @@
+# Shared build output directory for all Cargo projects.
+# Dependencies built once are reused across projects, and cleanup is one location.
+[build]
+target-dir = "{{ .chezmoi.homeDir }}/.cache/cargo/target"
