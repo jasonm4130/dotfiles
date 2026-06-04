@@ -8,6 +8,7 @@ eval "$(mise activate zsh --shims)"
 export CLOUDSDK_PYTHON="$(mise which python 2>/dev/null || echo /usr/bin/python3)"
 
 # MCP secrets via 1Password (login shell, so GUI launchers see env vars)
-if command -v op >/dev/null 2>&1 && [ -r "$HOME/.config/op/env.tmpl" ]; then
-  eval "$(op inject -i "$HOME/.config/op/env.tmpl" 2>/dev/null)" || true
+# Uses op-fast for Keychain-cached secrets — see ~/.config/op-fast/config.toml
+if command -v op-fast >/dev/null 2>&1 && [ -r "$HOME/.config/op/env.tmpl" ]; then
+  eval "$(op-fast inject -i "$HOME/.config/op/env.tmpl" 2>/dev/null)" || true
 fi

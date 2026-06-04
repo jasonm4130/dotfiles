@@ -14,9 +14,10 @@ source "$HOME/google-cloud-sdk/completion.zsh.inc" 2>/dev/null
 # PATH — LM Studio
 export PATH="$PATH:$HOME/.cache/lm-studio/bin"
 
-# Secrets via 1Password CLI — single inject covers all secrets, ~300ms with biometric unlock
-if command -v op >/dev/null 2>&1 && [ -r "$HOME/.config/op/env.tmpl" ]; then
-  eval "$(op inject -i "$HOME/.config/op/env.tmpl" 2>/dev/null)" || \
+# Secrets via 1Password CLI — op-fast caches in macOS Keychain to skip per-tty Touch ID
+# TTLs live in ~/.config/op-fast/config.toml (4h default, 15m for stripe-secret)
+if command -v op-fast >/dev/null 2>&1 && [ -r "$HOME/.config/op/env.tmpl" ]; then
+  eval "$(op-fast inject -i "$HOME/.config/op/env.tmpl" 2>/dev/null)" || \
     echo "⚠ 1Password not loaded — unlock the app or run \`op signin\`"
 fi
 

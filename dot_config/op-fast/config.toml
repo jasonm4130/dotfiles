@@ -1,0 +1,6 @@
+# 4h default TTL ≈ one working session; bounds revoked-secret exposure
+default_ttl = "4h"
+
+[ttl]
+# Stripe is the high-value secret in this set — tighter window
+"op://Private/stripe-secret/*" = "15m"

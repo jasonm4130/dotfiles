@@ -6,6 +6,7 @@ brew:
   taps:
   - 1password/tap
   - cloudflare/cloudflare
+  - cometkim/tap
   - getagentseal/codeburn
   - hashicorp/tap
   - jasonm4130/tap
@@ -15,6 +16,7 @@ brew:
   - automake
   - chezmoi
   - cloudflare/cloudflare/cf-terraforming
+  - cometkim/tap/op-fast
   - getagentseal/codeburn/codeburn
   - cmake
   - coreutils
