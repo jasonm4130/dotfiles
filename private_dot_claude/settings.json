@@ -1,4 +1,7 @@
 {
+  "env": {
+    "HANDOFF_EFFECTIVE_MAX_TOKENS": "400000"
+  },
   "attribution": {
     "commit": ""
   },
@@ -121,6 +124,10 @@
       }
     ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "node \"/Users/jasonmatthew/.claude/handoff-statusline.mjs\""
+  },
   "enabledPlugins": {
     "superpowers@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
@@ -135,7 +142,8 @@
     "adversarial-agents@jasonm4130-claude-skills": true,
     "deep-research@jasonm4130-claude-skills": true,
     "handoff@jasonm4130-claude-skills": true,
-    "session-retro@jasonm4130-claude-skills": true
+    "session-retro@jasonm4130-claude-skills": true,
+    "workflow-model-guard@jasonm4130-claude-skills": true
   },
   "extraKnownMarketplaces": {
     "thedotmack": {
@@ -153,14 +161,8 @@
     }
   },
   "autoCompactWindow": 400000,
-  "env": {
-    "HANDOFF_EFFECTIVE_MAX_TOKENS": "400000"
-  },
+  "skipWorkflowUsageWarning": true,
   "theme": "dark-daltonized",
-  "skipAutoPermissionPrompt": true,
   "remoteControlAtStartup": true,
-  "statusLine": {
-    "type": "command",
-    "command": "node \"/Users/jasonmatthew/.claude/plugins/cache/jasonm4130-claude-skills/handoff/0.2.0/scripts/status-and-flag.mjs\""
-  }
+  "skipAutoPermissionPrompt": true
 }
