@@ -66,8 +66,20 @@
       "mcp__reddit__*",
       "mcp__x-twitter__*"
     ],
+    "deny": [
+      "Skill(superpowers:subagent-driven-development)",
+      "Skill(superpowers:executing-plans)",
+      "Skill(superpowers:dispatching-parallel-agents)",
+      "Skill(superpowers:test-driven-development)",
+      "Skill(superpowers:using-git-worktrees)",
+      "Skill(superpowers:finishing-a-development-branch)",
+      "Skill(superpowers:requesting-code-review)",
+      "Skill(superpowers:receiving-code-review)",
+      "Skill(superpowers:verification-before-completion)"
+    ],
     "defaultMode": "auto"
   },
+  "model": "claude-fable-5[1m]",
   "disabledMcpjsonServers": [
     "context7"
   ],
@@ -160,6 +172,7 @@
       "autoUpdate": true
     }
   },
+  "effortLevel": "medium",
   "autoCompactWindow": 400000,
   "skipWorkflowUsageWarning": true,
   "theme": "dark-daltonized",
