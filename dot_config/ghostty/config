@@ -1,0 +1,39 @@
+# Ghostty config — ported from dot_config/wezterm/wezterm.lua. Managed by chezmoi.
+# Validate after edits:  ghostty +validate-config
+
+# Font (Monaspace Neon, matches Zed)
+font-family = "Monaspace Neon"
+font-family = "Symbols Nerd Font Mono"
+font-feature = calt
+font-feature = liga
+font-feature = ss01
+font-feature = ss02
+font-feature = ss03
+font-size = 14
+adjust-cell-height = 30%
+
+# Theme (matches Zed's Monokai Pro)
+theme = Monokai Pro
+
+# Window chrome
+macos-titlebar-style = tabs
+background-opacity = 0.97
+background-blur = 20
+window-padding-x = 12,12
+window-padding-y = 8,4
+
+# Behavior
+scrollback-limit = 10000000
+macos-option-as-alt = right
+
+# Keybinds (tmux-style splits + command palette), mirrors wezterm.lua
+keybind = cmd+d=new_split:right
+keybind = cmd+shift+d=new_split:down
+keybind = cmd+w=close_surface
+keybind = cmd+alt+h=goto_split:left
+keybind = cmd+alt+l=goto_split:right
+keybind = cmd+alt+k=goto_split:up
+keybind = cmd+alt+j=goto_split:down
+keybind = cmd+]=goto_split:next
+keybind = cmd+[=goto_split:previous
+keybind = cmd+shift+p=toggle_command_palette

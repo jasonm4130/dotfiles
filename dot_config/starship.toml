@@ -63,7 +63,7 @@ style                    = "bold blue"
 read_only                = " 󰌾"
 read_only_style          = "red"
 home_symbol              = "~"
-truncation_symbol        = "…/"
+truncation_symbol        = ""
 
 [directory.substitutions]
 "Documents" = "󰈙"

@@ -81,6 +81,7 @@ brew:
   - font-monaspace
   - font-monaspice-nerd-font
   - font-roboto
+  - ghostty
   - google-chrome
   - hot
   - lm-studio
