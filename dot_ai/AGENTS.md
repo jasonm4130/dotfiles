@@ -33,6 +33,10 @@ For changes that take more than one sentence to describe: produce a plan first (
 
 Past ~70% of the context window, prefer `/clear` and re-prime over pushing through. Two failed correction attempts on the same issue → `/clear` and restart fresh.
 
+## Git: merge PRs with merge commits
+
+When merging a PR, default to a **merge commit** (`gh pr merge --merge`) — not `--squash` or `--rebase`. Jason finds merge commits cleaner: they preserve the PR's commits and merge context without rewriting SHAs. Do NOT infer merge style from a repo's existing linear history — it's usually incidental, not policy. Rebase-merging rewrites every commit SHA and strands local `main` on a pre-rebase tip that can't fast-forward (needing `git reset --hard origin/main`). Resync local `main` after any merge. Override only when the user asks for squash/rebase on a specific PR.
+
 ## When corrected, update this file
 
 These instructions are global — loaded into every session of every tool from a single source-of-truth file managed by chezmoi. If you make a mistake the user has to correct, edit the chezmoi source (run `chezmoi source-path ~/.ai/AGENTS.md` to locate it) and then `chezmoi apply` to propagate to `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Do not edit the rendered copies directly — they get clobbered on next apply. End such suggestions with: "Update your AGENTS.md so you don't make that mistake again." This file grows by correction, not by speculation.
