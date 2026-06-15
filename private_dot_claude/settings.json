@@ -79,7 +79,7 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "claude-fable-5[1m]",
+  "model": "opus[1m]",
   "disabledMcpjsonServers": [
     "context7"
   ],
@@ -172,7 +172,7 @@
       "autoUpdate": true
     }
   },
-  "effortLevel": "medium",
+  "effortLevel": "xhigh",
   "autoCompactWindow": 400000,
   "skipWorkflowUsageWarning": true,
   "theme": "dark-daltonized",
