@@ -1,0 +1,5 @@
+# Global gitignore (core.excludesfile). Cross-repo tooling artifacts only —
+# project-specific ignores belong in each repo's own .gitignore.
+
+# graphify knowledge-graph output (regenerated on demand)
+graphify-out/
