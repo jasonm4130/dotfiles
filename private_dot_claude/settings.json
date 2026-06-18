@@ -62,9 +62,7 @@
       "Bash(for:*)",
       "Bash(cd:*)",
       "Bash(pwd:*)",
-      "mcp__buffer__*",
-      "mcp__reddit__*",
-      "mcp__x-twitter__*"
+      "mcp__buffer__*"
     ],
     "deny": [
       "Skill(superpowers:subagent-driven-development)",
