@@ -80,9 +80,7 @@
     "defaultMode": "auto"
   },
   "model": "opus[1m]",
-  "disabledMcpjsonServers": [
-    "context7"
-  ],
+  "disabledMcpjsonServers": [],
   "hooks": {
     "PreToolUse": [
       {
@@ -147,12 +145,11 @@
     "typescript-lsp@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
-    "ralph-loop@claude-plugins-official": true,
     "cloudflare@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
     "playwright@claude-plugins-official": true,
     "adversarial-agents@jasonm4130-claude-skills": true,
-    "deep-research@jasonm4130-claude-skills": true,
+    "deep-dive@jasonm4130-claude-skills": true,
     "handoff@jasonm4130-claude-skills": true,
     "session-retro@jasonm4130-claude-skills": true,
     "workflow-model-guard@jasonm4130-claude-skills": true

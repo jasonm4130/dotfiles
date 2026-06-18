@@ -24,6 +24,15 @@ if (tool_name !== 'Grep') {
 
 const pattern = tool_input?.pattern || '';
 
+// File-scope allow: if the search explicitly targets non-code files
+// (config/data/docs), LSP can't index them — let snake_case keys etc. through.
+const scopeStr = [tool_input?.glob, tool_input?.path].filter(Boolean).join(' ');
+const nonCodeExt = /\.(json|ya?ml|toml|sh|bash|zsh|md|markdown|txt|env|plist|conf|ini|cfg|lock|log|csv|tsv)\b/i;
+const nonCodeType = /^(json|yaml|md|markdown|sh|bash|toml|config|txt|csv|log)$/i;
+if (nonCodeExt.test(scopeStr) || nonCodeType.test(tool_input?.type || '')) {
+  process.exit(0);
+}
+
 // Allow list — patterns that are clearly not code symbol lookups
 const allowPatterns = [
   // Short patterns (likely text search)

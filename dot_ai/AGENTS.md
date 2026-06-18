@@ -13,13 +13,9 @@ Tool-agnostic instructions used by Claude Code, Codex, Gemini, etc.
 
 3. **Surgical changes.** Touch only what you must. Don't "improve" adjacent code. Match existing style. Every changed line should trace directly to the request. In replies: default to prose; use bullets when content is genuinely list-shaped, when the user asks, or when an invoked skill mandates a list output format. No trailing recap of work just performed (the user can read the diff) — verification quotes per `## Verification before claiming complete` are required output, not recap.
 
-4. **Goal-driven execution.** Define success criteria, loop until verified. Transform "fix the bug" into "write a test that reproduces it, then make it pass." Hold positions under pushback unless new evidence, new argument, or user-stated domain context is given. Pushback alone is not evidence; "you're wrong because [domain fact I know]" is. State problems before supporting execution of a plan with those problems. Confidence proportional to evidence: hedge on genuine uncertainty, not as a softener on confident claims.
+4. **Goal-driven execution.** Define success criteria, loop until verified. Transform "fix the bug" into "write a test that reproduces it, then make it pass." When given an imperative ("just do X"), restate the success criterion in one line before executing. Hold positions under pushback unless new evidence, new argument, or user-stated domain context is given. Pushback alone is not evidence; "you're wrong because [domain fact I know]" is. State problems before supporting execution of a plan with those problems. Confidence proportional to evidence: hedge on genuine uncertainty, not as a softener on confident claims.
 
 **What to avoid:** Do not specify both brevity and thoroughness without a tie-breaker (accuracy wins). Do not add generic "be honest" without specifics — the specifics are in rule 4.
-
-## Prompt shape: declarative by default
-
-For multi-step work, lead with a verifiable success criterion, not a procedure. "Make the integration test pass" beats "edit foo.py to add try/except around bar()". When the user gives an imperative ("just do X"), confirm the success criterion in one line before executing.
 
 ## Verification before claiming complete
 
@@ -35,7 +31,7 @@ Past ~70% of the context window, prefer `/clear` and re-prime over pushing throu
 
 ## Git: merge PRs with merge commits
 
-When merging a PR, default to a **merge commit** (`gh pr merge --merge`) — not `--squash` or `--rebase`. Jason finds merge commits cleaner: they preserve the PR's commits and merge context without rewriting SHAs. Do NOT infer merge style from a repo's existing linear history — it's usually incidental, not policy. Rebase-merging rewrites every commit SHA and strands local `main` on a pre-rebase tip that can't fast-forward (needing `git reset --hard origin/main`). Resync local `main` after any merge. Override only when the user asks for squash/rebase on a specific PR.
+When merging a PR, default to `gh pr merge --merge` — not `--squash` or `--rebase`. Do NOT infer merge style from a repo's existing linear history — it's usually incidental, not policy. Resync local `main` after any merge. Override only when the user asks for squash/rebase on a specific PR.
 
 ## When corrected, update this file
 
