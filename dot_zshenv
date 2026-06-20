@@ -3,3 +3,8 @@
 
 # Ensure homebrew bin is on PATH so tools like `op` resolve from any shell context
 [[ ":$PATH:" != *":/opt/homebrew/bin:"* ]] && export PATH="/opt/homebrew/bin:$PATH"
+
+# Default editor — GUI Zed; --wait blocks CLI callers until the buffer is closed.
+# (git keeps its own editor via .gitconfig core.editor=nvim.)
+export EDITOR="zed --wait"
+export VISUAL="zed --wait"

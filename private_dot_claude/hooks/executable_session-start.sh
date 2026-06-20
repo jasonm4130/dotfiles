@@ -11,6 +11,10 @@ primer=$(mktemp)
 trap 'rm -f "$primer"' EXIT
 
 {
+  # Low-disk early warning — heavy multi-agent Rust builds can silently fill
+  # the volume and wedge the harness (it can't write tool-output once at 100%).
+  [ -x "$HOME/.claude/hooks/disk-guard.sh" ] && "$HOME/.claude/hooks/disk-guard.sh" check 2>/dev/null
+
   for d in "$PROJECT/docs/plans" "$PROJECT/.claude/plans" "$HOME/.claude/plans"; do
     if [ -d "$d" ]; then
       plans=$(ls -1 "$d" 2>/dev/null | grep -v '^\.' | head -5)

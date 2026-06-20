@@ -36,7 +36,7 @@ REPOS=(
   ~/Work/Git/formrecap-lora-classifier
   ~/Work/Git/brok-stacks
   ~/Work/Git/email-management
-  ~/Work/Git/Adaptive-Training
+  ~/Work/Git/endurebyte
   ~/Work/Git/jasonm4130-cf
   ~/Work/Git/games-games-games
   ~/Work/Git/card-counting-trainer

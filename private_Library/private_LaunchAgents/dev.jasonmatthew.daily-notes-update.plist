@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>dev.jasonmatthew.daily-notes-update</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/jasonmatthew/.local/bin/daily-notes-weekly.sh</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>5</integer>
+        <key>Hour</key>
+        <integer>18</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/jasonmatthew/Library/Logs/daily-notes-weekly.stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/jasonmatthew/Library/Logs/daily-notes-weekly.stderr.log</string>
+
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>

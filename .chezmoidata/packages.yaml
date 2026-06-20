@@ -21,6 +21,7 @@ brew:
   - cmake
   - coreutils
   - diffutils
+  - duti
   - expat
   - ffmpeg
   - findutils
