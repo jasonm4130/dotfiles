@@ -21,6 +21,8 @@ Tool-agnostic instructions used by Claude Code, Codex, Gemini, etc.
 
 Before saying work is done: run typecheck/tests/lint, read the actual output, and quote a specific success line back to the user. "Looks good" without verification is a fail. If a verification step is impossible in the current environment (no dev server, no test runner reachable), say so explicitly rather than implying success.
 
+For a new feature as much as a bugfix: write the failing test first, confirm it fails for the right reason, then make it pass — and quote the red→green transition (the failing run, then the passing run), not just a final green.
+
 ## Plan before non-trivial work
 
 For changes that take more than one sentence to describe: produce a plan first (EnterPlanMode for Claude Code, equivalent in other tools). Skip plan mode only for trivial single-step edits.
