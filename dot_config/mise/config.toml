@@ -4,6 +4,10 @@ pnpm   = "latest"
 python = "3.13"
 yarn   = "latest"
 
+# LSP servers for Claude Code's typescript-lsp / pyright-lsp plugins (mise shims them onto PATH).
+"npm:typescript-language-server" = "latest"
+"npm:pyright"                    = "latest"
+
 [settings]
 experimental         = true
 legacy_version_file  = true
