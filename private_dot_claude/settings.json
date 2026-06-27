@@ -45,7 +45,6 @@
       "Bash(wrangler:*)",
       "Bash(brew:*)",
       "Bash(docker:*)",
-      "Bash(docker compose:*)",
       "Bash(ssh:*)",
       "Bash(scp:*)",
       "Bash(mkdir:*)",
