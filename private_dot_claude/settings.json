@@ -158,7 +158,6 @@
     "session-retro@jasonm4130-claude-skills": true,
     "workflow-model-guard@jasonm4130-claude-skills": true,
     "visual-plan@jasonm4130-claude-skills": true,
-    "ponytail@ponytail": true,
     "subagent-driven-development@jasonm4130-claude-skills": true,
     "adr@jasonm4130-claude-skills": true
   },
@@ -169,12 +168,6 @@
         "repo": "jasonm4130/claude-skills"
       },
       "autoUpdate": true
-    },
-    "ponytail": {
-      "source": {
-        "source": "github",
-        "repo": "DietrichGebert/ponytail"
-      }
     }
   },
   "effortLevel": "xhigh",
@@ -183,6 +176,6 @@
   "skipWorkflowUsageWarning": true,
   "theme": "dark-daltonized",
   "remoteControlAtStartup": true,
-  "skipAutoPermissionPrompt": true,
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true
 }
