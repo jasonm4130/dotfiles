@@ -45,8 +45,6 @@
       "Bash(wrangler:*)",
       "Bash(brew:*)",
       "Bash(docker:*)",
-      "Bash(ssh:*)",
-      "Bash(scp:*)",
       "Bash(mkdir:*)",
       "Bash(cp:*)",
       "Bash(mv:*)",
@@ -76,7 +74,7 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "opus[1m]",
+  "model": "claude-fable-5[1m]",
   "disabledMcpjsonServers": [],
   "hooks": {
     "PreToolUse": [
@@ -95,15 +93,6 @@
           {
             "type": "command",
             "command": "node ~/.claude/hooks/secrets-scan.js"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/graphify-nudge.sh"
           }
         ]
       },

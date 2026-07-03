@@ -17,7 +17,8 @@ trap 'rm -f "$primer"' EXIT
 
   for d in "$PROJECT/docs/plans" "$PROJECT/.claude/plans" "$HOME/.claude/plans"; do
     if [ -d "$d" ]; then
-      plans=$(ls -1 "$d" 2>/dev/null | grep -v '^\.' | head -5)
+      # Most-recent first; -p marks dirs with a trailing / so archive/ is excluded
+      plans=$(ls -1tp "$d" 2>/dev/null | grep -v '/' | grep -v '^\.' | head -5)
       if [ -n "$plans" ]; then
         rel="${d/#$HOME/~}"
         printf "\n**Active plans in \`%s\`:**\n" "$rel"
