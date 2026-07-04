@@ -17,7 +17,7 @@ The `lsp-first-guard.js` PreToolUse hook enforces this for Grep calls that look 
 
 ## Log noteworthy outcomes to the Obsidian vault
 
-When a session in this tree produces a noteworthy outcome — a shipped feature, a published blog post or deploy, a completed experiment or training run, a merged PR on a flagship project — offer to append a one-line entry to today's daily note in the vault (`~/Documents/Obsidian Vault/Daily/YYYY-MM-DD - Daily.md`, create from `_templates/Daily.md` if missing). Format: `- HH:MM [repo-name] outcome in one sentence`. Routine edits, WIP commits, and exploration don't qualify. This keeps the vault's daily record from undercounting code-side output.
+When a session in this tree produces a noteworthy outcome — a shipped feature, a published blog post or deploy, a completed experiment or training run, a merged PR on a flagship project — append a one-line entry to today's daily note in the vault without asking (standing approval, Jason 2026-07-05); mention in the reply that it was logged. Note path: `~/Documents/Obsidian Vault/Daily/YYYY-MM-DD - Daily.md`, create from `_templates/Daily.md` if missing; add under `## 🏆 Wins`. Format: `- HH:MM [repo-name] outcome in one sentence` plus a `[ship]`/`[arch]`/`[win]`-style tag. Routine edits, WIP commits, and exploration don't qualify. This keeps the vault's daily record from undercounting code-side output.
 
 ## Test runners by stack
 
