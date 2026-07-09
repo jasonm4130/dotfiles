@@ -3,3 +3,5 @@
 
 # graphify knowledge-graph output (regenerated on demand)
 graphify-out/
+
+**/.claude/.cc-writes/
