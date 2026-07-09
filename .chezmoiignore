@@ -3,6 +3,8 @@ LICENSE
 README.md
 docs
 docs/**
+tests
+tests/**
 bootstrap.sh
 .gitignore
 
