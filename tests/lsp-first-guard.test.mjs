@@ -52,7 +52,9 @@ for (const [label, pattern, extraToolInput] of BLOCK_CASES) {
 const PASS_CASES = [
   ['TODO', 'TODO', {}],
   ['FIXME:', 'FIXME:', {}],
-  ['quoted "handleSubmit" (escape hatch)', '"handleSubmit"', {}],
+  ['quoted "handleSubmit" (string-literal allow rule)', '"handleSubmit"', {}],
+  ['handleSubmit(?:) (escape hatch)', 'handleSubmit(?:)', {}],
+  ['fetchData\\((?:) (escape hatch on function-call pattern)', 'fetchData\\((?:)', {}],
   ['MAX_RETRIES', 'MAX_RETRIES', {}],
   ['foo.bar-baz', 'foo.bar-baz', {}],
   ['server.port', 'server.port', {}],
@@ -103,7 +105,7 @@ test('deny JSON shape matches PreToolUse permissionDecision contract with escape
   assert.equal(parsed.hookSpecificOutput.hookEventName, 'PreToolUse');
   assert.ok(
     parsed.hookSpecificOutput.permissionDecisionReason.includes(
-      'If the LSP tool is unavailable for this file type or returned no results, re-run this exact Grep with the pattern wrapped in double quotes ("pattern") to bypass this guard.'
+      "If the LSP tool is unavailable for this file type or returned no results, re-run this exact Grep with (?:) appended to the end of the pattern (pattern(?:)) to bypass this guard — that's a zero-width match, so it doesn't change what Grep actually searches for."
     ),
     'expected escape-hatch sentence in permissionDecisionReason'
   );

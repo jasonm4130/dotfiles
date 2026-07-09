@@ -56,9 +56,17 @@ const allowPatterns = [
   // TODO/FIXME/HACK comments — case-sensitive, word boundary (so `warnUser`,
   // `NoteEditor` don't slip through as `WARN`/`NOTE`)
   /^(TODO|FIXME|HACK|NOTE|XXX|WARN)\b/,
-  // String literals / log messages — also the deliberate escape hatch: wrap
-  // any pattern in double quotes to bypass the guard
+  // String literals / log messages
   /^["'].*["']$/,
+  // Escape hatch — deliberate: append `(?:)` (an empty non-capturing group)
+  // to the end of the original pattern to bypass this guard when LSP can't
+  // help. `(?:)` matches the empty string, so it's a zero-width no-op that
+  // doesn't change what Grep actually matches — unlike wrapping the pattern
+  // in quotes (which searches for the literal quoted string instead of the
+  // identifier and silently returns nothing). Verified empirically: `rg
+  // 'handleSubmit'` and `rg 'handleSubmit(?:)'` return identical matches;
+  // `rg '"handleSubmit"'` returns none.
+  /\(\?:\)$/,
   // File paths and extensions
   /\.\w{1,4}$/,
   // Config keys — all-lowercase dotted form only. Mixed-case dotted patterns
@@ -134,7 +142,7 @@ const suggestion = `LSP-FIRST: "${pattern}" looks like a code symbol. Use the LS
 
 Only use Grep if LSP returns no results or you're searching non-code files.
 
-If the LSP tool is unavailable for this file type or returned no results, re-run this exact Grep with the pattern wrapped in double quotes ("pattern") to bypass this guard.`;
+If the LSP tool is unavailable for this file type or returned no results, re-run this exact Grep with (?:) appended to the end of the pattern (pattern(?:)) to bypass this guard — that's a zero-width match, so it doesn't change what Grep actually searches for.`;
 
 // Output the deny decision in the current PreToolUse hookSpecificOutput contract
 console.log(JSON.stringify({
