@@ -7,6 +7,7 @@ yarn   = "latest"
 # LSP servers for Claude Code's typescript-lsp / pyright-lsp plugins (mise shims them onto PATH).
 "npm:typescript-language-server" = "latest"
 "npm:pyright"                    = "latest"
+"npm:typescript"                 = "latest"   # tsserver — typescript-language-server fails to initialize without it (LSP audit 2026-07-09)
 
 [settings]
 experimental         = true
