@@ -148,7 +148,9 @@
     "workflow-model-guard@jasonm4130-claude-skills": true,
     "visual-plan@jasonm4130-claude-skills": true,
     "subagent-driven-development@jasonm4130-claude-skills": true,
-    "adr@jasonm4130-claude-skills": true
+    "adr@jasonm4130-claude-skills": true,
+    "ship-gate@jasonm4130-claude-skills": true,
+    "adversarial-agents@jasonm4130-claude-skills": true
   },
   "extraKnownMarketplaces": {
     "jasonm4130-claude-skills": {
