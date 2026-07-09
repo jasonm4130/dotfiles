@@ -42,3 +42,7 @@ export PATH="$HOME/.local/bin:$PATH"
 
 # Starship prompt
 eval "$(starship init zsh)"
+
+# direnv — per-directory env (e.g. ~/Work/Git/unifi secrets via 1Password/op-fast)
+# Must stay after prompt setup (starship) per direnv docs.
+eval "$(direnv hook zsh)"

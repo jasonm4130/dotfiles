@@ -2,6 +2,7 @@
 node   = "lts"
 pnpm   = "latest"
 python = "3.13"
+rust   = "1.95.0"   # global pin so the rust-analyzer shim resolves outside rust-pinned repos (LSP audit 2026-07-09)
 yarn   = "latest"
 
 # LSP servers for Claude Code's typescript-lsp / pyright-lsp plugins (mise shims them onto PATH).
