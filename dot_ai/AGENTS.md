@@ -35,6 +35,10 @@ Past ~70% of the context window, prefer `/clear` and re-prime over pushing throu
 
 When merging a PR, default to `gh pr merge --merge` — not `--squash` or `--rebase`. Do NOT infer merge style from a repo's existing linear history — it's usually incidental, not policy. Resync local `main` after any merge. Override only when the user asks for squash/rebase on a specific PR.
 
+## Git: stage explicitly, never `commit -a`
+
+Always `git add <specific paths>` then commit — never `git commit -a`/`-am`. In long-lived working trees (dotfiles especially) an unrelated pre-existing modification gets silently swept into a commit whose message doesn't describe it (happened 2026-07-09: a direnv zshrc change rode into a mise commit). Check `git status` before staging; if unexpected modifications exist, surface them instead of committing around them.
+
 ## When corrected, update this file
 
 These instructions are global — loaded into every session of every tool from a single source-of-truth file managed by chezmoi. If you make a mistake the user has to correct, edit the chezmoi source (run `chezmoi source-path ~/.ai/AGENTS.md` to locate it) and then `chezmoi apply` to propagate to `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Do not edit the rendered copies directly — they get clobbered on next apply. End such suggestions with: "Update your AGENTS.md so you don't make that mistake again." This file grows by correction, not by speculation.
