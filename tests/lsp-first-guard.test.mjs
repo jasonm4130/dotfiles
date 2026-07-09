@@ -96,6 +96,12 @@ test('fail-open: garbage stdin exits 0 with no output', () => {
   assert.equal(result.stdout.trim(), '');
 });
 
+test('fail-open: literal null stdin exits 0 with no output', () => {
+  const result = runHook('null');
+  assert.equal(result.status, 0, `expected exit 0, got ${result.status}; stderr: ${result.stderr}`);
+  assert.equal(result.stdout.trim(), '');
+});
+
 // --- Output shape: current PreToolUse permissionDecision contract only ---
 test('deny JSON shape matches PreToolUse permissionDecision contract with escape hatch', () => {
   const result = runGrep('handleSubmit');

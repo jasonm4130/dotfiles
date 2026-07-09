@@ -15,7 +15,7 @@ const input = (() => {
   }
 })();
 
-const { tool_name, tool_input } = input;
+const { tool_name, tool_input } = input ?? {};
 
 // Only intercept Grep calls
 if (tool_name !== 'Grep') {
