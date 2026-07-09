@@ -5,10 +5,14 @@ python = "3.13"
 rust   = "1.95.0"   # global pin so the rust-analyzer shim resolves outside rust-pinned repos (LSP audit 2026-07-09)
 yarn   = "latest"
 
-# LSP servers for Claude Code's typescript-lsp / pyright-lsp plugins (mise shims them onto PATH).
-"npm:typescript-language-server" = "latest"
+# LSP server for Claude Code's pyright-lsp plugin (mise shims it onto PATH).
+# NOTE: typescript-language-server + typescript are deliberately NOT mise-managed:
+# tls must require.resolve typescript as a sibling in the same node_modules tree,
+# which mise's isolated per-package npm prefixes break (verified 2026-07-09).
+# They are co-installed via `npm install -g typescript-language-server typescript@5`
+# (typescript@5, not 7 — the native TS7 port ships no tsserver). Re-run that after
+# a mise node major upgrade, then `mise reshim`.
 "npm:pyright"                    = "latest"
-"npm:typescript"                 = "latest"   # tsserver — typescript-language-server fails to initialize without it (LSP audit 2026-07-09)
 
 [settings]
 experimental         = true
