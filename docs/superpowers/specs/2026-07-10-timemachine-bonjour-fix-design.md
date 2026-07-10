@@ -40,7 +40,7 @@ Native Unraid Time Machine export + UniFi mDNS reflection + re-point the Mac at 
 
 - Wait for any in-progress backup to finish.
 - Mount `smb://jason@brok.local/timemachine` once in Finder (stores the credential for the new server name).
-- `sudo tmutil setdestination -a /Volumes/timemachine`, then `sudo tmutil removedestination 08BB7E8F-078B-4D1E-98A8-E8719B1FB6D3` (the old `smb.jasonmatthew.me` destination).
+- `sudo tmutil setdestination -a <mountpoint>` (nominally `/Volumes/timemachine`, but use the actual mountpoint — Finder appends `-1` if the old mount is still present; unmount stale mounts first), then `sudo tmutil removedestination 08BB7E8F-078B-4D1E-98A8-E8719B1FB6D3` (the old `smb.jasonmatthew.me` destination).
 - Same share + same machine name → Time Machine reuses `Jason's MacBook Pro.sparsebundle`; backup history continues, nothing is re-uploaded.
 - `smb.jasonmatthew.me` DNS keeps existing for other uses.
 
