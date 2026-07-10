@@ -12,61 +12,71 @@
  * $6,000 by morning, depending on which provider's quota gets burned).
  *
  * False positives are intentional: cost of asking ≪ cost of a leaked key.
+ *
+ * Stdin is read async, not via readFileSync('/dev/stdin'): the sync read
+ * intermittently throws EAGAIN on Linux when stdin is a non-blocking pipe,
+ * and this hook fails open — a read failure would silently skip the scan.
  */
 
-const input = (() => {
+let rawStdin = '';
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', (chunk) => { rawStdin += chunk; });
+process.stdin.on('error', () => process.exit(0));
+process.stdin.on('end', () => main(rawStdin));
+
+function main(raw) {
+  let input;
   try {
-    return JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8'));
+    input = JSON.parse(raw);
   } catch {
     process.exit(0);
   }
-})();
 
-const { tool_name, tool_input } = input;
+  const { tool_name, tool_input } = input;
 
-if (!['Edit', 'Write', 'MultiEdit', 'NotebookEdit'].includes(tool_name)) {
-  process.exit(0);
-}
+  if (!['Edit', 'Write', 'MultiEdit', 'NotebookEdit'].includes(tool_name)) {
+    process.exit(0);
+  }
 
-let content = '';
-if (tool_name === 'Write') {
-  content = tool_input?.content || '';
-} else if (tool_name === 'Edit') {
-  content = tool_input?.new_string || '';
-} else if (tool_name === 'MultiEdit') {
-  const edits = tool_input?.edits || [];
-  content = edits.map(e => e.new_string || '').join('\n');
-} else if (tool_name === 'NotebookEdit') {
-  content = tool_input?.new_source || '';
-}
+  let content = '';
+  if (tool_name === 'Write') {
+    content = tool_input?.content || '';
+  } else if (tool_name === 'Edit') {
+    content = tool_input?.new_string || '';
+  } else if (tool_name === 'MultiEdit') {
+    const edits = tool_input?.edits || [];
+    content = edits.map(e => e.new_string || '').join('\n');
+  } else if (tool_name === 'NotebookEdit') {
+    content = tool_input?.new_source || '';
+  }
 
-if (!content) {
-  process.exit(0);
-}
+  if (!content) {
+    process.exit(0);
+  }
 
-// High-confidence secret patterns. Tuned to minimise false positives while
-// still catching the obvious ones. Keep this list focused — every false
-// positive is friction, every miss is a potential leak.
-const secretPatterns = [
-  { name: 'Anthropic API key', regex: /sk-ant-[a-zA-Z0-9_-]{20,}/ },
-  { name: 'OpenAI API key',    regex: /\bsk-[a-zA-Z0-9]{32,}\b/ },
-  { name: 'AWS access key ID', regex: /\bAKIA[0-9A-Z]{16}\b/ },
-  { name: 'AWS secret-key assignment', regex: /AWS_SECRET_ACCESS_KEY\s*[=:]\s*["']?[a-zA-Z0-9/+]{30,}["']?/ },
-  { name: 'GitHub token',      regex: /\bgh[pousr]_[a-zA-Z0-9]{30,}\b/ },
-  { name: 'Stripe key',        regex: /\bsk_(?:live|test)_[a-zA-Z0-9]{20,}\b/ },
-  { name: 'Buffer token assignment', regex: /BUFFER_TOKEN\s*[=:]\s*["']?[a-zA-Z0-9_.\-]{20,}["']?/ },
-  { name: 'Slack token',       regex: /\bxox[baprs]-[a-zA-Z0-9-]{10,}\b/ },
-  { name: 'Private key header', regex: /-----BEGIN (?:RSA |EC |DSA |OPENSSH |ENCRYPTED )?PRIVATE KEY-----/ },
-  { name: 'Cloudflare API token (long URL-safe assignment)', regex: /CF(?:_API)?_TOKEN\s*[=:]\s*["']?[a-zA-Z0-9_-]{30,}["']?/ },
-];
+  // High-confidence secret patterns. Tuned to minimise false positives while
+  // still catching the obvious ones. Keep this list focused — every false
+  // positive is friction, every miss is a potential leak.
+  const secretPatterns = [
+    { name: 'Anthropic API key', regex: /sk-ant-[a-zA-Z0-9_-]{20,}/ },
+    { name: 'OpenAI API key',    regex: /\bsk-[a-zA-Z0-9]{32,}\b/ },
+    { name: 'AWS access key ID', regex: /\bAKIA[0-9A-Z]{16}\b/ },
+    { name: 'AWS secret-key assignment', regex: /AWS_SECRET_ACCESS_KEY\s*[=:]\s*["']?[a-zA-Z0-9/+]{30,}["']?/ },
+    { name: 'GitHub token',      regex: /\bgh[pousr]_[a-zA-Z0-9]{30,}\b/ },
+    { name: 'Stripe key',        regex: /\bsk_(?:live|test)_[a-zA-Z0-9]{20,}\b/ },
+    { name: 'Buffer token assignment', regex: /BUFFER_TOKEN\s*[=:]\s*["']?[a-zA-Z0-9_.\-]{20,}["']?/ },
+    { name: 'Slack token',       regex: /\bxox[baprs]-[a-zA-Z0-9-]{10,}\b/ },
+    { name: 'Private key header', regex: /-----BEGIN (?:RSA |EC |DSA |OPENSSH |ENCRYPTED )?PRIVATE KEY-----/ },
+    { name: 'Cloudflare API token (long URL-safe assignment)', regex: /CF(?:_API)?_TOKEN\s*[=:]\s*["']?[a-zA-Z0-9_-]{30,}["']?/ },
+  ];
 
-const matches = secretPatterns.filter(p => p.regex.test(content));
+  const matches = secretPatterns.filter(p => p.regex.test(content));
 
-if (matches.length === 0) {
-  process.exit(0);
-}
+  if (matches.length === 0) {
+    process.exit(0);
+  }
 
-const reason = `SECRETS-SCAN: Detected potential secret(s) in tool input — blocking the write.
+  const reason = `SECRETS-SCAN: Detected potential secret(s) in tool input — blocking the write.
 
 Matches: ${matches.map(m => m.name).join(', ')}
 
@@ -77,7 +87,8 @@ If this is intentional (editing a gitignored .env, an encrypted fixture, or a pl
 
 False positives are intentional. The cost of asking is much lower than the cost of a leaked key.`;
 
-console.log(JSON.stringify({
-  decision: 'block',
-  reason: reason,
-}));
+  console.log(JSON.stringify({
+    decision: 'block',
+    reason: reason,
+  }));
+}
