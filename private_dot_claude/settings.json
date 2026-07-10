@@ -131,7 +131,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "node \"/Users/jasonmatthew/.claude/handoff-statusline.mjs\""
+    "command": "node ~/.claude/handoff-statusline.mjs"
   },
   "enabledPlugins": {
     "superpowers@claude-plugins-official": true,
