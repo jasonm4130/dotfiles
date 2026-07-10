@@ -15,6 +15,18 @@ When working in code files (TS, JS, Python, Rust, Go, etc.):
 
 The `lsp-first-guard.js` PreToolUse hook enforces this for Grep calls that look like code-symbol lookups; it doesn't replace the rule, just catches misses.
 
+## Delegate with an explicit model tier
+
+When dispatching the Agent tool, always set `model` explicitly — subagents otherwise inherit the session model, which on an Opus/Fable session runs searches and mechanical work at the most expensive tier (measured: 73% of dispatches leaked this way before this rule existed):
+
+1. `model: 'sonnet'` — searches, file reads, mechanical implementation from a clear spec, test runs, verification. The default for delegated work.
+2. `model: 'haiku'` — pure enumeration only (listing files/URLs/matches). Haiku misses subtle cross-source contradictions; don't use it for judgment.
+3. `model: 'opus'` / `'fable'` — deliberately, when the delegated task itself needs frontier reasoning (architecture judgment, hard debugging). Setting it explicitly is fine; inheriting it silently is not.
+
+Don't delegate at all when the task is trivial, tightly coupled to conversation context, or latency-sensitive — a fresh subagent pays a cold-start and relay-loss cost that outweighs the context saving (Anthropic's own docs warn the same).
+
+The `workflow-model-guard` plugin's Agent hook enforces this — it denies untiered dispatches (except `fork` and agent types with pinned frontmatter models); it doesn't replace the rule, just catches misses.
+
 ## Log noteworthy outcomes to the Obsidian vault
 
 When a session in this tree produces a noteworthy outcome — a shipped feature, a published blog post or deploy, a completed experiment or training run, a merged PR on a flagship project — append a one-line entry to today's daily note in the vault without asking (standing approval, Jason 2026-07-05); mention in the reply that it was logged. Note path: `~/Documents/Obsidian Vault/Daily/YYYY-MM-DD - Daily.md`, create from `_templates/Daily.md` if missing; add under `## 🏆 Wins`. Format: `- HH:MM [repo-name] outcome in one sentence` plus a `[ship]`/`[arch]`/`[win]`-style tag. Routine edits, WIP commits, and exploration don't qualify. This keeps the vault's daily record from undercounting code-side output.

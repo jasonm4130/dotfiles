@@ -17,6 +17,8 @@ bootstrap.sh
 # CLAUDE.md is rendered by run_onchange_after_07-agents-md-sync, NOT chezmoi-tracked
 !.claude/settings.json
 !.claude/.mcp.json
+!.claude/agents/
+!.claude/agents/**/**
 !.claude/hooks/
 !.claude/hooks/**/**
 !.claude/skills/
