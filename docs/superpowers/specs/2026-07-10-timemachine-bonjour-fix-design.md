@@ -53,6 +53,17 @@ Native Unraid Time Machine export + UniFi mDNS reflection + re-point the Mac at 
 
 Rollback per layer: restore `smb-extra.conf` from backup and revert the share's SMB settings; flip the UniFi mDNS toggle back; `tmutil setdestination` back to the old URL.
 
+## Implementation notes (2026-07-11, as executed)
+
+Deviations and discoveries from the run:
+
+- **UniFi needed no change.** Gateway mDNS Proxy was already Custom-scoped to IoT (4), Trusted Devices (2), Servers (5) — reflection between the Mac and brok VLANs existed all along.
+- **Unraid 7.3's native TM export does not emit the `_adisk._tcp` advertisement.** It generates correct fruit config and starts avahi, but no advert: no emhttp code references adisk, and Samba's `multicast dns register = yes` (tested) only registers `_smb._tcp`. The advert therefore required the static-file approach after all: `/etc/avahi/services/timemachine.service` (adVN=timemachine, adVF=0x82), flash master at `/boot/config/custom/avahi/`, re-copied at boot by two lines appended to `/boot/config/go` (backup: `go.bak-2026-07-10`). `smb-extra.conf` ended empty; its pre-change backup is `smb-extra.conf.bak-2026-07-10`.
+- **Destination was re-added via the Time Machine GUI** (avoids the Full Disk Access requirement of `tmutil setdestination`): the share appeared in the picker via Bonjour, proving discovery end-to-end. New destination URL `smb://jason@Brok._smb._tcp.local./timemachine`, ID `8E947DAF-7415-47FE-BDDE-D5516030DE26`.
+- **Gotcha: System Settings holds a sparsebundle lock after "Add Backup Disk".** Its GeneralSettings.appex kept a deny-write SMB lock on `…sparsebundle/lock` for ~8h (blocking every backup with `BACKUP_FAILED_DISK_IMAGE_BUSY`) until System Settings was quit. If backups fail with "Resource busy / failed locking the image" after GUI destination changes: quit System Settings, check `smbstatus -L` on brok.
+- Validated 2026-07-11 07:39: backupd mounted the existing `Jason's MacBook Pro.sparsebundle` via the Bonjour URL and started backing up. Remaining real-world test: automatic recovery after the next office trip.
+- Cleanup candidate: dormant `Jason's MacBook Pro0.sparsebundle` on the share (untouched since 2026-05-16) — likely an orphaned chain wasting array space.
+
 ## Out of scope (follow-up)
 
 **Mid-backup SMB drops** — two today (16:50, 21:01) even while on the home network. Prime suspect: the sparsebundle is split across cache (14G) and array (642G) with hourly Mover Tuning activity; cross-VLAN session timeout on the gateway is the secondary suspect. If drops continue after this fix: set the share to `Use cache: No` so mover never touches it, then investigate UniFi flow timeouts.
