@@ -1,6 +1,7 @@
 {
   "env": {
-    "HANDOFF_EFFECTIVE_MAX_TOKENS": "400000"
+    "HANDOFF_EFFECTIVE_MAX_TOKENS": "400000",
+    "CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE": "1"
   },
   "attribution": {
     "commit": ""
@@ -150,7 +151,8 @@
     "subagent-driven-development@jasonm4130-claude-skills": true,
     "adr@jasonm4130-claude-skills": true,
     "ship-gate@jasonm4130-claude-skills": true,
-    "adversarial-agents@jasonm4130-claude-skills": true
+    "adversarial-agents@jasonm4130-claude-skills": true,
+    "docs-sync-guard@jasonm4130-claude-skills": true
   },
   "extraKnownMarketplaces": {
     "jasonm4130-claude-skills": {
