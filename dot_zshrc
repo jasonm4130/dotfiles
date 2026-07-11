@@ -4,6 +4,14 @@ ZSH_THEME=""
 plugins=(git npm node zsh-autosuggestions zsh-syntax-highlighting docker docker-compose gcloud)
 source $ZSH/oh-my-zsh.sh
 
+# Tab titles — omz termsupport owns them (Ghostty's own title integration is
+# disabled via shell-integration-features = no-title). Idle shows the cwd;
+# a running command (incl. Claude Code, which writes its own task summary)
+# takes over the title while it runs. Must be set AFTER sourcing oh-my-zsh —
+# termsupport assigns these unconditionally at load.
+ZSH_THEME_TERM_TAB_TITLE_IDLE='%~'
+ZSH_THEME_TERM_TITLE_IDLE='%~'
+
 # mise — version manager (replaces Volta + pyenv)
 eval "$(mise activate zsh)"
 

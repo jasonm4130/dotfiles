@@ -128,6 +128,29 @@
           }
         ]
       }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt|idle_prompt|agent_needs_input",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/tab-title.mjs",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/tab-title.mjs",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
