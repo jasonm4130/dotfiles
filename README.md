@@ -16,7 +16,7 @@ That command installs chezmoi, clones this repo to `~/.local/share/chezmoi`, run
 - **Starship** — prompt config (`~/.config/starship.toml`)
 - **WezTerm** — terminal config (`~/.config/wezterm/wezterm.lua`)
 - **Zed** — editor config (`~/.config/zed/`)
-- **Claude Code** — settings, hooks, custom skills (`~/.claude/`)
+- **Claude Code** — settings, hooks, custom skills (`~/.claude/`); tab-title hook plays ElevenLabs voice clips on finish/needs-input (fanfare), falling back to the Glass chime when no clips are generated
 - **AGENTS.md** — unified AI tool instructions, rendered to per-tool files
 - **Brewfile** — formulae, casks, fonts, App Store apps
 - **macOS defaults** — Dock, Finder, keyboard, etc.
