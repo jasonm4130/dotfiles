@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -123,7 +123,19 @@ function makeFanfare(events) {
   const recordFile = path.join(dir, 'played.txt');
   const player = path.join(dir, 'player.sh');
   writeFileSync(player, `#!/bin/sh\necho "$1" >> "${recordFile}"\n`, { mode: 0o755 });
+  // Warm the script once: macOS scans a freshly written executable on first
+  // exec (~1s), which made fixed-delay "nothing was played" assertions pass
+  // vacuously — the write landed after the assertion. Pay that cost here so
+  // play latency during the test is milliseconds, then discard the record.
+  spawnSync(player, ['__warmup__'], { encoding: 'utf8' });
+  rmSync(recordFile, { force: true });
   return { dir, recordFile, player, lock: path.join(dir, 'lock') };
+}
+
+/** Assert nothing gets played within a post-warmup grace window. */
+async function assertNothingPlayed(f, graceMs = 500) {
+  await new Promise((r) => setTimeout(r, graceMs));
+  assert.equal(existsSync(f.recordFile), false, 'expected no clip to be played');
 }
 
 /** Run the hook with sound ENABLED and the fanfare env pointed at a temp layout. */
@@ -135,7 +147,7 @@ function runHookWithSound(stdinPayload, f, extraEnv = {}) {
     CLAUDE_FANFARE_LOCK: f.lock,
     ...extraEnv,
   };
-  delete env.CLAUDE_TAB_TITLE_SILENT;
+  if (!('CLAUDE_TAB_TITLE_SILENT' in extraEnv)) delete env.CLAUDE_TAB_TITLE_SILENT;
   for (const [k, v] of Object.entries(extraEnv)) if (v === undefined) delete env[k];
   const input = typeof stdinPayload === 'string' ? stdinPayload : JSON.stringify(stdinPayload);
   return spawnSync(process.execPath, [HOOK_PATH], { input, encoding: 'utf8', env });
@@ -188,16 +200,14 @@ test('Stop with NO clips → silence (legacy), title still written', async () =>
   const f = makeFanfare({});
   const res = runHookWithSound({ hook_event_name: 'Stop', cwd: '/tmp/proj' }, f);
   assert.equal(JSON.parse(res.stdout).terminalSequence, `${ESC}]0;✅ proj${BEL}`);
-  await new Promise((r) => setTimeout(r, 300));
-  assert.equal(existsSync(f.recordFile), false);
+  await assertNothingPlayed(f);
 });
 
 test('chorus guard: fresh lockfile → voice skipped', async () => {
   const f = makeFanfare({ stop: 1 });
   writeFileSync(f.lock, '');
   runHookWithSound({ hook_event_name: 'Stop', cwd: '/tmp/proj' }, f);
-  await new Promise((r) => setTimeout(r, 300));
-  assert.equal(existsSync(f.recordFile), false);
+  await assertNothingPlayed(f);
 });
 
 test('chorus guard: stale lockfile → voice plays', async () => {
@@ -214,6 +224,5 @@ test('CLAUDE_TAB_TITLE_SILENT=1 suppresses fanfare clips too', async () => {
   runHookWithSound({ hook_event_name: 'Stop', cwd: '/tmp/proj' }, f, {
     CLAUDE_TAB_TITLE_SILENT: '1',
   });
-  await new Promise((r) => setTimeout(r, 300));
-  assert.equal(existsSync(f.recordFile), false);
+  await assertNothingPlayed(f);
 });
