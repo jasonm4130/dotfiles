@@ -19,4 +19,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - name: Run hook & script tests
-        run: node --test tests/
+        # Unquoted glob, not a bare directory: Node 22's test runner errors on
+        # a directory arg (Node 20 scanned it), and Node 20 has no native glob
+        # support (added in 21) — the shell must expand it.
+        run: node --test tests/*.test.mjs

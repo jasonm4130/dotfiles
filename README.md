@@ -20,7 +20,7 @@ That command installs chezmoi, clones this repo to `~/.local/share/chezmoi`, run
 - **AGENTS.md** — unified AI tool instructions, rendered to per-tool files
 - **Brewfile** — formulae, casks, fonts, App Store apps
 - **macOS defaults** — Dock, Finder, keyboard, etc.
-- **CI** — GitHub Actions runs `node --test tests/` (hook & script suites) on ubuntu + macOS × Node 20/22 on every push/PR
+- **CI** — GitHub Actions runs `node --test tests/*.test.mjs` (hook & script suites) on ubuntu + macOS × Node 20/22 on every push/PR
 
 ## Manual one-time steps after bootstrap
 
