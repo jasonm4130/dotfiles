@@ -1,21 +1,21 @@
 {
-  "voice_id": "",
+  "voice_id": "7cOBG34AiHrAzs842Rdi",
   "model_id": "eleven_multilingual_v2",
   "phrases": {
     "stop": [
-      "I'M DOOONE!",
-      "IT IS FINISHED.",
-      "YOUR MOVE, HUMAN.",
-      "THE DEED... IS DONE.",
-      "MISSION. ACCOMPLISHED.",
-      "BEHOLD! IT IS COMPLETE!"
+      "Sir, the task is complete.",
+      "It is done, sir.",
+      "The work, sir... is done.",
+      "Finished, sir. I trust it meets expectations.",
+      "Your code awaits inspection, sir.",
+      "All wrapped up, sir. Do have a look."
     ],
     "input": [
-      "I REQUIRE YOUR GUIDANCE!",
-      "HUMAN! YOUR PERMISSION IS NEEDED!",
-      "I AM... BLOCKED!",
-      "A DECISION AWAITS, MORTAL!",
-      "INPUT. REQUIRED."
+      "Sir, your attention is required.",
+      "Pardon the interruption — your input, sir.",
+      "I find myself in need of guidance, sir.",
+      "A decision awaits you, sir.",
+      "I am, regrettably... blocked, sir."
     ]
   }
 }

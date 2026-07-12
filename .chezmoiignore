@@ -25,6 +25,8 @@ bootstrap.sh
 !.claude/skills/**/**
 !.claude/mcp-servers/
 !.claude/mcp-servers/**/**
+!.claude/sounds/
+!.claude/sounds/**/**
 
 # Belt-and-braces: explicit re-ignores (parent ignore covers them, but be loud)
 .claude/.claude.json

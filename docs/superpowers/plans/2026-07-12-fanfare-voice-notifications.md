@@ -1,6 +1,6 @@
 # Fanfare Voice Notifications Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Replace/augment the Claude Code chime with pre-generated ElevenLabs voice clips — epic-trailer "I'M DOOONE!" on Stop, "I REQUIRE YOUR GUIDANCE!" on permission/needs-input.
 
@@ -33,7 +33,7 @@
 - Consumes: clip layout `<fanfare dir>/stop/*.mp3` and `<fanfare dir>/input/*.mp3` (produced later by Task 2's script; tests fabricate it with dummy files).
 - Produces: env contract — `CLAUDE_FANFARE_DIR` (default `~/.claude/sounds/fanfare`), `CLAUDE_FANFARE_PLAYER` (default `afplay`, darwin-gated when unset), `CLAUDE_FANFARE_LOCK` (default `os.tmpdir()/claude-fanfare.lock`), 2000 ms debounce.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `tests/tab-title.test.mjs`:
 
@@ -153,12 +153,12 @@ test('CLAUDE_TAB_TITLE_SILENT=1 suppresses fanfare clips too', async () => {
 
 (Merge the two import lines above into the file's existing import block — ESM imports belong at the top.)
 
-- [ ] **Step 2: Run tests to verify the new ones fail**
+- [x] **Step 2: Run tests to verify the new ones fail**
 
 Run: `node --test tests/tab-title.test.mjs`
 Expected: the 7 new fanfare tests FAIL (no clip played / chime not routed through player override); the 9 existing tests still PASS.
 
-- [ ] **Step 3: Implement clip playback in the hook**
+- [x] **Step 3: Implement clip playback in the hook**
 
 In `private_dot_claude/hooks/tab-title.mjs`, replace the imports block and `SOUND` constant:
 
@@ -245,12 +245,12 @@ Then in `main()`, replace the glyph/sound decision and the afplay block:
 
 Update the file's doc comment: the "Permission/needs-input also plays a short sound" paragraph becomes a short note that both Stop and needs-input play a random ElevenLabs clip from `~/.claude/sounds/fanfare/` when present (see `fanfare-generate.mjs`), falling back to the legacy chime/silence otherwise.
 
-- [ ] **Step 4: Run the full suite, verify green**
+- [x] **Step 4: Run the full suite, verify green**
 
 Run: `node --test tests/tab-title.test.mjs`
 Expected: all 16 tests PASS (9 legacy + 7 new). The legacy chime test now exercises the `play()` seam, and Glass.aiff behavior is unchanged for real usage.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add private_dot_claude/hooks/tab-title.mjs tests/tab-title.test.mjs
@@ -270,7 +270,7 @@ git commit -m "feat(claude): fanfare voice clips in tab-title hook, fail-open to
 - Consumes: nothing from Task 1 (independent; shares only the on-disk layout convention `<fanfare dir>/{stop,input}/NN-<hash8>.mp3`).
 - Produces: `clipFilename(index, phrase, voiceId, modelId) → string` and `planWork(phrases, existingNames, voiceId, modelId) → {generate: Array<{index, phrase, filename}>, rename: Array<{from, to}>, remove: string[]}`, exported from `executable_fanfare-generate.mjs`. CLI: `fanfare-generate.mjs [--list-voices]`.
 
-- [ ] **Step 1: Create the phrase config**
+- [x] **Step 1: Create the phrase config**
 
 `private_dot_claude/sounds/fanfare/phrases.json` (voice_id intentionally empty — filled in Task 3):
 
@@ -298,7 +298,7 @@ git commit -m "feat(claude): fanfare voice clips in tab-title hook, fail-open to
 }
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 `tests/fanfare-generate.test.mjs`:
 
@@ -371,12 +371,12 @@ test('planWork: stray mp3 not matching any phrase is removed', () => {
 });
 ```
 
-- [ ] **Step 3: Run tests to verify they fail**
+- [x] **Step 3: Run tests to verify they fail**
 
 Run: `node --test tests/fanfare-generate.test.mjs`
 Expected: FAIL — `Cannot find module .../executable_fanfare-generate.mjs`.
 
-- [ ] **Step 4: Write the generation script**
+- [x] **Step 4: Write the generation script**
 
 `dot_local/bin/executable_fanfare-generate.mjs`:
 
@@ -525,12 +525,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 }
 ```
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `node --test tests/fanfare-generate.test.mjs`
 Expected: all 8 tests PASS. Then run the whole suite: `node --test tests/` — everything green.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add private_dot_claude/sounds/fanfare/phrases.json \
@@ -553,26 +553,26 @@ This task needs the human: 1Password item, voice taste, credit spend, `chezmoi a
 - Consumes: Task 1's hook (already reads clips), Task 2's script and config.
 - Produces: the live clip library; the feature is DONE after this task.
 
-- [ ] **Step 1: Apply the managed files**
+- [x] **Step 1: Apply the managed files**
 
 Run: `chezmoi diff` — review; expected: only the tab-title.mjs change, the new phrases.json, and the new fanfare-generate.mjs. Then: `chezmoi apply` (ask Jason if anything unexpected appears in the diff).
 
-- [ ] **Step 2: Confirm the 1Password item**
+- [x] **Step 2: Confirm the 1Password item**
 
 Run: `op-fast read op://Private/elevenlabs/credential` (falls back: `op read …`).
 If the item doesn't exist, ask Jason for the real item path (update `OP_ITEM` in the script if it differs) or have him create it: `op item create --category "API Credential" --title elevenlabs credential=<key>`.
 
-- [ ] **Step 3: Pick the voice**
+- [x] **Step 3: Pick the voice**
 
 Run: `fanfare-generate.mjs --list-voices`
 Show Jason the list; he picks a deep trailer-style voice (his ElevenLabs library choice). Write the chosen id into `voice_id` in `~/.claude/sounds/fanfare/phrases.json` AND mirror it back to the chezmoi source copy.
 
-- [ ] **Step 4: Generate and audition**
+- [x] **Step 4: Generate and audition**
 
 Run: `fanfare-generate.mjs`
 Expected: 11 `created` lines, no errors. Audition: `afplay ~/.claude/sounds/fanfare/stop/01-*.mp3`. If the delivery is flat, tweak phrasing (ellipses/caps change ElevenLabs delivery) and re-run — only changed lines regenerate.
 
-- [ ] **Step 5: Persist clips + config to dotfiles**
+- [x] **Step 5: Persist clips + config to dotfiles**
 
 ```bash
 chezmoi add ~/.claude/sounds/fanfare
@@ -582,7 +582,7 @@ git add private_dot_claude/sounds/fanfare
 git commit -m "feat(claude): fanfare voice clips (generated, epic-trailer pack)"
 ```
 
-- [ ] **Step 6: Live smoke test**
+- [x] **Step 6: Live smoke test**
 
 In any Claude Code session, finish a turn → expect the voice on Stop; trigger a permission prompt → expect the "need you" line. Verify `CLAUDE_TAB_TITLE_SILENT=1` in env still silences (used by tests). If clips don't play: check `ls ~/.claude/sounds/fanfare/stop/` and hook errors via a manual pipe:
 `echo '{"hook_event_name":"Stop","cwd":"'$PWD'"}' | node ~/.claude/hooks/tab-title.mjs`

@@ -36,7 +36,7 @@ silence (stop). Clips are generated once and committed, so machines get them
 via `chezmoi apply` — no API key at runtime.
 
 - Regenerate after editing `~/.claude/sounds/fanfare/phrases.json`:
-  `fanfare-generate.mjs` (key comes from `op://Private/elevenlabs/credential`;
+  `fanfare-generate.mjs` (key comes from `op://Private/elevenlabs-fanfare/credential`;
   only changed lines are re-rendered). Then `chezmoi add ~/.claude/sounds/fanfare`.
 - Pick a different voice: `fanfare-generate.mjs --list-voices`, set `voice_id`
   in `phrases.json`, re-run.

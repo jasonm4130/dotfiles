@@ -21,7 +21,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
-const OP_ITEM = 'op://Private/elevenlabs/credential';
+const OP_ITEM = 'op://Private/elevenlabs-fanfare/credential';
 const API = 'https://api.elevenlabs.io/v1';
 
 /** @param {string} phrase @param {string} voiceId @param {string} modelId */
