@@ -7,6 +7,8 @@ tests
 tests/**
 bootstrap.sh
 .gitignore
+.github
+.github/**
 
 # === ~/.claude/ allowlist (chezmoi#4916 pattern) ===
 # Default: ignore everything under .claude
