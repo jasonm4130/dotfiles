@@ -13,23 +13,54 @@
  *
  * False positives are intentional: cost of asking ≪ cost of a leaked key.
  *
+ * This is a PROTECTION hook, so it fails CLOSED: if stdin can't be read,
+ * the payload can't be parsed, or the scan itself throws, the write is
+ * denied rather than silently unscanned. A swallowed error here would mean
+ * the guard stops protecting without anyone noticing. Advisory hooks
+ * (lsp-first-guard, tab-title) keep failing open; this one must not.
+ *
+ * Denials use the current PreToolUse contract (exit 0 +
+ * hookSpecificOutput.permissionDecision) — the older top-level
+ * `decision: "block"` field is deprecated, and exit-code-2 blocking is
+ * unreliable for Edit/Write tool calls.
+ *
  * Stdin is read async, not via readFileSync('/dev/stdin'): the sync read
- * intermittently throws EAGAIN on Linux when stdin is a non-blocking pipe,
- * and this hook fails open — a read failure would silently skip the scan.
+ * intermittently throws EAGAIN on Linux when stdin is a non-blocking pipe.
  */
+
+/** Emit a deny in the current PreToolUse contract and exit 0. */
+function deny(reason) {
+  console.log(JSON.stringify({
+    hookSpecificOutput: {
+      hookEventName: 'PreToolUse',
+      permissionDecision: 'deny',
+      permissionDecisionReason: reason,
+    },
+  }));
+  process.exit(0);
+}
 
 let rawStdin = '';
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', (chunk) => { rawStdin += chunk; });
-process.stdin.on('error', () => process.exit(0));
-process.stdin.on('end', () => main(rawStdin));
+process.stdin.on('error', () => deny('SECRETS-SCAN: could not read hook input — failing closed (write blocked because it could not be scanned). Re-run the edit; if this persists, check ~/.claude/hooks/secrets-scan.js.'));
+process.stdin.on('end', () => {
+  try {
+    main(rawStdin);
+  } catch (err) {
+    deny(`SECRETS-SCAN: internal error while scanning — failing closed (write blocked because it could not be scanned). Error: ${err?.message ?? err}`);
+  }
+});
 
 function main(raw) {
   let input;
   try {
     input = JSON.parse(raw);
   } catch {
-    process.exit(0);
+    deny('SECRETS-SCAN: could not parse hook input JSON — failing closed (write blocked because it could not be scanned).');
+  }
+  if (input === null || typeof input !== 'object') {
+    deny('SECRETS-SCAN: hook input was not an object — failing closed (write blocked because it could not be scanned).');
   }
 
   const { tool_name, tool_input } = input;
@@ -87,8 +118,5 @@ If this is intentional (editing a gitignored .env, an encrypted fixture, or a pl
 
 False positives are intentional. The cost of asking is much lower than the cost of a leaked key.`;
 
-  console.log(JSON.stringify({
-    decision: 'block',
-    reason: reason,
-  }));
+  deny(reason);
 }
