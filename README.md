@@ -27,6 +27,23 @@ That command installs chezmoi, clones this repo to `~/.local/share/chezmoi`, run
 2. Sign in to the App Store (so `mas` entries install)
 3. Open a new terminal — secrets resolve via `op inject` at shell start
 
+## Fanfare voice notifications
+
+`~/.claude/hooks/tab-title.mjs` plays a random ElevenLabs clip from
+`~/.claude/sounds/fanfare/{stop,input}/` when Claude Code finishes a turn or
+needs input; with no clips it falls back to the old Glass chime (input) or
+silence (stop). Clips are generated once and committed, so machines get them
+via `chezmoi apply` — no API key at runtime.
+
+- Regenerate after editing `~/.claude/sounds/fanfare/phrases.json`:
+  `fanfare-generate.mjs` (key comes from `op://Private/elevenlabs/credential`;
+  only changed lines are re-rendered). Then `chezmoi add ~/.claude/sounds/fanfare`.
+- Pick a different voice: `fanfare-generate.mjs --list-voices`, set `voice_id`
+  in `phrases.json`, re-run.
+- Env knobs (mostly for tests): `CLAUDE_FANFARE_DIR`, `CLAUDE_FANFARE_PLAYER`,
+  `CLAUDE_FANFARE_LOCK`, and `CLAUDE_TAB_TITLE_SILENT=1` to mute everything.
+  Parallel sessions are debounced (2 s) so tabs don't yell in chorus.
+
 ## chezmoi cheat-sheet
 
 | Task | Command |

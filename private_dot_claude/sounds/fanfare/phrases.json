@@ -1,0 +1,21 @@
+{
+  "voice_id": "",
+  "model_id": "eleven_multilingual_v2",
+  "phrases": {
+    "stop": [
+      "I'M DOOONE!",
+      "IT IS FINISHED.",
+      "YOUR MOVE, HUMAN.",
+      "THE DEED... IS DONE.",
+      "MISSION. ACCOMPLISHED.",
+      "BEHOLD! IT IS COMPLETE!"
+    ],
+    "input": [
+      "I REQUIRE YOUR GUIDANCE!",
+      "HUMAN! YOUR PERMISSION IS NEEDED!",
+      "I AM... BLOCKED!",
+      "A DECISION AWAITS, MORTAL!",
+      "INPUT. REQUIRED."
+    ]
+  }
+}
