@@ -3,5 +3,11 @@
 set -euo pipefail
 echo "📥 Running brew bundle..."
 eval "$(/opt/homebrew/bin/brew shellenv)"
+# Homebrew 6 refuses to load third-party tap formulae unless the tap is
+# trusted (HOMEBREW_REQUIRE_TAP_TRUST is default-on). Trust works before the
+# tap is installed, so this can run ahead of bundle on a fresh machine.
+{{- range .brew.taps }}
+brew trust --tap "{{ . }}"
+{{- end }}
 brew bundle --file="$HOME/Brewfile"
 echo "✅ brew bundle complete"

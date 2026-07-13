@@ -18,7 +18,7 @@ That command installs chezmoi, clones this repo to `~/.local/share/chezmoi`, run
 - **Zed** — editor config (`~/.config/zed/`)
 - **Claude Code** — settings, hooks, custom skills (`~/.claude/`); tab-title hook plays ElevenLabs voice clips on finish/needs-input (fanfare), falling back to the Glass chime when no clips are generated. Guard hooks follow the protection/advisory split: secrets-scan **fails closed** (blocks writes it cannot scan, denies via `permissionDecision` JSON); advisory guards (lsp-first) fail open
 - **AGENTS.md** — unified AI tool instructions, rendered to per-tool files
-- **Brewfile** — formulae, casks, fonts, App Store apps
+- **Brewfile** — rendered from `.chezmoidata/packages.yaml` (the source of truth for taps/formulae/casks); the bundle script runs `brew trust --tap` for each declared tap first, since Homebrew 6 refuses to load untrusted third-party taps
 - **macOS defaults** — Dock, Finder, keyboard, etc.
 - **CI** — GitHub Actions runs `node --test tests/*.test.mjs` (hook & script suites) on ubuntu + macOS × Node 20/22 on every push/PR
 

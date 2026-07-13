@@ -1,32 +1,41 @@
 # Source of truth for Homebrew packages.
 # Edit this file, NOT the Brewfile (Brewfile.tmpl renders from this).
-# Re-seed from current state with: brew bundle dump --file=- | scripts/bundle-to-yaml.py
+# Re-seed from current state: brew bundle dump --file=- and merge entries by hand.
 
 brew:
   taps:
   - 1password/tap
+  - cirruslabs/cli
   - cloudflare/cloudflare
   - cometkim/tap
   - getagentseal/codeburn
   - hashicorp/tap
+  - hudochenkov/sshpass
   - jasonm4130/tap
   - mingrammer/flog
   formulae:
   - age
   - automake
+  - bats-core
+  - bison
   - chezmoi
+  - chruby
+  - cirruslabs/cli/tart
   - cloudflare/cloudflare/cf-terraforming
   - cometkim/tap/op-fast
   - getagentseal/codeburn/codeburn
   - cmake
+  - cocoapods
   - coreutils
   - diffutils
+  - direnv
   - duti
   - expat
   - ffmpeg
   - findutils
   - gawk
   - gdbm
+  - gdrive
   - gh
   - git-extras
   - git-filter-repo
@@ -35,13 +44,18 @@ brew:
   - gnu-getopt
   - gnu-tar
   - go
+  - gradle
   - grep
+  - hadolint
   - hashicorp/tap/terraform
+  - hudochenkov/sshpass/sshpass
   - jasonm4130/tap/pipespy
   - libffi
   - libyaml
   - llmfit
+  - llvm
   - make
+  - mas
   - mingrammer/flog/flog
   - mise
   - ncurses
@@ -49,16 +63,27 @@ brew:
   - opencode
   - openjdk@17
   - openjdk@21
+  - opentofu
   - pandoc
   - pkgconf
+  - poppler
+  - portaudio
   - pre-commit
+  - prometheus
+  - protobuf
+  - quilt
+  - r
   - rclone
   - rsync
+  - ruby-install
   - rust
   - semgrep
+  - shellcheck
   - starship
+  - subversion
   - tflint
   - uv
+  - vhs
   - weasyprint
   - wget
   - zsh
@@ -66,18 +91,20 @@ brew:
   - 1password
   - 1password/tap/1password-cli
   - android-studio
-  - arc
+  - audacity
   - balenaetcher
-  - caffeine
   - claude-code
+  - codex
   - discord
   - displaylink
   - figma
   - firefox@developer-edition
+  - flutter
   - flux-app
   - font-fira-code-nerd-font
   - font-hack-nerd-font
   - font-jetbrains-mono-nerd-font
+  - font-lato
   - font-lobster
   - font-monaspace
   - font-monaspice-nerd-font
@@ -85,24 +112,25 @@ brew:
   - ghostty
   - google-chrome
   - hot
+  - inkscape
+  - iriunwebcam
   - lm-studio
   - maccy
+  - obs
   - obsidian
   - omnidisksweeper
   - openaudible
   - opencode-desktop
-  - postman
   - rectangle
   - signal
   - spotify
   - steam
+  - tailscale-app
   - textmate
-  - tunnelblick
   - visual-studio-code
-  - visual-studio-code@insiders
   - vlc
-  - wezterm
   - zed
+  - zwift
   mas: []
   vscode:
   - aaron-bond.better-comments
