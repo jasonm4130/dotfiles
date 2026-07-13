@@ -22,6 +22,10 @@ That command installs chezmoi, clones this repo to `~/.local/share/chezmoi`, run
 - **macOS defaults** — Dock, Finder, keyboard, etc.
 - **CI** — GitHub Actions runs `node --test tests/*.test.mjs` (hook & script suites) on ubuntu + macOS × Node 20/22 on every push/PR
 
+## Scheduled maintenance (launchd)
+
+- `dev.jasonmatthew.brew-update` — Mondays 09:00: `brew update` then upgrade formulae + casks, logging to `~/Library/Logs/brew-weekly-update.log`. Casks needing sudo (e.g. displaylink) fail into the log and need an occasional manual pass.
+
 ## Manual one-time steps after bootstrap
 
 1. Open 1Password → Settings → Developer → enable **"Integrate with 1Password CLI"** + **Touch ID**

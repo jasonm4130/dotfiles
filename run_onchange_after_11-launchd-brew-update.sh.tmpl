@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Reloads when the plist changes: {{ include "private_Library/private_LaunchAgents/dev.jasonmatthew.brew-update.plist.tmpl" | sha256sum }}
+set -euo pipefail
+
+PLIST="$HOME/Library/LaunchAgents/dev.jasonmatthew.brew-update.plist"
+
+echo "🔁 (Re)loading brew-update launchd agent"
+launchctl unload "$PLIST" 2>/dev/null || true
+launchctl load -w "$PLIST"
+echo "✅ brew-update agent loaded"
