@@ -25,6 +25,7 @@ That command installs chezmoi, clones this repo to `~/.local/share/chezmoi`, run
 ## Scheduled maintenance (launchd)
 
 - `dev.jasonmatthew.brew-update` — Mondays 09:00: `brew update` then upgrade formulae + casks, logging to `~/Library/Logs/brew-weekly-update.log`. Casks needing sudo (e.g. displaylink) fail into the log and need an occasional manual pass.
+- `dev.jasonmatthew.chezmoi-drift` — daily 09:30: macOS notification when `chezmoi status` is non-empty, so drift gets settled the day it appears (`chezmoi apply` already fails safe on drifted files; this adds timely detection). Settle with `chezmoi-drift`: per-file diff, then re-add (keep local edit) / apply (restore source) / skip.
 
 ## Manual one-time steps after bootstrap
 
@@ -62,6 +63,7 @@ via `chezmoi apply` — no API key at runtime.
 | Check what's ignored | `chezmoi ignored \| grep <pattern>` |
 | Render a template | `chezmoi execute-template --file <path>` |
 | Pull + apply remote changes | `chezmoi update` |
+| Settle source↔destination drift interactively | `chezmoi-drift` |
 
 ## Design
 

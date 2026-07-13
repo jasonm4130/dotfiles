@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Settle chezmoi drift file by file: show the diff, then keep the local edit
+# (re-add) or restore the source version (apply). Remaining entries (pending
+# source changes, script re-runs) are settled with a normal `chezmoi apply`.
+set -euo pipefail
+
+status="$(chezmoi status)"
+if [[ -z "$status" ]]; then
+  echo "✅ No drift — chezmoi source and destination are in sync."
+  exit 0
+fi
+
+echo "$status"
+echo
+
+other=0
+# Status lines are read on fd 3 so stdin stays free for the prompts below.
+while IFS= read -r line <&3; do
+  code="${line:0:2}"
+  path="${line:3}"
+  if [[ "$code" == "MM" ]]; then
+    echo "── $path (edited on disk since chezmoi last wrote it) ──"
+    chezmoi diff "$HOME/$path" || true
+    read -rp "[r]e-add local edit into source / [a]pply source over it / [s]kip? " choice
+    case "$choice" in
+      r) chezmoi re-add "$HOME/$path" && echo "→ re-added; remember to commit the source change" ;;
+      a) chezmoi apply --force "$HOME/$path" && echo "→ restored from source" ;;
+      *) echo "→ skipped" ;;
+    esac
+    echo
+  else
+    other=$((other + 1))
+  fi
+done 3<<<"$status"
+
+if (( other > 0 )); then
+  read -rp "$other non-conflict entr(ies) remain (pending source changes/scripts). Run chezmoi apply now? [y/N] " go
+  [[ "$go" == "y" ]] && chezmoi apply
+fi
