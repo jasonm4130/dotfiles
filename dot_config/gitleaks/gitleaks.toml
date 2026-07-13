@@ -7,9 +7,12 @@ useDefault = true
 description = "1Password URIs and known false positives"
 regexes = [
   '''op://[A-Za-z0-9 _/-]+''',
+  '''postToLinkedIn''',
 ]
 paths = [
   '''docs/specs/.*\.md''',
   '''docs/plans/.*\.md''',
+  '''docs/superpowers/specs/.*\.md''',
+  '''docs/superpowers/plans/.*\.md''',
   '''.*\.example''',
 ]

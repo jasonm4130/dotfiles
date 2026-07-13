@@ -184,6 +184,12 @@
         "repo": "jasonm4130/claude-skills"
       },
       "autoUpdate": true
+    },
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
     }
   },
   "effortLevel": "xhigh",
