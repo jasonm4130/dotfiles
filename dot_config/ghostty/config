@@ -1,4 +1,4 @@
-# Ghostty config — ported from dot_config/wezterm/wezterm.lua. Managed by chezmoi.
+# Ghostty config. Managed by chezmoi.
 # Validate after edits:  ghostty +validate-config
 
 # Font (Monaspace Neon, matches Zed)
@@ -36,7 +36,7 @@ shell-integration-features = no-title
 notify-on-command-finish = unfocused
 notify-on-command-finish-action = bell,notify
 
-# Keybinds (tmux-style splits + command palette), mirrors wezterm.lua
+# Keybinds (tmux-style splits + command palette)
 keybind = cmd+d=new_split:right
 keybind = cmd+shift+d=new_split:down
 keybind = cmd+w=close_surface

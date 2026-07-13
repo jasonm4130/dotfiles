@@ -14,7 +14,7 @@ That command installs chezmoi, clones this repo to `~/.local/share/chezmoi`, run
 
 - **zsh** — `.zshrc`, `.zshenv`, `.zprofile`, with `op inject` for secrets
 - **Starship** — prompt config (`~/.config/starship.toml`)
-- **WezTerm** — terminal config (`~/.config/wezterm/wezterm.lua`)
+- **Ghostty** — terminal config (`~/.config/ghostty/config`)
 - **Zed** — editor config (`~/.config/zed/`)
 - **Claude Code** — settings, hooks, custom skills (`~/.claude/`); tab-title hook plays ElevenLabs voice clips on finish/needs-input (fanfare), falling back to the Glass chime when no clips are generated. Guard hooks follow the protection/advisory split: secrets-scan **fails closed** (blocks writes it cannot scan, denies via `permissionDecision` JSON); advisory guards (lsp-first) fail open
 - **AGENTS.md** — unified AI tool instructions, rendered to per-tool files
