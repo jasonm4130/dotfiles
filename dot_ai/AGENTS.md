@@ -23,6 +23,16 @@ Before saying work is done: run typecheck/tests/lint, read the actual output, an
 
 For a new feature as much as a bugfix: write the failing test first, confirm it fails for the right reason, then make it pass — and quote the red→green transition (the failing run, then the passing run), not just a final green.
 
+## A reported finding is a hypothesis — verify it against HEAD before acting
+
+Anything *told* to you about the code — an audit finding, a review comment, a triage doc, a stale TODO, a claim in your own earlier message — is a hypothesis about a codebase that has since moved. Before planning or dispatching work on it, reproduce it against the current code. One `grep` or one console command is the whole cost.
+
+Do this in both directions:
+- **Already fixed?** Then say so and delete the item. Don't "fix" it again, and never let a subagent implement against a finding you didn't confirm — it will happily edit code it never read.
+- **Real, but is the stated *mechanism* right?** A finding can name a genuine bug and be wrong about why. Fix what's actually broken, not what the report guessed.
+
+Applies to your own claims too: don't restate a status you haven't checked this session. (2026-07-14: three findings in one audit — plus a whole batch — were already fixed, and I repeated "still open" in a PR body without checking.)
+
 ## Plan before non-trivial work
 
 For changes that take more than one sentence to describe: produce a plan first (EnterPlanMode for Claude Code, equivalent in other tools). Skip plan mode only for trivial single-step edits.
