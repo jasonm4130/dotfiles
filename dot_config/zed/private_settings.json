@@ -18,11 +18,12 @@
 
   "telemetry": { "diagnostics": false, "metrics": false },
 
-  "buffer_font_family": "Monaspace Neon",
+  "buffer_font_family": "Monaspace Neon Radon",
   "buffer_font_size": 14,
   "buffer_font_features": {
     "calt": true, "liga": true,
-    "ss01": true, "ss02": true, "ss03": true, "ss04": true, "ss05": true
+    "ss01": true, "ss02": true, "ss03": true, "ss04": true, "ss05": true,
+    "ss09": true
   },
   "buffer_line_height": { "custom": 1.3 },
   "ui_font_family": "Inter",
@@ -115,7 +116,7 @@
   },
 
   "terminal": {
-    "font_family": "Monaspace Neon",
+    "font_family": "Monaspace Neon Radon",
     "font_size": 14,
     "font_features": { "calt": true, "liga": true },
     "shell": { "program": "/opt/homebrew/bin/zsh" },

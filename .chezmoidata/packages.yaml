@@ -109,6 +109,7 @@ brew:
   - font-monaspace
   - font-monaspice-nerd-font
   - font-roboto
+  - font-symbols-only-nerd-font
   - ghostty
   - google-chrome
   - hot

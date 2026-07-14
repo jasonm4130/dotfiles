@@ -1,14 +1,19 @@
 # Ghostty config. Managed by chezmoi.
 # Validate after edits:  ghostty +validate-config
 
-# Font (Monaspace Neon, matches Zed)
-font-family = "Monaspace Neon"
+# Font: Monaspace Krypton — the terminal wears the techno cut;
+# Zed runs Neon with Radon italics (see Monaspace Neon Radon merged family).
+font-family = "Monaspace Krypton"
 font-family = "Symbols Nerd Font Mono"
 font-feature = calt
 font-feature = liga
 font-feature = ss01
 font-feature = ss02
 font-feature = ss03
+font-feature = ss04
+font-feature = ss05
+# ss09 split out of ss02 in Monaspace v1.3 (>>= =<< etc.)
+font-feature = ss09
 font-size = 14
 adjust-cell-height = 30%
 
