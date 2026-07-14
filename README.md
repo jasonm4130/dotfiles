@@ -16,7 +16,7 @@ That command installs chezmoi, clones this repo to `~/.local/share/chezmoi`, run
 - **Starship** — prompt config (`~/.config/starship.toml`)
 - **Ghostty** — terminal config (`~/.config/ghostty/config`)
 - **Zed** — editor config (`~/.config/zed/`)
-- **Fonts** — Monaspace everywhere, mixed: Zed runs the generated **Monaspace Neon Radon** family (Neon for code, handwritten Radon for comments via the italic slot — Monokai Pro CE italicizes `comment`); rebuild with `monaspace-radon-mix.py` after the Monaspice cask updates. Ghostty wears Krypton.
+- **Fonts** — Monaspace everywhere, mixed: Zed runs the generated **Monaspace Neon Radon** family (Neon for code, handwritten Radon for comments via the italic slot — Monokai Pro CE italicizes `comment`); rebuild with `monaspace-radon-mix.py` after the Monaspice cask updates. Ghostty wears Argon.
 - **Claude Code** — settings, hooks, custom skills (`~/.claude/`); tab-title hook plays ElevenLabs voice clips on finish/needs-input (fanfare), falling back to the Glass chime when no clips are generated. Guard hooks follow the protection/advisory split: secrets-scan **fails closed** (blocks writes it cannot scan, denies via `permissionDecision` JSON); advisory guards (lsp-first) fail open
 - **AGENTS.md** — unified AI tool instructions, rendered to per-tool files
 - **Brewfile** — rendered from `.chezmoidata/packages.yaml` (the source of truth for taps/formulae/casks); the bundle script runs `brew trust --tap` for each declared tap first, since Homebrew 6 refuses to load untrusted third-party taps

@@ -1,9 +1,9 @@
 # Ghostty config. Managed by chezmoi.
 # Validate after edits:  ghostty +validate-config
 
-# Font: Monaspace Krypton — the terminal wears the techno cut;
+# Font: Monaspace Argon — the terminal wears the humanist cut;
 # Zed runs Neon with Radon italics (see Monaspace Neon Radon merged family).
-font-family = "Monaspace Krypton"
+font-family = "Monaspace Argon"
 font-family = "Symbols Nerd Font Mono"
 font-feature = calt
 font-feature = liga
