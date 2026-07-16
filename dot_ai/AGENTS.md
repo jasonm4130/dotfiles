@@ -45,6 +45,10 @@ Past ~70% of the context window, prefer `/clear` and re-prime over pushing throu
 
 When merging a PR, default to `gh pr merge --merge` — not `--squash` or `--rebase`. Do NOT infer merge style from a repo's existing linear history — it's usually incidental, not policy. Resync local `main` after any merge. Override only when the user asks for squash/rebase on a specific PR.
 
+## Git: never `--admin`-bypass required checks
+
+When a PR merge is blocked by branch protection ("base branch policy prohibits the merge"), do NOT reach for `gh pr merge --admin` to force it past pending or failing required checks. Wait for the required checks to go green (use `--auto` to queue the merge for when they pass), or hand the merge to the user. Local test-pass is not a substitute for the repo's required checks. Use `--admin` ONLY when the user explicitly asks to bypass for that specific PR — an option label mentioning `--admin` is not that ask. (2026-07-16: `--admin`-merged a self-initiated follow-up fix past pending checks on brok-stacks; user prefers waiting for the checks.)
+
 ## Git: stage explicitly, never `commit -a`
 
 Always `git add <specific paths>` then commit — never `git commit -a`/`-am`. In long-lived working trees (dotfiles especially) an unrelated pre-existing modification gets silently swept into a commit whose message doesn't describe it (happened 2026-07-09: a direnv zshrc change rode into a mise commit). Check `git status` before staging; if unexpected modifications exist, surface them instead of committing around them.
