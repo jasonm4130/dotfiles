@@ -16,6 +16,7 @@
       "WebFetch",
       "WebSearch",
       "Agent",
+      "Workflow",
       "Bash(git status:*)",
       "Bash(git log:*)",
       "Bash(git diff:*)",
