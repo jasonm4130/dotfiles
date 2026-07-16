@@ -174,7 +174,8 @@
     "adr@jasonm4130-claude-skills": true,
     "ship-gate@jasonm4130-claude-skills": true,
     "adversarial-agents@jasonm4130-claude-skills": true,
-    "docs-sync-guard@jasonm4130-claude-skills": true
+    "docs-sync-guard@jasonm4130-claude-skills": true,
+    "codex-review@jasonm4130-claude-skills": true
   },
   "extraKnownMarketplaces": {
     "jasonm4130-claude-skills": {
