@@ -27,6 +27,15 @@ Don't delegate at all when the task is trivial, tightly coupled to conversation 
 
 The `workflow-model-guard` plugin's Agent hook enforces this — it denies untiered dispatches (except `fork` and agent types with pinned frontmatter models); it doesn't replace the rule, just catches misses.
 
+## Cross-provider review: run codex-review without being asked
+
+The `codex-review` plugin (Codex / GPT-5.6 Terra) is a cross-family second opinion — it catches bug classes a same-family Claude review misses. Invoke the `codex-plan-review` skill automatically, without waiting to be prompted, at these gates:
+
+1. **Plan gates** — right after a spec/plan/ADR is finalized *and user-approved* (a brainstorming spec, a writing-plans plan, an ADR draft, or an SDD plan confirmed at its gate). Plan mode, Terra/high effort.
+2. **Before a PR** — after implementing a Codex-reviewed plan, run diff mode on `main...HEAD` before opening the PR. A reviewed plan is NOT a reviewed diff (proven: a branch that passed 3 plan rounds + an audit still shipped 3 real bugs that diff mode caught).
+
+Keep it **whole-branch, not per-task**: one diff pass on `main...HEAD`, never a Codex call inside each SDD task (per-task pays N× the paid-call cost and N× the reviewer's over-rejection surface to catch strictly less). **Terra for every pass; do not escalate to Sol** — Fable owns same-family escalation, and Terra ≈ Sol review quality at lower cost and latency. Skip silently if `codex` is missing or not logged in — never block a gate. Each chain burns ChatGPT-subscription quota, so never re-run on the same artifact without an explicit ask.
+
 ## Log noteworthy outcomes to the Obsidian vault
 
 When a session in this tree produces a noteworthy outcome — a shipped feature, a published blog post or deploy, a completed experiment or training run, a merged PR on a flagship project — append a one-line entry to today's daily note in the vault without asking (standing approval, Jason 2026-07-05); mention in the reply that it was logged. Note path: `~/Documents/Obsidian Vault/Daily/YYYY-MM-DD - Daily.md`, create from `_templates/Daily.md` if missing; add under `## 🏆 Wins`. Format: `- HH:MM [repo-name] outcome in one sentence` plus a `[ship]`/`[arch]`/`[win]`-style tag. Routine edits, WIP commits, and exploration don't qualify. This keeps the vault's daily record from undercounting code-side output.
