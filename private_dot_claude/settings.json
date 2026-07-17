@@ -63,10 +63,16 @@
       "Bash(cd:*)",
       "Bash(pwd:*)"
     ],
-    "deny": [],
+    "deny": [
+      "Skill(deep-research)",
+      "Skill(deep-research *)"
+    ],
     "defaultMode": "auto"
   },
   "disabledMcpjsonServers": [],
+  "skillOverrides": {
+    "deep-research": "off"
+  },
   "hooks": {
     "PreToolUse": [
       {
