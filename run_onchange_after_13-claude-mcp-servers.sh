@@ -35,5 +35,6 @@ ensure exa    -- sh -c 'EXA_API_KEY=$(security find-generic-password -a "$USER" 
 ensure tavily -- sh -c 'TAVILY_API_KEY=$(security find-generic-password -a "$USER" -s tavily-api-key -w) npx -y tavily-mcp'
 ensure social --transport http https://social-mcp.jasonmatthew.dev/mcp
 ensure chrome-devtools -- npx chrome-devtools-mcp@latest
+ensure claude-design --transport http https://api.anthropic.com/v1/design/mcp
 
 echo "✅ Claude user-scope MCP servers reconciled"
