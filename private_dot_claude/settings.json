@@ -176,7 +176,9 @@
     "superpowers-core@jasonm4130-claude-skills": true,
     "frontend-design@jasonm4130-claude-skills": true,
     "design-gate-guard@jasonm4130-claude-skills": true,
-    "claude-design@jasonm4130-claude-skills": true
+    "claude-design@jasonm4130-claude-skills": true,
+    "domain-modeling@jasonm4130-claude-skills": true,
+    "codebase-design@jasonm4130-claude-skills": true
   },
   "extraKnownMarketplaces": {
     "jasonm4130-claude-skills": {
