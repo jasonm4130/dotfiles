@@ -30,6 +30,10 @@ window-padding-y = 8,4
 # Behavior
 scrollback-limit = 10000000
 macos-option-as-alt = right
+# Reopen the window/tab/split layout on restart regardless of the macOS
+# "Close windows when quitting an app" setting. Restores layout with fresh
+# shells — not running programs or scrollback.
+window-save-state = always
 
 # Tab titles — let the shell (omz termsupport) and Claude Code own the title;
 # Ghostty's shell-integration title would fight them (cwd reporting via OSC 7
