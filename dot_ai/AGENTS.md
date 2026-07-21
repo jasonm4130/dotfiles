@@ -60,3 +60,7 @@ These instructions are global — loaded into every session of every tool from a
 ## Per-project conventions live in per-project CLAUDE.md
 
 Code-specific guidance (LSP-first navigation, stack conventions, project-specific patterns) lives in `~/Work/Git/CLAUDE.md` and per-repo `CLAUDE.md` files, not in this global file. Claude Code loads them lazily for the directory it's working in, so vault/markdown sessions don't pay token cost for guidance that only applies to code work.
+
+## Memory has two stores — route each fact by scope (Claude Code)
+
+Claude Code's file memory is two-layer: a **global** store at `~/.claude/memory/` (loaded across every project — user profile, preferences, cross-repo/cross-project reference) and a **per-project** store at `~/.claude/projects/<hash>/memory/` (facts only that repo cares about). Route each new memory to the store matching its scope — user-level or spans-multiple-repos → global; single-repo fact → that project. Each store keeps its own `MEMORY.md` index. Don't assume only the per-project store exists. (2026-07-20: I did, and nearly pinned a cross-repo IaC map to one project instead of global.)
