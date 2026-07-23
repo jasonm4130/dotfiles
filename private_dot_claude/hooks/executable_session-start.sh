@@ -26,6 +26,17 @@ trap 'rm -f "$primer"' EXIT
       fi
     fi
   done
+
+  # Session-control commands the model cannot invoke itself — without this it
+  # never offers them, and the moment to use them has passed by the next turn.
+  cat <<'EOF'
+
+**Session control — offer these to the user at the right moment; you cannot invoke them yourself.**
+Offer at most one, as a single line alongside the work, then keep going. Never stall waiting for an answer, and never re-offer for a moment already passed on.
+1. `/rewind` — the user wants to undo work you just did that spans several files and isn't committed. NOT for a single edit you can simply re-edit, and not when a git operation is cleaner.
+2. `/branch` — the user is choosing between two substantive paths and the context built so far is expensive to rebuild. NOT for trivial either/ors.
+3. `/fork` — a tangent opens that needs everything already in this conversation but shouldn't be spent inside it.
+EOF
 } > "$primer"
 
 # Wrap in JSON with hookSpecificOutput.additionalContext
