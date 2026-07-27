@@ -15,6 +15,36 @@ trap 'rm -f "$primer"' EXIT
   # the volume and wedge the harness (it can't write tool-output once at 100%).
   [ -x "$HOME/.claude/hooks/disk-guard.sh" ] && "$HOME/.claude/hooks/disk-guard.sh" check 2>/dev/null
 
+  # Agent-config staleness. AGENTS.md carries a marker:
+  #   <!-- config-review: tuned_for=opus-5 review_after=YYYY-MM-DD last_checked=YYYY-MM-DD -->
+  # Deliberately NOT a scheduled job: a previous weekly launchd automation got
+  # deleted for firing regardless of need. This is silent until the date passes,
+  # then nudges at most weekly, and never starts the review itself.
+  agents_file="${CLAUDE_AGENTS_FILE:-$HOME/.ai/AGENTS.md}"
+  ack_file="${CLAUDE_CONFIG_REVIEW_ACK:-$HOME/.claude/.config-review-ack}"
+  if [ -r "$agents_file" ]; then
+    marker=$(grep -o '<!-- config-review:[^>]*-->' "$agents_file" 2>/dev/null | head -1)
+    review_after=$(printf '%s' "$marker" | sed -n 's/.*review_after=\([0-9-]*\).*/\1/p')
+    tuned_for=$(printf '%s' "$marker" | sed -n 's/.*tuned_for=\([^ ]*\).*/\1/p')
+    today=$(date +%F)
+    # String compare is safe for zero-padded YYYY-MM-DD.
+    if [ -n "$review_after" ] && [ "$today" \> "$review_after" ]; then
+      last_nudge=$(sed -n "s/^${review_after}|//p" "$ack_file" 2>/dev/null | head -1)
+      week_ago=$(date -v-7d +%F 2>/dev/null || date -d '7 days ago' +%F 2>/dev/null || echo "0000-00-00")
+      # Persist the acknowledgement FIRST, and only nudge if it stuck. This hook
+      # has no errexit, so a full disk or unwritable ack file would otherwise
+      # leave no record and repeat the nudge every single session — which is the
+      # noise that got the previous automation deleted.
+      if [ -z "$last_nudge" ] || [ "$week_ago" \> "$last_nudge" ]; then
+        if mkdir -p "$(dirname "$ack_file")" 2>/dev/null \
+           && printf '%s|%s\n' "$review_after" "$today" > "$ack_file" 2>/dev/null; then
+          printf '\n**Agent config is due a review.** `%s` is tuned for `%s` and its review_after date (%s) has passed. Offer the user a config sweep against current model guidance (plan: docs/plans/2026-07-28-opus5-agent-config-alignment.md); do not start one unprompted. Bump the marker when done.\n' \
+            "${agents_file/#$HOME/~}" "${tuned_for:-unknown}" "$review_after"
+        fi
+      fi
+    fi
+  fi
+
   for d in "$PROJECT/docs/plans" "$PROJECT/.claude/plans" "$HOME/.claude/plans"; do
     if [ -d "$d" ]; then
       # Most-recent first; -p marks dirs with a trailing / so archive/ is excluded

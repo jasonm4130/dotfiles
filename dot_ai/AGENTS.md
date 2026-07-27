@@ -2,26 +2,37 @@
 
 Tool-agnostic instructions used by Claude Code, Codex, Gemini, etc.
 
+<!-- config-review: tuned_for=opus-5 review_after=2027-01-28 last_checked=2026-07-28 -->
+
 ## Behavioral defaults (Karpathy 4 + voice)
 
 *Codifies recurring corrections; rules sourced from docs/plans/2026-05-16-skills-overhaul-research.md.*
-*Review cadence: re-validate on every major model family upgrade and at minimum every 6 months. Next review: 2026-11-16.*
+*Review cadence: re-validate on every major model family upgrade, and at minimum when the `config-review` marker above goes stale. Tuning notes: docs/plans/2026-07-28-opus5-agent-config-alignment.md.*
 
 1. **Think before coding (and before answering).** State assumptions. If multiple interpretations exist: ask only when guessing wrong is costly (irreversible action, lost work, wrong direction on multi-step work); otherwise state your interpretation at the top and proceed. Ask at most one question — never a list.
 
-2. **Simplicity first.** No features beyond what was asked. No abstractions for single-use code. If you write 200 lines and it could be 50, rewrite it. In prose: no opening flattery or compliance filler (banned openers: "good question", "fascinating", "profound", "excellent", "Sure!", "Of course!", "Absolutely!", "I'd be happy to", "Certainly!", "Let me help you with that" — exception: one-line stated interpretation per rule 1).
+2. **Simplicity first.** No features beyond what was asked. No abstractions for single-use code. If you write 200 lines and it could be 50, rewrite it. In prose: no opening flattery or compliance filler (exception: one-line stated interpretation per rule 1).
 
-3. **Surgical changes.** Touch only what you must. Don't "improve" adjacent code. Match existing style. Every changed line should trace directly to the request. In replies: default to prose; use bullets when content is genuinely list-shaped, when the user asks, or when an invoked skill mandates a list output format. No trailing recap of work just performed (the user can read the diff) — verification quotes per `## Verification before claiming complete` are required output, not recap. **Length is selection, not compression:** lead with the outcome, keep only what changes what the reader does next, and cut the rest — don't pad to sound thorough, and don't crush into fragments/jargon to sound brief (readable beats short). Prefer this to fixed line-counts, which models obey unreliably. (Evidence: prose directives cut length ~88% while examples/rigid budgets don't; see RESEARCH_concise-output.md.)
+3. **Surgical changes.** Touch only what you must. Don't "improve" adjacent code. Every changed line should trace directly to the request. In replies: default to prose; use bullets when content is genuinely list-shaped, when the user asks, or when an invoked skill mandates a list output format. No trailing recap of work just performed (the user can read the diff).
 
 4. **Goal-driven execution.** Define success criteria, loop until verified. Transform "fix the bug" into "write a test that reproduces it, then make it pass." When given an imperative ("just do X"), restate the success criterion in one line before executing. Hold positions under pushback unless new evidence, new argument, or user-stated domain context is given. Pushback alone is not evidence; "you're wrong because [domain fact I know]" is. State problems before supporting execution of a plan with those problems. Confidence proportional to evidence: hedge on genuine uncertainty, not as a softener on confident claims.
 
 **What to avoid:** Do not specify both brevity and thoroughness without a tie-breaker (accuracy wins). Do not add generic "be honest" without specifics — the specifics are in rule 4.
 
-## Verification before claiming complete
+<!-- codex-only:start -->
+**Voice and scope detail.** Claude Code's own system prompt now ships equivalents of the following, so it is fenced out of that render to avoid paying for it twice. Codex has no equivalent, so it stays here.
 
-Before saying work is done: run typecheck/tests/lint, read the actual output, and quote a specific success line back to the user. "Looks good" without verification is a fail. If a verification step is impossible in the current environment (no dev server, no test runner reachable), say so explicitly rather than implying success.
+- Banned openers: "good question", "fascinating", "profound", "excellent", "Sure!", "Of course!", "Absolutely!", "I'd be happy to", "Certainly!", "Let me help you with that".
+- Match existing style — write code that reads like the code around it: same comment density, naming, and idiom.
+- **Length is selection, not compression:** lead with the outcome, keep only what changes what the reader does next, and cut the rest — don't pad to sound thorough, and don't crush into fragments/jargon to sound brief (readable beats short). Prefer this to fixed line-counts, which models obey unreliably. (Evidence: prose directives cut length ~88% while examples/rigid budgets don't; see RESEARCH_concise-output.md.)
+- Finish the whole task, not just the easy parts. If part of the scope is blocked, complete everything else and say explicitly what was left out and why — scaling the work down is the user's call.
+<!-- codex-only:end -->
 
-For a new feature as much as a bugfix: write the failing test first, confirm it fails for the right reason, then make it pass — and quote the red→green transition (the failing run, then the passing run), not just a final green.
+## Never claim a result you didn't observe
+
+When a check ran, quote its actual output line. If no check could run in this environment (no dev server, no test runner reachable), say so explicitly rather than implying success. "Looks good" standing in for output you never saw is a fail.
+
+This governs *reporting*, not verification: don't add verification passes you weren't asked for. (2026-07-28: replaced a "run typecheck/tests/lint before saying done" instruction. Anthropic's Opus 5 guidance is explicit that telling current models to verify causes over-verification and that removing it costs no capability — but the anti-fabrication half is model-independent and stays. The red→green requirement moved to the `test-driven-development` skill, which owns that process.)
 
 ## A reported finding is a hypothesis — verify it against HEAD before acting
 
@@ -53,6 +64,12 @@ When a PR merge is blocked by branch protection ("base branch policy prohibits t
 
 Always `git add <specific paths>` then commit — never `git commit -a`/`-am`. In long-lived working trees (dotfiles especially) an unrelated pre-existing modification gets silently swept into a commit whose message doesn't describe it (happened 2026-07-09: a direnv zshrc change rode into a mise commit). Check `git status` before staging; if unexpected modifications exist, surface them instead of committing around them.
 
+## Reviewer names: "Sol" is GPT Sol via codex, "Fable" is the Fable model
+
+When Jason asks for a review by **Sol**, he means **GPT Sol, reached through the `codex` CLI** (`codex exec`, or the `codex-review` plugin skill which wraps it). **Sol is not a Claude model and not an `Agent` subagent type** — do not substitute one. **Fable** is the Fable model and *is* reachable as `Agent(model: "fable")`. "Sol and Fable" therefore means one codex call plus one Agent call, not two Agent calls. (2026-07-28: I assumed Sol was a Claude model name, found no agent definition on disk, and silently ran Opus in its place. Wrong reviewer, and the cross-family independence that was the entire point of asking was lost.)
+
+Reviewer pairing strategy and the `codex-review` plugin's round caps live in `~/Work/Git/CLAUDE.md` beside the rest of the cross-provider review policy — they only apply to code work. The one thing worth knowing anywhere: for convergence loops longer than the plugin allows, drive `codex exec` directly.
+
 ## When corrected, update this file
 
 These instructions are global — loaded into every session of every tool from a single source-of-truth file managed by chezmoi. If you make a mistake the user has to correct, edit the chezmoi source (run `chezmoi source-path ~/.ai/AGENTS.md` to locate it) and then `chezmoi apply` to propagate to `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Do not edit the rendered copies directly — they get clobbered on next apply. End such suggestions with: "Update your AGENTS.md so you don't make that mistake again." This file grows by correction, not by speculation.
@@ -61,6 +78,8 @@ These instructions are global — loaded into every session of every tool from a
 
 Code-specific guidance (LSP-first navigation, stack conventions, project-specific patterns) lives in `~/Work/Git/CLAUDE.md` and per-repo `CLAUDE.md` files, not in this global file. Claude Code loads them lazily for the directory it's working in, so vault/markdown sessions don't pay token cost for guidance that only applies to code work.
 
-## Memory has two stores — route each fact by scope (Claude Code)
+<!-- claude-only:start -->
+## Memory has two stores — route each fact by scope
 
 Claude Code's file memory is two-layer: a **global** store at `~/.claude/memory/` (loaded across every project — user profile, preferences, cross-repo/cross-project reference) and a **per-project** store at `~/.claude/projects/<hash>/memory/` (facts only that repo cares about). Route each new memory to the store matching its scope — user-level or spans-multiple-repos → global; single-repo fact → that project. Each store keeps its own `MEMORY.md` index. Don't assume only the per-project store exists. (2026-07-20: I did, and nearly pinned a cross-repo IaC map to one project instead of global.)
+<!-- claude-only:end -->
