@@ -34,7 +34,11 @@ The `codex-review` plugin (Codex / GPT-5.6 Terra) is a cross-family second opini
 1. **Plan gates** — right after a spec/plan/ADR is finalized *and user-approved* (a brainstorming spec, a writing-plans plan, an ADR draft, or an SDD plan confirmed at its gate). Plan mode, Terra/high effort.
 2. **Before a PR** — after implementing a Codex-reviewed plan, run diff mode on `main...HEAD` before opening the PR. A reviewed plan is NOT a reviewed diff (proven: a branch that passed 3 plan rounds + an audit still shipped 3 real bugs that diff mode caught).
 
-Keep it **whole-branch, not per-task**: one diff pass on `main...HEAD`, never a Codex call inside each SDD task (per-task pays N× the paid-call cost and N× the reviewer's over-rejection surface to catch strictly less). **Terra for every pass; do not escalate to Sol** — Fable owns same-family escalation, and Terra ≈ Sol review quality at lower cost and latency. If `codex` is missing or not logged in, disclose the skip and continue without blocking — never block a gate, but the skip must be visible so a downstream consumer (e.g. SDD) knows the plan is unreviewed. Each chain burns ChatGPT-subscription quota, so never re-run on the same artifact without an explicit ask.
+Keep it **whole-branch, not per-task**: one diff pass on `main...HEAD`, never a Codex call inside each SDD task (per-task pays N× the paid-call cost and N× the reviewer's over-rejection surface to catch strictly less). **Terra for automatic passes; escalate to Sol only when Jason asks for Sol by name** — Fable owns same-family escalation, and Terra ≈ Sol review quality at lower cost and latency. If `codex` is missing or not logged in, disclose the skip and continue without blocking — never block a gate, but the skip must be visible so a downstream consumer (e.g. SDD) knows the plan is unreviewed. Each chain burns ChatGPT-subscription quota, so never re-run on the same artifact without an explicit ask.
+
+**Pair reviewers on different tasks, not the same task.** Two reviewers agreeing is weak evidence, and cross-vendor pairs are the *most* correlated. The value comes from distinct lenses — e.g. one on strategy and adversarial pressure, one on factual grounding against sources. That split has repeatedly found disjoint sets of real defects where duplicate reviews found the same thing twice. Corollary: don't send a reviewer an artifact it helped write.
+
+**The `codex-review` plugin hard-caps at 3 review rounds plus 1 audit** and refuses a 4th before spending a paid call. For longer convergence loops, drive `codex exec` directly — but keep the plugin's one non-negotiable prompt rule: **the reviewer must never see your self-assessment.** Pass the file path, never your own confidence, never "I think this is now correct".
 
 ## Log noteworthy outcomes to the Obsidian vault
 
@@ -42,7 +46,7 @@ When a session in this tree produces a noteworthy outcome — a shipped feature,
 
 ## Test runners by stack
 
-Quote the red→green transition (per global AGENTS.md) using the repo's actual runner. Defaults by stack — use the repo's existing runner if it differs (check `package.json` scripts / `Makefile` / `pyproject.toml`):
+When the `test-driven-development` skill is driving, quote the red→green transition using the repo's actual runner. Defaults by stack — use the repo's existing runner if it differs (check `package.json` scripts / `Makefile` / `pyproject.toml`):
 
 | Stack | Run tests with |
 |---|---|
