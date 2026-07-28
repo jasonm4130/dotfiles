@@ -13,8 +13,9 @@
 #   check             SessionStart: emit a warning line if free < WARN_GB
 #   pretool           PreToolUse(Bash): block heavy cargo builds if free < BLOCK_GB
 #   reclaim [--deep]  delete rebuildable target/ dirs in agent worktrees + prune.
-#                     --deep also trims the shared cargo cache + removes worktrees
-#                     whose branch is on a remote (commits are preserved).
+#                     --deep also trims the shared cargo cache + removes agent
+#                     worktrees that are provably redundant: unlocked, clean,
+#                     and local tip == remote tip. Never dirty/ahead/locked ones.
 #
 # Fail-open everywhere: any error → behave as if disk is fine. A buggy guard
 # must never block a build on a healthy disk.
@@ -38,7 +39,7 @@ case "${1:-check}" in
   check)
     free=$(free_gb)
     if [ "$free" -lt "$WARN_GB" ] 2>/dev/null; then
-      printf '\n**⚠ Low disk: %sGB free** (warn threshold %sGB). Reclaim build artifacts before heavy builds:\n- `~/.claude/hooks/disk-guard.sh reclaim` (safe — deletes rebuildable target/ dirs in agent worktrees)\n- add `--deep` to also trim the shared cargo cache and remove pushed worktrees\n' "$free" "$WARN_GB"
+      printf '\n**⚠ Low disk: %sGB free** (warn threshold %sGB). Reclaim build artifacts before heavy builds:\n- `~/.claude/hooks/disk-guard.sh reclaim` (safe — deletes rebuildable target/ dirs in agent worktrees)\n- add `--deep` to also trim the shared cargo cache and remove fully-pushed clean worktrees\n' "$free" "$WARN_GB"
     fi
     ;;
 
@@ -83,17 +84,40 @@ case "${1:-check}" in
       for c in "$HOME/.cache/cargo/target" "$HOME/.cargo/target"; do
         [ -d "$c" ] && { echo "  rm cargo cache: ${c#$HOME/}"; rm -rf "${c:?}"/* 2>/dev/null || true; }
       done
-      # 4. Remove agent worktrees whose branch is on a remote (commits survive
-      #    in .git + on the remote; only the redundant working copy is dropped).
+      # 4. Remove agent worktrees ONLY when provably redundant: not locked,
+      #    checkout clean, and the local branch tip EQUALS the remote tip.
+      #    2026-07-29: the old "branch exists on remote" test deleted a LIVE
+      #    session worktree that was 11 commits ahead of origin — the refs
+      #    survived, but uncommitted agent work and generated files did not,
+      #    and a running SDD workflow lost its working directory. A branch
+      #    being on the remote says nothing about the checkout being
+      #    disposable. Fail closed on every uncertainty.
       for repo in "$GIT_ROOT"/*/; do
         git -C "$repo" rev-parse --git-dir >/dev/null 2>&1 || continue
         git -C "$repo" worktree list --porcelain 2>/dev/null \
-          | awk '/^worktree /{w=$2} /^branch /{print w"\t"$2}' \
-          | grep '/.claude/worktrees/' | while IFS=$'\t' read -r wt ref; do
+          | awk '
+              /^worktree /{wt=$2; ref=""; locked=0}
+              /^branch /{ref=$2}
+              /^locked/{locked=1}
+              /^$/{if (wt != "") print wt "\t" ref "\t" locked; wt=""}
+              END{if (wt != "") print wt "\t" ref "\t" locked}
+            ' \
+          | grep '/.claude/worktrees/' | while IFS=$'\t' read -r wt ref locked; do
               br=${ref#refs/heads/}
-              if git -C "$repo" ls-remote --exit-code --heads origin "$br" >/dev/null 2>&1; then
-                echo "  remove worktree (branch on remote): ${wt#$HOME/}"
+              [ "$locked" = "1" ] && { echo "  keep (locked): ${wt#$HOME/}"; continue; }
+              [ -z "$br" ] && { echo "  keep (detached): ${wt#$HOME/}"; continue; }
+              if ! st=$(git -C "$wt" status --porcelain 2>/dev/null); then
+                echo "  keep (status unreadable): ${wt#$HOME/}"; continue
+              fi
+              [ -n "$st" ] && { echo "  keep (dirty): ${wt#$HOME/}"; continue; }
+              local_sha=$(git -C "$repo" rev-parse --verify "refs/heads/$br" 2>/dev/null) \
+                || { echo "  keep (no local ref): ${wt#$HOME/}"; continue; }
+              remote_sha=$(git -C "$repo" ls-remote --heads origin "$br" 2>/dev/null | awk '{print $1}')
+              if [ -n "$remote_sha" ] && [ "$remote_sha" = "$local_sha" ]; then
+                echo "  remove worktree (fully pushed, clean): ${wt#$HOME/}"
                 git -C "$repo" worktree remove --force "$wt" 2>/dev/null || rm -rf "$wt"
+              else
+                echo "  keep (unpushed or no remote): ${wt#$HOME/}"
               fi
             done
         git -C "$repo" worktree prune 2>/dev/null || true
