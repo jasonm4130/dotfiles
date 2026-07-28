@@ -27,6 +27,22 @@ Don't delegate at all when the task is trivial, tightly coupled to conversation 
 
 The `workflow-model-guard` plugin's Agent hook enforces this — it denies untiered dispatches (except `fork` and agent types with pinned frontmatter models); it doesn't replace the rule, just catches misses.
 
+**Effort is not available here.** `Workflow`'s `agent()` takes `opts.effort`; the plain `Agent` tool does not. For Agent dispatches the model tier above is the only lever. Inside a Workflow script, prefer holding the model and lowering effort over reaching for a cheaper model — Anthropic documents `low` as the fit for subagents specifically, and it buys fewer tool calls and no plan preamble, which is what an agent working from a settled spec wants. `subagent-driven-development` encodes this.
+
+## Escalate to Fable on a trigger, not on a feeling
+
+"This needs more reasoning" is a label applied after difficulty is already visible, which makes every rescue look like foresight and every wasted escalation look like judgment. Escalate when one of these fires, and say which one:
+
+1. Two failed attempts at the same acceptance test or reproduction.
+2. Competing architectural approaches where the choice is irreversible.
+3. Security, data-loss, or production-migration risk in the change itself.
+4. Evidence spanning several repos, or a system nobody in the session knows.
+5. Adversarial review *after* an implementation is complete.
+
+**Route Fable to planning and review, not to taking over implementation.** Published benchmarks put Opus 5 within a point of Fable 5 on SWE-bench Pro (79.2 vs 80.0) and ahead on SWE-bench Verified (96.0 vs ~95); Fable's separation shows on Terminal-Bench and FrontierCode — long-horizon and frontier work. Handing it routine implementation buys ~nothing at 2× price and higher latency. Trigger 5 is the highest-value one: if you conflate "Fable implemented it" with "a second pass caught it", you'll credit the model for what the second look did.
+
+**Escalation means a new session or subagent at the higher tier, not raising effort in place.** Changing effort mid-conversation invalidates the prompt cache, so pick a level at the start of a session and hold it.
+
 ## Cross-provider review: run codex-review without being asked
 
 The `codex-review` plugin (Codex / GPT-5.6 Terra) is a cross-family second opinion — it catches bug classes a same-family Claude review misses. Invoke the `codex-plan-review` skill automatically, without waiting to be prompted, at these gates:
