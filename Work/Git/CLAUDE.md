@@ -54,6 +54,8 @@ Keep it **whole-branch, not per-task**: one diff pass on `main...HEAD`, never a 
 
 **Pair reviewers on different tasks, not the same task.** Two reviewers agreeing is weak evidence, and cross-vendor pairs are the *most* correlated. The value comes from distinct lenses — e.g. one on strategy and adversarial pressure, one on factual grounding against sources. That split has repeatedly found disjoint sets of real defects where duplicate reviews found the same thing twice. Corollary: don't send a reviewer an artifact it helped write.
 
+**That rule governs *verifying* finished work. Adversarial planning on an unsolved problem is a different move.** Putting two reviewers on the same problem *arguing opposite positions* is generation, not corroboration — the output is candidate plans to weigh, not a claim two models endorsed, so the correlation argument doesn't bite. Reach for it on trigger 1 above (circling on the same target): a Fable-vs-Sol argument over the whole fix is what unstuck `transcoder` on 2026-07-25 after ordinary sessions went round in circles. n=1 and uncontrolled — a single fresh Fable pass might have done the same — so treat it as a play worth trying when stuck, not a default, and never as evidence the resulting plan is right.
+
 **The `codex-review` plugin hard-caps at 3 review rounds plus 1 audit** and refuses a 4th before spending a paid call. For longer convergence loops, drive `codex exec` directly — but keep the plugin's one non-negotiable prompt rule: **the reviewer must never see your self-assessment.** Pass the file path, never your own confidence, never "I think this is now correct".
 
 ## Log noteworthy outcomes to the Obsidian vault
