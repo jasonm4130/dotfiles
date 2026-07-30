@@ -195,7 +195,8 @@
       }
     }
   },
-  "effortLevel": "high",
+  "model": "fable",
+  "effortLevel": "low",
   "autoCompactWindow": 400000,
   "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
