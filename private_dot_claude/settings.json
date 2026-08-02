@@ -1,7 +1,10 @@
 {
   "env": {
     "HANDOFF_EFFECTIVE_MAX_TOKENS": "400000",
-    "CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE": "1"
+    "CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE": "1",
+    "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB": "1",
+    "TZ": "Australia/Brisbane",
+    "BASH_DEFAULT_TIMEOUT_MS": "300000"
   },
   "attribution": {
     "commit": ""
@@ -61,7 +64,11 @@
       "Bash(diff:*)",
       "Bash(for:*)",
       "Bash(cd:*)",
-      "Bash(pwd:*)"
+      "Bash(pwd:*)",
+      "WebFetch(domain:zed.dev)",
+      "mcp__exa__web_search_exa",
+      "mcp__exa__web_fetch_exa",
+      "mcp__tavily__tavily_search"
     ],
     "deny": [
       "Skill(deep-research)",
@@ -195,8 +202,8 @@
       }
     }
   },
-  "model": "fable",
-  "effortLevel": "low",
+  "model": "opus",
+  "effortLevel": "high",
   "autoCompactWindow": 400000,
   "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
