@@ -76,6 +76,7 @@
     ],
     "defaultMode": "auto"
   },
+  "model": "opus",
   "disabledMcpjsonServers": [],
   "skillOverrides": {
     "deep-research": "off"
@@ -173,19 +174,18 @@
     "handoff@jasonm4130-claude-skills": true,
     "session-retro@jasonm4130-claude-skills": true,
     "workflow-model-guard@jasonm4130-claude-skills": true,
-    "visual-plan@jasonm4130-claude-skills": true,
     "subagent-driven-development@jasonm4130-claude-skills": true,
     "adr@jasonm4130-claude-skills": true,
     "ship-gate@jasonm4130-claude-skills": true,
-    "adversarial-agents@jasonm4130-claude-skills": true,
     "docs-sync-guard@jasonm4130-claude-skills": true,
     "codex-review@jasonm4130-claude-skills": true,
     "superpowers-core@jasonm4130-claude-skills": true,
     "frontend-design@jasonm4130-claude-skills": true,
     "design-gate-guard@jasonm4130-claude-skills": true,
     "claude-design@jasonm4130-claude-skills": true,
-    "domain-modeling@jasonm4130-claude-skills": true,
-    "codebase-design@jasonm4130-claude-skills": true
+    "codebase-design@jasonm4130-claude-skills": true,
+    "writing-artifacts@jasonm4130-claude-skills": true,
+    "domain-modeling@jasonm4130-claude-skills": true
   },
   "extraKnownMarketplaces": {
     "jasonm4130-claude-skills": {
@@ -202,7 +202,6 @@
       }
     }
   },
-  "model": "opus",
   "effortLevel": "high",
   "autoCompactWindow": 400000,
   "tui": "fullscreen",
