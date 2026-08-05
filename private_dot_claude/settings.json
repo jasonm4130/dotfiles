@@ -4,7 +4,10 @@
     "CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE": "1",
     "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB": "1",
     "TZ": "Australia/Brisbane",
-    "BASH_DEFAULT_TIMEOUT_MS": "300000"
+    "BASH_DEFAULT_TIMEOUT_MS": "300000",
+    "RETRO_BATCH_MIN_SESSIONS": "15",
+    "RETRO_BATCH_MIN_DAYS": "0",
+    "RETRO_BATCH_MAX_SESSIONS": "20"
   },
   "attribution": {
     "commit": ""
