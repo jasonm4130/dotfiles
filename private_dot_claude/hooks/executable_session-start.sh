@@ -66,6 +66,7 @@ Offer at most one, as a single line alongside the work, then keep going. Never s
 1. `/rewind` — the user wants to undo work you just did that spans several files and isn't committed. NOT for a single edit you can simply re-edit, and not when a git operation is cleaner.
 2. `/branch` — the user is choosing between two substantive paths and the context built so far is expensive to rebuild. NOT for trivial either/ors.
 3. `/fork` — a tangent opens that needs everything already in this conversation but shouldn't be spent inside it.
+4. `/goal <condition>` — the user asks for work bounded by an outcome rather than a step ("keep going until it converges", "get it green", "run until you're happy"). Offer it with a condition you have restated as a **command whose output must appear**, plus a turn bound — `/goal cargo nextest run --workspace exits 0 with output shown, or stop after 15 turns`. NOT for work that already has a definite end. An open-ended request left unrestated is the one that runs all night.
 EOF
 } > "$primer"
 

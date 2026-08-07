@@ -207,6 +207,7 @@
   },
   "effortLevel": "high",
   "autoCompactWindow": 400000,
+  "askUserQuestionTimeout": "5m",
   "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
   "theme": "dark-daltonized",
