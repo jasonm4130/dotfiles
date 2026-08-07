@@ -36,6 +36,8 @@ Do this in both directions:
 - **Already fixed?** Then say so and delete the item. Don't "fix" it again, and never let a subagent implement against a finding you didn't confirm — it will happily edit code it never read.
 - **Real, but is the stated *mechanism* right?** A finding can name a genuine bug and be wrong about why. Fix what's actually broken, not what the report guessed.
 
+**A confident negative needs a positive proof.** Before writing "X is absent / impossible / unsupported", name the command that would demonstrate it *positively* and run that instead. A self-authored grep pattern cannot prove absence — anything you failed to enumerate reads as missing (2026-07-25: grepped a Dockerfile for six directives, omitted `HEALTHCHECK`, and wrote "distroless images cannot carry a healthcheck" into five files across two repos; the first deploy printed `(healthy)`). Silence in reference docs is not evidence either — it is routinely just a documentation gap. Ask the source that would actually record the thing: a CHANGELOG for version availability, a strict validator for whether a config field is honoured, a real `/metrics` scrape for exported names, `docker image inspect` for image config. Accepted-without-error and honoured are different things.
+
 Applies to your own claims too: don't restate a status you haven't checked this session. (2026-07-14: three findings in one audit — plus a whole batch — were already fixed, and I repeated "still open" in a PR body without checking.)
 
 ## Plan before non-trivial work
@@ -58,6 +60,14 @@ When a PR merge is blocked by branch protection ("base branch policy prohibits t
 
 Always `git add <specific paths>` then commit — never `git commit -a`/`-am`. In long-lived working trees (dotfiles especially) an unrelated pre-existing modification gets silently swept into a commit whose message doesn't describe it (happened 2026-07-09: a direnv zshrc change rode into a mise commit). Check `git status` before staging; if unexpected modifications exist, surface them instead of committing around them.
 
+## Stack defaults
+
+Python is `uv` (never pip or conda), src layout, ruff, pytest. GPU compute is Modal — L4 for cost, A10G fallback. Edge hosting is Cloudflare Workers and Pages, Terraform for infra, wrangler for deploys. Git hosting is GitHub via the `gh` CLI. Editor is Zed.
+
+**Secrets are always 1Password, never plaintext.** A project needing secret env vars gets a `.env.op` committed to the repo (it holds only `op://Vault/Item/field` references, no secrets) and runs as `op run --env-file .env.op -- <command>`. Create items with `op item create`; never ask Jason to paste an API key — point him at `op item edit`. Add `!.env.op` to the `.gitignore` exceptions.
+
+For anything shipped, prefer Anthropic APIs and avoid taking an OpenAI dependency — Jason has OpenRouter but not OpenAI, which matters when picking an embedding or utility API. (Reaching GPT through the `codex` CLI for reviews is separate and fine.)
+
 ## Reviewer names
 
 "Sol" means GPT Sol reached through the `codex` CLI — not a Claude model, and not an `Agent` subagent type; never substitute one. "Fable" is the Fable model and *is* `Agent(model: "fable")`. So "Sol and Fable" is one codex call plus one Agent call. Pairing strategy and round caps are in `~/Work/Git/CLAUDE.md`, which only loads for code work — these two names can come up anywhere.
@@ -67,6 +77,14 @@ Always `git add <specific paths>` then commit — never `git commit -a`/`-am`. I
 These instructions are global — loaded into every session of every tool from a single source-of-truth file managed by chezmoi. If you make a mistake the user has to correct, edit the chezmoi source (run `chezmoi source-path ~/.ai/AGENTS.md` to locate it) and then `chezmoi apply` to propagate to `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Do not edit the rendered copies directly — they get clobbered on next apply. End such suggestions with: "Update your AGENTS.md so you don't make that mistake again." This file grows by correction, not by speculation.
 
 <!-- claude-only:start -->
+## Harness behaviours that fail quietly
+
+**The sandbox's write allowlist covers the session's primary repo and `$TMPDIR`, not sibling repos.** `git add`/`git commit` in another repo under `~/Work/Git/` fails with `Unable to create '<repo>/.git/index.lock': Operation not permitted`; re-run that specific call with `dangerouslyDisableSandbox: true`. The asymmetry is what misleads: `Edit`/`Write` are not sandboxed the same way, so editing a file in the other repo succeeding is no evidence that committing it will. Same class as LAN hostnames not resolving and `gh` failing TLS — on "Operation not permitted" or a resolver error, suspect the sandbox before the command. Separately, a hook that denies `git commit` denies the *whole* Bash call, so a chained `git add … && git commit …` leaves nothing staged; stage in its own call.
+
+**`Agent` with `isolation: "worktree"` resolves against an ambient directory, not the repo your prompt names.** In a multi-repo session it will launch agents into the wrong repo's worktree — one recovered by cloning fresh and lost ~10 minutes, one died silently a minute in with no failure notification and looked "still running" for 3+ hours (2026-07-30). Prefer telling the agent to `gh repo clone` fresh into the scratchpad; if using worktree isolation anyway, make its first instruction "verify `git remote -v` matches <repo>, else clone fresh". And a silent background agent is not a working agent — `stat -L` its output file, because one that stopped growing is dead regardless of the missing notification.
+
+**`WebFetch` loses to bot protection more often than it admits.** Cloudflare Browser Rendering self-identifies as a bot by design, so a permissive `robots.txt` is not access — probe for the 403. eBay and several AU retailer search URLs time out or 404 outright. Drive Chrome instead, and screenshot when `get_page_text` returns junk.
+
 ## Where a fact goes
 
 Run the gates in order. First one that fires wins — stop there.
