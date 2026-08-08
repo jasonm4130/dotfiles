@@ -211,7 +211,7 @@
   "askUserQuestionTimeout": "5m",
   "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
-  "theme": "dark-daltonized",
+  "theme": "dark",
   "remoteControlAtStartup": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true
