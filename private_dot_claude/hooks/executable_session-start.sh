@@ -106,13 +106,18 @@ trap 'rm -f "$primer"' EXIT
       continue
     fi
 
-    active=""; active_n=0; misfiled=""; misfiled_n=0
+    active=""; active_n=0; misfiled=""; misfiled_n=0; scanned=0
     while IFS= read -r f; do
       [ -n "$f" ] || continue
       p="$d/$f"
       # Skip subdirectories: is_plan greps them, fails, and they'd be reported
       # as "misfiled" — which they are not.
       [ -f "$p" ] || continue
+      # Budget 25 FILES, not 25 entries. The ls|grep this replaced excluded
+      # directories before its head -25; capping first instead would let a
+      # dir-heavy plans/ exhaust the budget and hide every real plan below it.
+      scanned=$((scanned + 1))
+      [ "$scanned" -gt 25 ] && break
       if ! is_plan "$p"; then
         misfiled_n=$((misfiled_n + 1))
         [ "$misfiled_n" -le 6 ] && misfiled="${misfiled}${misfiled:+, }$f"
@@ -120,7 +125,7 @@ trap 'rm -f "$primer"' EXIT
         active_n=$((active_n + 1))
         active="${active}${active:+$'\n'}$f"
       fi
-    done < <(ls -1t "$d" 2>/dev/null | head -25)
+    done < <(ls -1t "$d" 2>/dev/null)
 
     if [ -n "$active" ]; then
       printf "\n**Active plans in \`%s\`:**\n" "$rel"
