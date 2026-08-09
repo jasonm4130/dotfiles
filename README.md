@@ -12,7 +12,7 @@ That command installs chezmoi, clones this repo to `~/.local/share/chezmoi`, run
 
 ## What's in here
 
-- **zsh** — `.zshrc`, `.zshenv`, `.zprofile`. Secrets come from `op-fast inject` via `~/.config/op/load-env.zsh`, sourced by both `.zprofile` (login) and `.zshrc` (non-login interactive). A normal tab is both, so the file carries an `_OP_ENV_LOADED` sentinel and injects once; child shells inherit the marker along with the vars. op-fast caches in the macOS Keychain, so persistence across shells and reboots is the Keychain's — the shell only re-exports from it (~30ms warm)
+- **zsh** — `.zshrc`, `.zshenv`, `.zprofile`. Secrets come from `op-fast inject` via `~/.config/op/load-env.zsh`, sourced by both `.zprofile` (login) and `.zshrc` (non-login interactive). A normal tab is both, so the file carries an `_OP_ENV_TRIED` guard and injects once. The guard is on *attempted*, not *succeeded* — otherwise a locked 1Password makes `.zshrc` retry what `.zprofile` just failed, warning twice — and it is deliberately **not** exported, so child shells re-ask and op-fast's TTL still gets to expire a rotated secret. op-fast caches in the macOS Keychain, so persistence across shells and reboots is the Keychain's — the shell only re-exports from it (~30ms warm)
 - **Starship** — prompt config (`~/.config/starship.toml`)
 - **Ghostty** — terminal config (`~/.config/ghostty/config`)
 - **Zed** — editor config (`~/.config/zed/`)
