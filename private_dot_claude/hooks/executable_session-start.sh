@@ -45,15 +45,60 @@ trap 'rm -f "$primer"' EXIT
     fi
   fi
 
-  for d in "$PROJECT/docs/plans" "$PROJECT/.claude/plans" "$HOME/.claude/plans"; do
-    if [ -d "$d" ]; then
-      # Most-recent first; -p marks dirs with a trailing / so archive/ is excluded
+  # A plan is a file with `# Task N` headings — the contract the SDD loop parses.
+  # Classifying before asserting matters: this block used to `ls` a directory and
+  # label whatever it found "Active plans", so a finished plan or a research doc
+  # filed in a plans dir was injected as live work into every session of that repo.
+  # Both halves of the claim are now checked — is it a plan, and is it still open.
+  is_plan() { grep -qE '^#{1,3} +Task +[0-9A-Za-z]' "$1" 2>/dev/null; }
+  is_closed() {
+    grep -qiE '^[[:space:]]*(>[[:space:]]*)?(\*\*)?Status(\*\*)?[[:space:]]*:?[[:space:]]*(\*\*)?[[:space:]]*(SHIPPED|COMPLETE[D]?|DONE|ABANDONED|SUPERSEDED)' "$1" 2>/dev/null
+  }
+
+  # Only repo dirs are classified. ~/.claude/plans is Claude Code's own store,
+  # written in its native plan format (no `# Task N`), so running the check there
+  # would flag every file it owns — noisier than the bug this fixes.
+  for spec in "$PROJECT/docs/plans:check" \
+              "$PROJECT/docs/superpowers/plans:check" \
+              "$PROJECT/.claude/plans:check" \
+              "$HOME/.claude/plans:native"; do
+    d="${spec%:*}"; mode="${spec##*:}"
+    [ -d "$d" ] || continue
+    rel="${d/#$HOME/~}"
+
+    # Most-recent first; -p marks dirs with a trailing / so archive/ is excluded
+    if [ "$mode" = native ]; then
       plans=$(ls -1tp "$d" 2>/dev/null | grep -v '/' | grep -v '^\.' | head -5)
       if [ -n "$plans" ]; then
-        rel="${d/#$HOME/~}"
         printf "\n**Active plans in \`%s\`:**\n" "$rel"
         printf "%s\n" "$plans" | sed 's/^/- /'
       fi
+      continue
+    fi
+
+    active=""; active_n=0; misfiled=""; misfiled_n=0
+    while IFS= read -r f; do
+      [ -n "$f" ] || continue
+      p="$d/$f"
+      if ! is_plan "$p"; then
+        misfiled_n=$((misfiled_n + 1))
+        [ "$misfiled_n" -le 6 ] && misfiled="${misfiled}${misfiled:+, }$f"
+      elif ! is_closed "$p" && [ "$active_n" -lt 5 ]; then
+        active_n=$((active_n + 1))
+        active="${active}${active:+$'\n'}$f"
+      fi
+    done < <(ls -1tp "$d" 2>/dev/null | grep -v '/' | grep -v '^\.' | head -25)
+
+    if [ -n "$active" ]; then
+      printf "\n**Active plans in \`%s\`:**\n" "$rel"
+      printf "%s\n" "$active" | sed 's/^/- /'
+    fi
+    # Surfaced, never acted on. Moving a file is the user's call, and a misfiled
+    # doc is a filing question ("is this research?"), not something to guess at.
+    if [ -n "$misfiled" ]; then
+      [ "$misfiled_n" -gt 6 ] && misfiled="${misfiled}, +$((misfiled_n - 6)) more"
+      printf "\n**Not plans, filed in \`%s\`:** %s. No \`# Task N\` headings, so these are not implementation plans. Offer once to move them somewhere truthful (e.g. \`docs/research/\`) — do NOT move, rename, or delete anything unprompted, and drop it if the user passes.\n" \
+        "$rel" "$misfiled"
     fi
   done
 
