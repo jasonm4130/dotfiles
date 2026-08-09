@@ -7,8 +7,8 @@ eval "$(mise activate zsh --shims)"
 # Google Cloud SDK — use mise-managed Python
 export CLOUDSDK_PYTHON="$(mise which python 2>/dev/null || echo /usr/bin/python3)"
 
-# MCP secrets via 1Password (login shell, so GUI launchers see env vars)
-# Uses op-fast for Keychain-cached secrets — see ~/.config/op-fast/config.toml
-if command -v op-fast >/dev/null 2>&1 && [ -r "$HOME/.config/op/env.tmpl" ]; then
-  eval "$(op-fast inject -i "$HOME/.config/op/env.tmpl" 2>/dev/null)" || true
-fi
+# MCP secrets via 1Password. Login shell, so GUI apps launched FROM A TERMINAL
+# inherit these; an app started from the Dock or Finder never sources this file
+# and sees none of them — use `op run` in that app's own config instead.
+# Shared with .zshrc; the sentinel inside keeps it to one inject per tab.
+[ -r "$HOME/.config/op/load-env.zsh" ] && source "$HOME/.config/op/load-env.zsh"
