@@ -7,6 +7,29 @@ set -uo pipefail
 
 PROJECT="${CLAUDE_PROJECT_DIR:-$PWD}"
 
+# settings.json references ~/.claude/handoff-statusline.mjs unconditionally, but
+# that file is written by the handoff plugin's setup.mjs and is NOT chezmoi-managed
+# — a fresh machine gets the reference without the file. Chezmoi cannot own it: the
+# plugin cache it is generated from does not exist until Claude Code has launched.
+# This hook runs at exactly the moment the cache is guaranteed present.
+#
+# CLAUDE_HOME_OVERRIDE (setup.mjs's documented test seam) sends the settings.json
+# patch to a throwaway dir, so only the version-agnostic wrapper is taken. Running
+# setup.mjs directly would compare its absolute desiredCommand against our tracked
+# tilde form, not match, and exit 1; --force would rewrite settings.json to an
+# absolute path and leave permanent chezmoi drift.
+if [ ! -f "$HOME/.claude/handoff-statusline.mjs" ]; then
+  op_setup=$(ls -d "$HOME"/.claude/plugins/cache/jasonm4130-claude-skills/handoff/*/scripts/setup.mjs \
+             2>/dev/null | sort -V | tail -1)
+  if [ -n "$op_setup" ]; then
+    op_tmp=$(mktemp -d)
+    CLAUDE_HOME_OVERRIDE="$op_tmp" node "$op_setup" >/dev/null 2>&1 || true
+    [ -f "$op_tmp/handoff-statusline.mjs" ] \
+      && cp "$op_tmp/handoff-statusline.mjs" "$HOME/.claude/handoff-statusline.mjs"
+    rm -rf "$op_tmp"
+  fi
+fi
+
 primer=$(mktemp)
 trap 'rm -f "$primer"' EXIT
 
@@ -66,9 +89,16 @@ trap 'rm -f "$primer"' EXIT
     [ -d "$d" ] || continue
     rel="${d/#$HOME/~}"
 
-    # Most-recent first; -p marks dirs with a trailing / so archive/ is excluded
+    # Most-recent first. `ls -1t` omits dotfiles already; the -f test drops
+    # subdirectories (archive/) without piping ls into grep.
     if [ "$mode" = native ]; then
-      plans=$(ls -1tp "$d" 2>/dev/null | grep -v '/' | grep -v '^\.' | head -5)
+      plans=""; plans_n=0
+      while IFS= read -r f; do
+        [ -n "$f" ] && [ -f "$d/$f" ] || continue
+        plans="${plans}${plans:+$'\n'}$f"
+        plans_n=$((plans_n + 1))
+        [ "$plans_n" -ge 5 ] && break
+      done < <(ls -1t "$d" 2>/dev/null)
       if [ -n "$plans" ]; then
         printf "\n**Active plans in \`%s\`:**\n" "$rel"
         printf "%s\n" "$plans" | sed 's/^/- /'
@@ -80,6 +110,9 @@ trap 'rm -f "$primer"' EXIT
     while IFS= read -r f; do
       [ -n "$f" ] || continue
       p="$d/$f"
+      # Skip subdirectories: is_plan greps them, fails, and they'd be reported
+      # as "misfiled" — which they are not.
+      [ -f "$p" ] || continue
       if ! is_plan "$p"; then
         misfiled_n=$((misfiled_n + 1))
         [ "$misfiled_n" -le 6 ] && misfiled="${misfiled}${misfiled:+, }$f"
@@ -87,7 +120,7 @@ trap 'rm -f "$primer"' EXIT
         active_n=$((active_n + 1))
         active="${active}${active:+$'\n'}$f"
       fi
-    done < <(ls -1tp "$d" 2>/dev/null | grep -v '/' | grep -v '^\.' | head -25)
+    done < <(ls -1t "$d" 2>/dev/null | head -25)
 
     if [ -n "$active" ]; then
       printf "\n**Active plans in \`%s\`:**\n" "$rel"

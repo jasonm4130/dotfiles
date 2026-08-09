@@ -126,6 +126,18 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/json-config-guard.js",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "PreCompact": [
       {
         "hooks": [
@@ -189,7 +201,8 @@
     "claude-design@jasonm4130-claude-skills": true,
     "codebase-design@jasonm4130-claude-skills": true,
     "writing-artifacts@jasonm4130-claude-skills": true,
-    "domain-modeling@jasonm4130-claude-skills": true
+    "domain-modeling@jasonm4130-claude-skills": true,
+    "claude-code-setup@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "jasonm4130-claude-skills": {

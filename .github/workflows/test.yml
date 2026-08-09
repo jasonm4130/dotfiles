@@ -23,3 +23,62 @@ jobs:
         # a directory arg (Node 20 scanned it), and Node 20 has no native glob
         # support (added in 21) — the shell must expand it.
         run: node --test tests/*.test.mjs
+
+  shellcheck:
+    # ubuntu-latest ships shellcheck; the macOS images list SwiftLint as their
+    # only linter, so a macOS job would die at `shellcheck: command not found`.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint shell scripts
+        # Selected by shebang, not by extension: dot_local/bin/executable_chezmoi-drift
+        # and dot_config/git/hooks/executable_pre-commit are bash with no .sh suffix.
+        # Excludes *.md (docs contain shebangs inside code fences) and *.tmpl
+        # (Go template directives are not shell — they're linted after rendering
+        # in the `render` job). The `tr` is required: BSD grep's -Z is not GNU's,
+        # so piping NUL-separated names is not portable.
+        run: |
+          git ls-files \
+            | grep -vE '\.(md|tmpl)$' \
+            | xargs grep -l -E '^#!.*(bash|/sh)' \
+            | tr '\n' '\0' \
+            | xargs -0 shellcheck --severity=warning
+
+  render:
+    # Renders every chezmoi template, which is the only way a broken .tmpl gets
+    # caught before it breaks `chezmoi apply` on a new machine. Runs on ubuntu
+    # for the same shellcheck reason as above — safe because no template in this
+    # repo branches on .chezmoi.os or .chezmoi.arch. If one ever does, this job
+    # must move to macOS and install shellcheck.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install chezmoi
+        # Install outside $HOME and publish via GITHUB_PATH: the steps below
+        # override HOME to isolate chezmoi's state, so anything under the real
+        # home would drop off PATH exactly when it is needed.
+        run: |
+          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$RUNNER_TEMP/bin"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Render all templates
+        # An isolated HOME keeps the runner's real home untouched. --promptDefaults
+        # answers .chezmoi.toml.tmpl's promptStringOnce calls non-interactively.
+        # apply --dry-run executes every template without writing anything; a
+        # template error exits non-zero and names the file and line.
+        run: |
+          export HOME="$(mktemp -d)"
+          chezmoi init --source="$GITHUB_WORKSPACE" --promptDefaults
+          chezmoi apply --dry-run --source="$GITHUB_WORKSPACE"
+      - name: Lint rendered script templates
+        # Positional args to execute-template are literal template strings, not
+        # paths — the stdin form is required or this lints the filename.
+        run: |
+          workspace="$GITHUB_WORKSPACE"
+          export HOME="$(mktemp -d)"
+          chezmoi init --source="$workspace" --promptDefaults
+          out="$(mktemp -d)"
+          for f in $(git -C "$workspace" ls-files '*.sh.tmpl'); do
+            chezmoi execute-template --source="$workspace" \
+              < "$workspace/$f" > "$out/$(basename "$f" .tmpl)"
+          done
+          shellcheck --severity=warning "$out"/*.sh
