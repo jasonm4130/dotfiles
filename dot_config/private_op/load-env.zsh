@@ -11,6 +11,13 @@
 #
 # TTLs are in ~/.config/op-fast/config.toml (4h default, 15m for stripe-secret).
 
+# Deliberately NOT exported. .zprofile and .zshrc run in the SAME process, so a
+# plain variable already suppresses the second call — which is the only thing
+# this needs to do. Exporting it would also suppress the call in every CHILD
+# shell, which is worse than redundant: the child would keep whatever the parent
+# resolved, indefinitely, and op-fast's TTL (4h default, 15m for stripe) would
+# never get a chance to expire a rotated secret. Let children re-ask; op-fast
+# answers from its Keychain cache in ~30ms and owns the freshness decision.
 [[ -n ${_OP_ENV_LOADED:-} ]] && return 0
 command -v op-fast >/dev/null 2>&1 || return 0
 [[ -r $HOME/.config/op/env.tmpl ]] || return 0
@@ -22,7 +29,7 @@ command -v op-fast >/dev/null 2>&1 || return 0
 local _op_env
 if _op_env=$(op-fast inject -i "$HOME/.config/op/env.tmpl" 2>/dev/null) && [[ -n $_op_env ]]; then
   eval "$_op_env"
-  export _OP_ENV_LOADED=1
+  typeset -g _OP_ENV_LOADED=1
 elif [[ -o interactive ]]; then
   # Only where a human will read it. A login shell feeding a GUI launcher must
   # stay quiet — its stderr goes to a system log nobody checks.
