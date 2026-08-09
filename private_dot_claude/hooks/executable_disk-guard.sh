@@ -94,15 +94,22 @@ case "${1:-check}" in
       #    disposable. Fail closed on every uncertainty.
       for repo in "$GIT_ROOT"/*/; do
         git -C "$repo" rev-parse --git-dir >/dev/null 2>&1 || continue
+        # Fields are separated by US (\037), NOT tab. Tab is an IFS *whitespace*
+        # character, so `IFS=$'\t' read` collapses a run of tabs into one
+        # delimiter — a detached worktree emits an empty ref, and every later
+        # field shifts left (ref picks up the locked flag, locked becomes
+        # empty). That mislabelled every detached worktree as "no local ref"
+        # and silently disabled the locked check for it. \037 is not IFS
+        # whitespace, so empty fields survive.
         git -C "$repo" worktree list --porcelain 2>/dev/null \
           | awk '
               /^worktree /{wt=$2; ref=""; locked=0}
               /^branch /{ref=$2}
               /^locked/{locked=1}
-              /^$/{if (wt != "") print wt "\t" ref "\t" locked; wt=""}
-              END{if (wt != "") print wt "\t" ref "\t" locked}
+              /^$/{if (wt != "") print wt "\037" ref "\037" locked; wt=""}
+              END{if (wt != "") print wt "\037" ref "\037" locked}
             ' \
-          | grep '/.claude/worktrees/' | while IFS=$'\t' read -r wt ref locked; do
+          | grep '/.claude/worktrees/' | while IFS=$'\037' read -r wt ref locked; do
               br=${ref#refs/heads/}
               [ "$locked" = "1" ] && { echo "  keep (locked): ${wt#$HOME/}"; continue; }
               [ -z "$br" ] && { echo "  keep (detached): ${wt#$HOME/}"; continue; }
