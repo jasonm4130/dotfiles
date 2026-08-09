@@ -11,6 +11,16 @@
 #
 # TTLs are in ~/.config/op-fast/config.toml (4h default, 15m for stripe-secret).
 
+# Recovery hatch, defined before the guard so it exists even on the early return.
+# The guard below is on *attempted*, which means a shell that started while
+# 1Password was locked will not retry on its own — unlocking afterwards would
+# otherwise leave that terminal permanently without secrets and no obvious way
+# back except opening a new tab. This is the way back, and the warning names it.
+op-env-reload() {
+  unset _OP_ENV_TRIED
+  source "$HOME/.config/op/load-env.zsh"
+}
+
 # Guard on ATTEMPTED, not on succeeded: a locked 1Password fails, and gating on
 # success would let .zshrc retry what .zprofile just failed — two auth attempts
 # and the same warning printed twice into one terminal.
@@ -40,7 +50,7 @@ if _op_env=$(op-fast inject -i "$HOME/.config/op/env.tmpl" 2>/dev/null) && [[ -n
 elif [[ -o interactive ]]; then
   # Only where a human will read it. A login shell feeding a GUI launcher must
   # stay quiet — its stderr goes to a system log nobody checks.
-  print -u2 "⚠ 1Password not loaded — unlock the app or run \`op signin\`"
+  print -u2 "⚠ 1Password not loaded — unlock the app (or \`op signin\`), then run \`op-env-reload\`"
 fi
 
 unset _op_env

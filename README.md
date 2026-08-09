@@ -36,7 +36,7 @@ That is the full set of chezmoi-managed agents — `find private_Library/private
 
 1. Open 1Password → Settings → Developer → enable **"Integrate with 1Password CLI"** + **Touch ID**
 2. Sign in to the App Store (so `mas` entries install)
-3. Open a new terminal — secrets resolve via `op-fast inject` at shell start. If 1Password is locked you get a warning on stderr and the vars stay unset; a login shell with no tty stays silent by design. **GUI apps launched from the Dock or Finder never source `.zprofile`** and so see none of these — give such an app its own `op run` wrapper rather than exporting globally with `launchctl setenv`, which would publish the secrets to every process on the machine
+3. Open a new terminal — secrets resolve via `op-fast inject` at shell start. If 1Password is locked you get one warning on stderr and the vars stay unset; unlock it and run **`op-env-reload`** to recover that shell without opening a new one. A login shell with no tty stays silent by design. **GUI apps launched from the Dock or Finder never source `.zprofile`** and so see none of these — give such an app its own `op run` wrapper rather than exporting globally with `launchctl setenv`, which would publish the secrets to every process on the machine
 
 ## Fanfare voice notifications
 
