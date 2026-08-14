@@ -154,7 +154,8 @@ case "${1:-sweep}" in
     ;;
 
   sweep)
-    total=0; failed=0
+    # No counters here: the reporting loop below is fed by a pipe, so it runs in
+    # a subshell and any increment would be discarded at the closing `done`.
     # Always-loaded instruction files, plus every memory index.
     {
       printf '%s\n' "$HOME/.claude/CLAUDE.md" "$HOME/.ai/AGENTS.md" "$HOME/.codex/AGENTS.md"
