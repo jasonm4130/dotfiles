@@ -37,7 +37,7 @@ The `codex-plan-review` skill's own description carries the gates and when to fi
 - **Pair reviewers on different tasks, not the same task.** Two reviewers agreeing is weak evidence, and cross-vendor pairs are the *most* correlated. The value comes from distinct lenses — one on strategy and adversarial pressure, one on factual grounding against sources. Corollary: don't send a reviewer an artifact it helped write.
 - **Exception — adversarial planning on an unsolved problem is generation, not corroboration.** Two reviewers *arguing opposite positions* on the same open problem produce candidate plans to weigh, not a claim two models endorsed, so the correlation argument doesn't bite. Reach for it on trigger 1 above; it is what unstuck `transcoder` on 2026-07-25 after ordinary sessions went round in circles. n=1 — a play worth trying when stuck, not a default, and never evidence the resulting plan is right.
 
-**Reviewer names.** "Sol" means GPT Sol reached through the `codex` CLI — not a Claude model and not an `Agent` subagent type; do not substitute one. "Fable" is the Fable model and *is* `Agent(model: "fable")`. So "Sol and Fable" is one codex call plus one Agent call. For convergence loops longer than the plugin's cap, drive `codex exec` directly — keeping its one non-negotiable rule: the reviewer never sees your self-assessment.
+**Reviewer names.** Defined in `~/.claude/CLAUDE.md`, which loads alongside this file. For convergence loops longer than the plugin's cap, drive `codex exec` directly — keeping its one non-negotiable rule: the reviewer never sees your self-assessment.
 
 ## Log noteworthy outcomes to the Obsidian vault
 

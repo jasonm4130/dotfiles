@@ -38,7 +38,7 @@ Do this in both directions:
 
 **A confident negative needs a positive proof.** Before writing "X is absent / impossible / unsupported", name the command that would demonstrate it *positively* and run that instead. A self-authored grep pattern cannot prove absence — anything you failed to enumerate reads as missing (2026-07-25: grepped a Dockerfile for six directives, omitted `HEALTHCHECK`, and wrote "distroless images cannot carry a healthcheck" into five files across two repos; the first deploy printed `(healthy)`). Silence in reference docs is not evidence either — it is routinely just a documentation gap. Ask the source that would actually record the thing: a CHANGELOG for version availability, a strict validator for whether a config field is honoured, a real `/metrics` scrape for exported names, `docker image inspect` for image config. Accepted-without-error and honoured are different things.
 
-Applies to your own claims too: don't restate a status you haven't checked this session. (2026-07-14: three findings in one audit — plus a whole batch — were already fixed, and I repeated "still open" in a PR body without checking.)
+Applies to your own claims too: don't restate a status you haven't checked this session.
 
 ## Plan before non-trivial work
 
@@ -58,7 +58,7 @@ When a PR merge is blocked by branch protection ("base branch policy prohibits t
 
 ## Git: stage explicitly, never `commit -a`
 
-Always `git add <specific paths>` then commit — never `git commit -a`/`-am`. In long-lived working trees (dotfiles especially) an unrelated pre-existing modification gets silently swept into a commit whose message doesn't describe it (happened 2026-07-09: a direnv zshrc change rode into a mise commit). Check `git status` before staging; if unexpected modifications exist, surface them instead of committing around them.
+Always `git add <specific paths>` then commit — never `git commit -a`/`-am`. In long-lived working trees (dotfiles especially) an unrelated pre-existing modification gets silently swept into a commit whose message doesn't describe it. Check `git status` before staging; if unexpected modifications exist, surface them instead of committing around them.
 
 ## Stack defaults
 
@@ -83,7 +83,7 @@ These instructions are global — loaded into every session of every tool from a
 
 **`Agent` with `isolation: "worktree"` resolves against an ambient directory, not the repo your prompt names.** In a multi-repo session it will launch agents into the wrong repo's worktree — one recovered by cloning fresh and lost ~10 minutes, one died silently a minute in with no failure notification and looked "still running" for 3+ hours (2026-07-30). Prefer telling the agent to `gh repo clone` fresh into the scratchpad; if using worktree isolation anyway, make its first instruction "verify `git remote -v` matches <repo>, else clone fresh". And a silent background agent is not a working agent — `stat -L` its output file, because one that stopped growing is dead regardless of the missing notification.
 
-**`WebFetch` loses to bot protection more often than it admits.** Cloudflare Browser Rendering self-identifies as a bot by design, so a permissive `robots.txt` is not access — probe for the 403. eBay and several AU retailer search URLs time out or 404 outright. Drive Chrome instead, and screenshot when `get_page_text` returns junk.
+**`WebFetch` loses to bot protection more often than it admits.** Cloudflare Browser Rendering self-identifies as a bot by design, so a permissive `robots.txt` is not access — probe for the 403. Drive Chrome instead, and screenshot when `get_page_text` returns junk.
 
 ## Where a fact goes
 
@@ -95,7 +95,7 @@ Run the gates in order. First one that fires wins — stop there.
 3. **Is it more than ~3 ordered steps, or does it only matter in one part of the tree?** → a **skill**, or `.claude/rules/` with `paths:` frontmatter if it is a constraint rather than a workflow.
 4. **Did you decide it, or did Claude learn it?** A standard you impose → gate 5. An observation about how the world is (a build quirk, a network fact, a one-time correction) → gate 6.
 5. → **CLAUDE.md**, if all three hold: it applies to nearly every task in its scope; removing it would cause real mistakes; the file stays under 200 lines. `@`-imports buy no budget — they load in full at launch. Scope: every project → `~/.claude/CLAUDE.md`; this tree → the nearest `CLAUDE.md`.
-6. → **memory**, in the store for the repo it concerns. There is exactly one store per repo, `~/.claude/projects/<sanitized-repo-root>/memory/`, and all worktrees and subdirectories of that repo share it. **There is no global store** — `~/.claude/memory/` is not auto-loaded by anything; a session only sees it if it reads the file by hand. Do not route cross-repo facts there expecting them to surface.
+6. → **memory**, in the store for the repo it concerns. There is exactly one store per repo, `~/.claude/projects/<sanitized-repo-root>/memory/`, and all worktrees and subdirectories of that repo share it. **There is no global store** — `~/.claude/memory/` is not auto-loaded by anything; a session only sees it if it reads the file by hand. Do not route cross-repo facts there expecting them to surface. A cross-repo *harness* observation therefore has nowhere else to go and stays in `~/.claude/CLAUDE.md` — that is why `## Harness behaviours` lives there rather than being a gate-6 violation. An unscoped file in `~/.claude/rules/` does load for every project and is the alternate home if that section ever outgrows the global; glob-`paths:` scoping at user level is the part that is broken.
    Only `MEMORY.md` is injected at session start, capped at **200 lines or 25 KB, whichever comes first** — past that the remainder is dropped from context (the model is told, you are not). So index lines cost exactly what CLAUDE.md lines cost, and they are the scarcest budget here. Topic files beside the index are genuinely lazy: they load only when the model chooses to read one, which makes the index line's wording the thing that decides whether the memory is ever used.
 
 Nothing fired? The fact is not worth persisting. Say it in chat and let it go.
