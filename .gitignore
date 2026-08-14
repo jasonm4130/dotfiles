@@ -19,3 +19,5 @@ secrets/
 # Brewfile lockfile (we use --no-lock)
 Brewfile.lock.json
 /.claude/handoffs/
+# Agent worktrees live here; they are checkouts, never content to commit.
+/.claude/worktrees/

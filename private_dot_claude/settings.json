@@ -134,6 +134,11 @@
             "type": "command",
             "command": "node ~/.claude/hooks/json-config-guard.js",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/claude-md-guard.sh hook",
+            "timeout": 5
           }
         ]
       }
