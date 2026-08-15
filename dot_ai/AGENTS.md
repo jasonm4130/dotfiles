@@ -28,6 +28,14 @@ When a check ran, quote its actual output line. If no check could run in this en
 
 This governs *reporting*, not verification: don't add verification passes you weren't asked for.
 
+## Reading a thing is not running it
+
+Inspection, review and a green type-check share one blind spot: they confirm the code *says* the right thing, never that it *does* anything. Before calling a script, command or config working, execute it once against the real target — the cheapest end-to-end path, not a unit of it. Exercising a setup path is not exercising the thing.
+
+The failure mode is specific and it looks like success right up to the moment it runs. (2026-08-15: `buildbox.sh` shipped after self-review, a clean `clippy -D warnings` and a cross-provider diff review, having only ever been run via `--setup`. Its first actual workload died immediately on an ENTRYPOINT inherited from the production image, then again on a gitignored directory the compiler needs present. Both were one command away the whole time.)
+
+The same applies to diagnosis, where it costs more: a mechanism assembled from strong circumstantial evidence is still a guess, and running the thing is usually cheaper than the argument for why you needn't. That day a GHCR 403 acquired an airtight private-storage-quota story — 557 private versions, no packages SKU in billing, a Free-tier 500 MB cap, a timeline that fit — and a plain re-run of the job, changing nothing, succeeded. The "fix" would have deleted 375 package versions to no effect. When a cheap probe can discriminate, probe before you theorise, and never let a theory authorise a destructive action it hasn't earned.
+
 ## A reported finding is a hypothesis — verify it against HEAD before acting
 
 Anything *told* to you about the code — an audit finding, a review comment, a triage doc, a stale TODO, a claim in your own earlier message — is a hypothesis about a codebase that has since moved. Before planning or dispatching work on it, reproduce it against the current code. One `grep` or one console command is the whole cost.
