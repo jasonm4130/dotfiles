@@ -76,6 +76,10 @@ Python is `uv` (never pip or conda), src layout, ruff, pytest. GPU compute is Mo
 
 For anything shipped, prefer Anthropic APIs and avoid taking an OpenAI dependency — Jason has OpenRouter but not OpenAI, which matters when picking an embedding or utility API. (Reaching GPT through the `codex` CLI for reviews is separate and fine.)
 
+## Never file on someone else's tracker unprompted
+
+Opening, commenting on, or reopening an issue or PR on a third-party repo is outward-facing and public. Draft it, show Jason, wait for an explicit go — approval to *investigate* a bug is never approval to *file* it. When drafting, follow `~/.ai/writing-issues.md`: what maintainers actually act on, how to rank your evidence, and what to send when a clean reproduction is impossible.
+
 ## Reviewer names
 
 "Sol" means GPT Sol reached through the `codex` CLI — not a Claude model, and not an `Agent` subagent type; never substitute one. "Fable" is the Fable model and *is* `Agent(model: "fable")`. So "Sol and Fable" is one codex call plus one Agent call. Pairing strategy and round caps are in `~/Work/Git/CLAUDE.md`, which only loads for code work — these two names can come up anywhere.
