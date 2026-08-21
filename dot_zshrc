@@ -52,3 +52,9 @@ eval "$(starship init zsh)"
 # direnv — per-directory env (e.g. ~/Work/Git/unifi secrets via 1Password/op-fast)
 # Must stay after prompt setup (starship) per direnv docs.
 eval "$(direnv hook zsh)"
+
+# zoxide — frecency-ranked cd. --cmd cd shadows the builtin: `cd <substring>`
+# jumps to the highest-ranked match, `cd <real/path>` behaves as before, and
+# `cdi` opens the fzf picker. Must stay last — it wraps whatever `cd` is at
+# the point it loads, so anything above that redefines cd would clobber it.
+eval "$(zoxide init zsh --cmd cd)"

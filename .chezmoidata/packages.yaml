@@ -33,6 +33,7 @@ brew:
   - expat
   - ffmpeg
   - findutils
+  - fzf
   - gawk
   - gdbm
   - gdrive
@@ -86,6 +87,7 @@ brew:
   - vhs
   - weasyprint
   - wget
+  - zoxide
   - zsh
   casks:
   - 1password
