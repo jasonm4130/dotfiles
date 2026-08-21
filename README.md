@@ -12,6 +12,8 @@ That command installs chezmoi, clones this repo to `~/.local/share/chezmoi`, run
 
 ### Recovering from an interrupted bootstrap
 
+**Re-running the bootstrap one-liner does not update an existing checkout.** `chezmoi init` only clones when it finds no git repo in the source directory (`chezmoi init --help`, step 1), so on a machine that already has `~/.local/share/chezmoi` it silently leaves the old revision in place — including whichever broken script you were trying to replace. Use `chezmoi update` (git pull + apply) to move an existing checkout forward.
+
 `get.chezmoi.io` installs to `./bin` relative to the current directory (`BINDIR="${BINDIR:-bin}"`) and `exec`s that binary directly, so it is never added to `PATH` — and the `.zshrc` line that would add `~/.local/bin` does not exist until apply finishes. If the bootstrap dies partway, `chezmoi` is therefore "command not found" even though the binary is sitting in `~/bin/chezmoi`. Homebrew is installed by then and `chezmoi` is declared in `packages.yaml`, so take the permanent copy and resume:
 
 ```bash
