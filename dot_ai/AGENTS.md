@@ -97,6 +97,8 @@ These instructions are global — loaded into every session of every tool from a
 
 **`WebFetch` loses to bot protection more often than it admits.** Cloudflare Browser Rendering self-identifies as a bot by design, so a permissive `robots.txt` is not access — probe for the 403. Drive Chrome instead, and screenshot when `get_page_text` returns junk.
 
+**Never drive a native GUI by screen coordinate.** `osascript ... click at {x, y}` and `screencapture -R` address the *screen*, not an application, and focus does not survive between Bash calls — an `activate` in one call is gone by the next, so the click lands in whatever app came forward. There is no dry run and no undo. On 2026-08-17 two clicks meant for a Bambu Studio settings tab landed instead on its print flow, sending a 3 h job to a physical printer, and then in a Gmail draft; the second also dumped the draft's body, including a password, into tool output. Read state from files rather than pixels, and when only the GUI can answer, ask the user to click. This binds hardest on anything connected to hardware, money, or a send button — but coordinate clicking has no safe case, because you cannot know what is under the cursor. Full-screen `screencapture` is the same failure in miniature: it grabs whatever is open, so capture a single window's bounds or nothing.
+
 ## Where a fact goes
 
 Run the gates in order. First one that fires wins — stop there.
