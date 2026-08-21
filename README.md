@@ -5,7 +5,7 @@ Personal macOS dev environment, managed with [chezmoi](https://chezmoi.io).
 ## Bootstrap
 
 ```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply jasonm4130
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" init --apply jasonm4130
 ```
 
 That command installs chezmoi, clones this repo to `~/.local/share/chezmoi`, runs the install scripts (Homebrew, Brewfile, macOS defaults), and writes all dotfiles.
@@ -14,13 +14,14 @@ That command installs chezmoi, clones this repo to `~/.local/share/chezmoi`, run
 
 **Re-running the bootstrap one-liner does not update an existing checkout.** `chezmoi init` only clones when it finds no git repo in the source directory (`chezmoi init --help`, step 1), so on a machine that already has `~/.local/share/chezmoi` it silently leaves the old revision in place — including whichever broken script you were trying to replace. Use `chezmoi update` (git pull + apply) to move an existing checkout forward.
 
-`get.chezmoi.io` installs to `./bin` relative to the current directory (`BINDIR="${BINDIR:-bin}"`) and `exec`s that binary directly, so it is never added to `PATH` — and the `.zshrc` line that would add `~/.local/bin` does not exist until apply finishes. If the bootstrap dies partway, `chezmoi` is therefore "command not found" even though the binary is sitting in `~/bin/chezmoi`. Homebrew is installed by then and `chezmoi` is declared in `packages.yaml`, so take the permanent copy and resume:
+**`chezmoi: command not found` after a partial bootstrap.** `get.chezmoi.io` defaults to a *relative* install dir (`BINDIR="${BINDIR:-bin}"`; the `/lb` variant only changes that default to `.local/bin`, still relative) and `exec`s the binary directly, so it never reaches `PATH`. The bootstrap command above pins it with `-b "$HOME/.local/bin"`, but a machine bootstrapped before that fix has it under whatever directory the one-liner ran in — usually `~/bin/chezmoi`. Don't reach for Homebrew to recover: `01-homebrew.sh` is the step most likely to have failed, so `brew` may not exist either. Locate the bootstrap binary and invoke it by absolute path:
 
 ```bash
-eval "$(/opt/homebrew/bin/brew shellenv)"
-brew install chezmoi
-chezmoi update && chezmoi apply -v
+find ~ -maxdepth 3 -name chezmoi -type f 2>/dev/null
+~/bin/chezmoi update -v      # adjust to whatever the find printed
 ```
+
+Once `brew` is working, `chezmoi` is declared in `packages.yaml`, so `brew bundle` installs the permanent copy at `/opt/homebrew/bin/chezmoi` and the bootstrap binary can be deleted.
 
 **Never re-run any of this under `sudo`.** macOS sudoers keeps `HOME`, so root-owned files land in the real home directory — chezmoi's own config among them, after which every non-root run fails with `invalid config: ...: permission denied`, an error naming neither sudo nor ownership. The first script chezmoi runs now refuses to start as root, but an already-poisoned machine needs `sudo chown -R "$(id -u):$(id -g)"` over `~/.config/chezmoi`, `~/.local/share/chezmoi`, `~/.cache/chezmoi`, plus anything `find ~ -maxdepth 3 -user root` turns up.
 
