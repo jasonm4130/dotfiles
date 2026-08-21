@@ -10,6 +10,18 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply jasonm4130
 
 That command installs chezmoi, clones this repo to `~/.local/share/chezmoi`, runs the install scripts (Homebrew, Brewfile, macOS defaults), and writes all dotfiles.
 
+### Recovering from an interrupted bootstrap
+
+`get.chezmoi.io` installs to `./bin` relative to the current directory (`BINDIR="${BINDIR:-bin}"`) and `exec`s that binary directly, so it is never added to `PATH` — and the `.zshrc` line that would add `~/.local/bin` does not exist until apply finishes. If the bootstrap dies partway, `chezmoi` is therefore "command not found" even though the binary is sitting in `~/bin/chezmoi`. Homebrew is installed by then and `chezmoi` is declared in `packages.yaml`, so take the permanent copy and resume:
+
+```bash
+eval "$(/opt/homebrew/bin/brew shellenv)"
+brew install chezmoi
+chezmoi update && chezmoi apply -v
+```
+
+**Never re-run any of this under `sudo`.** macOS sudoers keeps `HOME`, so root-owned files land in the real home directory — chezmoi's own config among them, after which every non-root run fails with `invalid config: ...: permission denied`, an error naming neither sudo nor ownership. The first script chezmoi runs now refuses to start as root, but an already-poisoned machine needs `sudo chown -R "$(id -u):$(id -g)"` over `~/.config/chezmoi`, `~/.local/share/chezmoi`, `~/.cache/chezmoi`, plus anything `find ~ -maxdepth 3 -user root` turns up.
+
 ## What's in here
 
 - **zsh** — `.zshrc`, `.zshenv`, `.zprofile`. Secrets come from `op-fast inject` via `~/.config/op/load-env.zsh`, sourced by both `.zprofile` (login) and `.zshrc` (non-login interactive). A normal tab is both, so the file carries an `_OP_ENV_TRIED` guard and injects once. The guard is on *attempted*, not *succeeded* — otherwise a locked 1Password makes `.zshrc` retry what `.zprofile` just failed, warning twice — and it is deliberately **not** exported, so child shells re-ask and op-fast's TTL still gets to expire a rotated secret. op-fast caches in the macOS Keychain, so persistence across shells and reboots is the Keychain's — the shell only re-exports from it (~30ms warm)
