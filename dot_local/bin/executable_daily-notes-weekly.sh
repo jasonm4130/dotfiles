@@ -24,7 +24,7 @@ set -u
 
 CLAUDE=${DAILY_NOTES_CLAUDE:-}
 GIT_ROOT=~/Work/Git
-VAULT=~/Documents/"Obsidian Vault"
+VAULT=~/Documents/Main
 DAILY_DIR="$VAULT/Daily"
 TEMPLATE="$VAULT/_templates/Daily.md"
 LOG=~/Library/Logs/daily-notes-weekly.log
