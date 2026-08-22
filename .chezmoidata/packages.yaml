@@ -83,7 +83,6 @@ brew:
   - shellcheck
   - starship
   - subversion
-  - terraform-linters/tap/tflint
   - uv
   - vhs
   - weasyprint
@@ -96,6 +95,8 @@ brew:
   - android-studio
   - audacity
   - balenaetcher
+  - bambu-connect
+  - bambu-studio
   - claude-code
   - codex
   - discord
@@ -122,6 +123,7 @@ brew:
   - signal
   - spotify
   - steam
+  - terraform-linters/tap/tflint
   - tailscale-app
   - textmate
   - visual-studio-code
