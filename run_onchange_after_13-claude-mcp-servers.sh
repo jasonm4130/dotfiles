@@ -31,6 +31,21 @@ ensure() {
 
 # API keys are pulled from the macOS keychain at launch time — the $(...) and
 # "$USER" are single-quoted so they stay literal here and evaluate per-launch.
+#
+# The keychain entries themselves are NOT created here — seeding them is a
+# one-time manual step per machine, because chezmoi runs before 1Password may be
+# unlocked and a failed unlock would abort the apply chain. 1Password is the
+# source of truth; the keychain is a launch-time cache that avoids the Touch ID
+# prompt an MCP server (no login shell, no tty) could never answer. To seed a
+# fresh machine:
+#
+#   security add-generic-password -U -a "$USER" -s exa-api-key \
+#     -w "$(op read 'op://Private/Exa API Key/credential')"
+#   security add-generic-password -U -a "$USER" -s tavily-api-key \
+#     -w "$(op read 'op://Private/tavily-api/credential')"
+#
+# Without them the server still registers and reports Connected, then fails on
+# first use — so verify with `security find-generic-password -a "$USER" -s <svc> -w`.
 ensure exa    -- sh -c 'EXA_API_KEY=$(security find-generic-password -a "$USER" -s exa-api-key -w) npx -y exa-mcp-server'
 ensure tavily -- sh -c 'TAVILY_API_KEY=$(security find-generic-password -a "$USER" -s tavily-api-key -w) npx -y tavily-mcp'
 ensure social --transport http https://social-mcp.jasonmatthew.dev/mcp
