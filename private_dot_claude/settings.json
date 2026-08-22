@@ -122,6 +122,10 @@
             "type": "command",
             "command": "~/.claude/hooks/session-start.sh",
             "timeout": 6
+          },
+          {
+            "type": "command",
+            "command": "~/.local/bin/claude-stay-awake.sh"
           }
         ]
       }
