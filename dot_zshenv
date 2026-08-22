@@ -4,6 +4,24 @@
 # Ensure homebrew bin is on PATH so tools like `op` resolve from any shell context
 [[ ":$PATH:" != *":/opt/homebrew/bin:"* ]] && export PATH="/opt/homebrew/bin:$PATH"
 
+# mise shims — makes mise-managed toolchains (cargo, node, python, uv-adjacent
+# tooling) resolve in NON-interactive shells: `zsh -c`, git hooks, agent tool
+# calls, anything that never reads .zshrc. Interactive shells get the real
+# binaries instead, because `mise activate` in .zshrc prepends the actual
+# install dirs on top of these — shims are the fallback, not the primary path.
+#
+# Upstream documents `mise activate zsh --shims` in .zprofile for this, but
+# .zprofile is login shells only and the gap here is non-login non-interactive,
+# which only this file reaches. The static prepend is also the form that keeps
+# the promise at the top of this file: `--shims` would fork a mise process on
+# every single zsh invocation, while a PATH edit costs nothing until a shim is
+# actually called.
+#
+# Consequence to know: `python3` in a non-interactive zsh now resolves to mise's
+# Python, not /usr/bin/python3 — matching what interactive shells already do.
+[[ -d "$HOME/.local/share/mise/shims" && ":$PATH:" != *":$HOME/.local/share/mise/shims:"* ]] \
+  && export PATH="$HOME/.local/share/mise/shims:$PATH"
+
 # Default editor — GUI Zed; --wait blocks CLI callers until the buffer is closed.
 # (git keeps its own editor via .gitconfig core.editor=nvim.)
 export EDITOR="zed --wait"
