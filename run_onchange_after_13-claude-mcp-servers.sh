@@ -36,20 +36,63 @@ ensure() {
 # one-time manual step per machine, because chezmoi runs before 1Password may be
 # unlocked and a failed unlock would abort the apply chain. 1Password is the
 # source of truth; the keychain is a launch-time cache that avoids the Touch ID
-# prompt an MCP server (no login shell, no tty) could never answer. To seed a
-# fresh machine:
+# prompt an MCP server (no login shell, no tty) could never answer.
 #
-#   security add-generic-password -U -a "$USER" -s exa-api-key \
-#     -w "$(op read 'op://Private/Exa API Key/credential')"
-#   security add-generic-password -U -a "$USER" -s tavily-api-key \
-#     -w "$(op read 'op://Private/tavily-api/credential')"
+# To seed a fresh machine, pipe the command into `security -i` instead of
+# passing the key as an argument. The pipe is load-bearing, not style: with
+# `-w "$(op read ...)"` the plaintext key sits in security's argv, where any
+# process running as this user can read it out of `ps` for the duration of the
+# call. Apple says as much in the tool's own usage text — "Use of the -p or -w
+# options is insecure." Driven over stdin the argv is just `security -i`
+# (verified with `ps -o args=` on a live process), and `op read` only ever takes
+# an op:// reference, never a secret.
 #
-# Without them the server still registers and reports Connected, then fails on
-# first use — so verify with `security find-generic-password -a "$USER" -s <svc> -w`.
+#   printf 'add-generic-password -U -a "%s" -s exa-api-key -w "%s"\n' \
+#     "$USER" "$(op read 'op://Private/Exa API Key/credential')" | security -i
+#   printf 'add-generic-password -U -a "%s" -s tavily-api-key -w "%s"\n' \
+#     "$USER" "$(op read 'op://Private/tavily-api/credential')" | security -i
+#
+# `security -i` re-tokenises the line and strips backslashes even inside quotes
+# (spaces, $, and quotes survive). If a key ever contains a backslash, pass it
+# as `-X "$(printf '%s' "$key" | xxd -p | tr -d '\n')"` instead of -w.
+#
+# Without the entries the server still registers and reports Connected, then
+# fails on first use. Check presence like this — the >/dev/null redirect is
+# load-bearing and must NOT be removed, because the bare command prints the key
+# to your terminal:
+#
+#   security find-generic-password -a "$USER" -s <service> -w >/dev/null 2>&1 \
+#     && echo SET || echo UNSET
+#
+# The `find-generic-password ... -w` inside the two ensure lines below is the
+# one place the naked form is correct: its output is captured into an env var
+# for the server process and never reaches a terminal. Leave it as it is.
 ensure exa    -- sh -c 'EXA_API_KEY=$(security find-generic-password -a "$USER" -s exa-api-key -w) npx -y exa-mcp-server'
 ensure tavily -- sh -c 'TAVILY_API_KEY=$(security find-generic-password -a "$USER" -s tavily-api-key -w) npx -y tavily-mcp'
 ensure social --transport http https://social-mcp.jasonmatthew.dev/mcp
 ensure chrome-devtools -- npx chrome-devtools-mcp@latest
 ensure claude-design --transport http https://api.anthropic.com/v1/design/mcp
+
+# OAuth-backed servers need one interactive login per machine. Registration
+# above only records the URL; the token lives in the login keychain under
+# service "Claude Code-credentials", key "mcpOAuth", and is NOT reproducible by
+# chezmoi. `claude mcp list` reports these as "! Needs authentication" until you
+# run, in an interactive terminal (the flow opens a browser and waits on a tty):
+#
+#   claude mcp login social
+#   claude mcp login plugin:cloudflare:cloudflare-bindings
+#   claude mcp login plugin:cloudflare:cloudflare-builds
+#   claude mcp login plugin:cloudflare:cloudflare-observability
+#   claude mcp login plugin:cloudflare:cloudflare-api
+#
+# Add `--no-browser` over SSH to print the URL and paste the redirect back.
+# The stored entries carry no refresh token, so expiry means re-running these.
+#
+# The plugin:cloudflare:* and plugin:context7:* servers are NOT registered here
+# — they ship inside their plugins' own .mcp.json and are reproduced by the
+# `enabledPlugins` / `extraKnownMarketplaces` blocks in ~/.claude/settings.json.
+# The three "claude.ai Google *" servers are account-level connectors
+# (`claude mcp get` reports `Scope: claude.ai config`); they follow the Anthropic
+# account, not this machine, and nothing here can or should recreate them.
 
 echo "✅ Claude user-scope MCP servers reconciled"

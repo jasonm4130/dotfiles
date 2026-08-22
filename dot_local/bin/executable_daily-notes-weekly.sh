@@ -22,7 +22,7 @@
 
 set -u
 
-CLAUDE=/Users/jasonmatthew/.local/bin/claude
+CLAUDE=${DAILY_NOTES_CLAUDE:-}
 GIT_ROOT=~/Work/Git
 VAULT=~/Documents/"Obsidian Vault"
 DAILY_DIR="$VAULT/Daily"
@@ -38,6 +38,33 @@ mkdir -p "$(dirname "$LOG")"
 
 log()    { print -r -- "$@" >> "$LOG"; }
 notify() { osascript -e "display notification \"$2\" with title \"$1\"" 2>/dev/null; }
+
+# --- preflight -------------------------------------------------------------
+# The vault and the claude CLI are the two things that did not survive the
+# 2026-08 laptop migration. Without either, every day in the window turns into
+# a write that fails while the run still reports success -- a weekly job that
+# quietly does nothing. Refuse to start instead.
+if [ -z "$CLAUDE" ]; then
+  for _c in /opt/homebrew/bin/claude ~/.local/bin/claude; do
+    [ -x "$_c" ] && { CLAUDE=$_c; break; }
+  done
+  [ -z "$CLAUDE" ] && CLAUDE=$(command -v claude 2>/dev/null)
+fi
+
+if [ "$DRY" = "1" ]; then
+  [ -d "$DAILY_DIR" ] || log "WARNING: vault daily dir missing: $DAILY_DIR (dry run continues)"
+else
+  if [ ! -d "$DAILY_DIR" ]; then
+    log "FATAL: vault daily dir missing: $DAILY_DIR -- nothing was written."
+    notify "daily-notes weekly FAILED" "vault missing: $DAILY_DIR"
+    exit 1
+  fi
+  if [ -z "$CLAUDE" ] || [ ! -x "$CLAUDE" ]; then
+    log "FATAL: claude CLI not found (override with DAILY_NOTES_CLAUDE)."
+    notify "daily-notes weekly FAILED" "claude CLI not found"
+    exit 1
+  fi
+fi
 
 ordinal() {
   local n=$1
@@ -62,7 +89,7 @@ header_date() {  # YYYY-MM-DD -> "Wednesday 17th June 2026"
 # Write a resolved daily-note skeleton (Templater syntax can't run headless).
 # $2 is the single Notes-section bullet to seed (default placeholder "-").
 ensure_note() {
-  local day=$1 notes_seed=${2:--}
+  local day=$1 notes_seed=${2:--} rc
   local note="$DAILY_DIR/$day - Daily.md"
   [ -f "$note" ] && return 0
   cat > "$note" <<EOF
@@ -111,6 +138,11 @@ $notes_seed
 - **Weight**: kg (Target: 85kg)
 - **Training Notes**:
 EOF
+  rc=$?
+  if [ $rc -ne 0 ]; then
+    log "[$day] FAILED to write note skeleton: $note"
+    return 1
+  fi
   log "[$day] created note skeleton"
 }
 
@@ -182,8 +214,11 @@ while [ $i -lt "$WINDOW" ]; do
     elif [ "$DRY" = "1" ]; then
       log "[$day] no commits; DRY -> would create stub"
     else
-      ensure_note "$day" "- No local commits across local repos today (note backfilled from git history for completeness)."
-      log "[$day] no commits -> stub created"
+      if ensure_note "$day" "- No local commits across local repos today (note backfilled from git history for completeness)."; then
+        log "[$day] no commits -> stub created"
+      else
+        FAILED+=("$day")
+      fi
     fi
     continue
   fi
@@ -194,7 +229,7 @@ while [ $i -lt "$WINDOW" ]; do
     continue
   fi
 
-  ensure_note "$day"
+  ensure_note "$day" || { FAILED+=("$day"); continue; }
   prompt="$PROMPT_HEADER
 
 TARGET NOTE: $note
