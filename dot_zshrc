@@ -27,6 +27,23 @@ export PATH="$PATH:$HOME/.cache/lm-studio/bin"
 # tab both run and the sentinel makes the second a no-op.
 [ -r "$HOME/.config/op/load-env.zsh" ] && source "$HOME/.config/op/load-env.zsh"
 
+# ghcr auth for Homebrew bottle downloads. Anonymous pulls send `Bearer QQ==`
+# (base64 of "A") and get rate-limited hard: a large bottle starts fast, then
+# collapses to single-digit KB/s partway through, which reads as a hung download
+# rather than a quota. Authenticated pulls are not limited that way.
+#
+# ghcr wants `Bearer <base64-of-token>`. `Basic <user:token>` returns 401 and a
+# raw unencoded token returns 403, so HOMEBREW_DOCKER_REGISTRY_TOKEN (which brew
+# renders as `Bearer $VALUE`) is the right variable and the value must be
+# pre-encoded -- HOMEBREW_DOCKER_REGISTRY_BASIC_AUTH_TOKEN builds the `Basic`
+# form and cannot work here.
+#
+# Sourced from gh's own Keychain entry rather than 1Password: it is the same
+# credential, so copying it into a second store would only add a thing to rotate.
+# Unset when gh is absent or logged out, and brew falls back to anonymous.
+command -v gh >/dev/null 2>&1 && \
+  export HOMEBREW_DOCKER_REGISTRY_TOKEN="$(gh auth token 2>/dev/null | tr -d '\n' | base64 | tr -d '\n')"
+
 # Aliases
 alias zshconfig="code ~/.zshrc"
 alias ohmyzsh="code ~/.oh-my-zsh"
