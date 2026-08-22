@@ -1,9 +1,31 @@
+{{/* chezmoi:template:left-delimiter="[[#" right-delimiter="#]]" */}}
 # Resolved by `op inject` at shell startup. Contains only references, never secrets.
-export TAVILY_API_KEY="op://Private/tavily-api/credential"
-export TURBO_TOKEN="op://Private/turbo/token"
-export TURBO_TEAM="op://Private/turbo/team"
-export TURBO_REMOTE_CACHE_SIGNATURE_KEY="op://Private/turbo/signature"
-export MOONSHOT_API_KEY="op://Private/Moonshot AI/credential"
+#
+# The line above retargets chezmoi's own template delimiters and is stripped from
+# the rendered file. It has to be here: this source is a double-`.tmpl` so the
+# destination keeps its `.tmpl` suffix for op-fast, which means chezmoi renders it
+# as a Go template first — and the `{{ … }}` below is 1Password syntax, which Go
+# would otherwise try to execute (`function "op" not defined`).
+#
+# Format is `NAME={{ reference }}` — no `export`, no quotes. ~/.config/op/load-env.zsh
+# reads the injected output line by line and assigns with `typeset`; it does not
+# eval it, because op-fast substitutes secret values as raw unquoted text, and a
+# `"`, `$$` or `;` inside a value would otherwise be parsed as shell syntax. With
+# no wrapper around the value there is nothing to strip, so nothing can be
+# stripped wrongly — a secret that genuinely begins and ends with `"` keeps both.
+#
+# The braces are load-bearing, and so are the spaces inside them. op-fast's own
+# scan for unenclosed references does not terminate them correctly here: a file
+# with N unquoted `NAME=<scheme>...` lines fails the whole inject with
+# `op inject returned 2(N-1) values for (N-1) references`. One such line injects
+# fine, which is how this format looked correct until it was tried with all five.
+# The enclosed form resolves every reference, including `Moonshot AI`, whose item
+# name contains a space. Do not "simplify" the braces away.
+TAVILY_API_KEY={{ op://Private/tavily-api/credential }}
+TURBO_TOKEN={{ op://Private/turbo/token }}
+TURBO_TEAM={{ op://Private/turbo/team }}
+TURBO_REMOTE_CACHE_SIGNATURE_KEY={{ op://Private/turbo/signature }}
+MOONSHOT_API_KEY={{ op://Private/Moonshot AI/credential }}
 
 # STRIPE_SECRET_KEY is deliberately not exported at startup.
 #
