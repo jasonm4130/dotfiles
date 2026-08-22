@@ -13,6 +13,7 @@ brew:
   - hudochenkov/sshpass
   - jasonm4130/tap
   - mingrammer/flog
+  - terraform-linters/tap
   formulae:
   - age
   - automake
@@ -82,7 +83,7 @@ brew:
   - shellcheck
   - starship
   - subversion
-  - tflint
+  - terraform-linters/tap/tflint
   - uv
   - vhs
   - weasyprint
@@ -103,15 +104,8 @@ brew:
   - firefox@developer-edition
   - flutter
   - flux-app
-  - font-fira-code-nerd-font
-  - font-hack-nerd-font
-  - font-jetbrains-mono-nerd-font
-  - font-lato
-  - font-lobster
   - font-monaspace
   - font-monaspice-nerd-font
-  - font-roboto
-  - font-symbols-only-nerd-font
   - ghostty
   - google-chrome
   - hot

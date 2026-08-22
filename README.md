@@ -23,6 +23,8 @@ find ~ -maxdepth 3 -name chezmoi -type f 2>/dev/null
 
 Once `brew` is working, `chezmoi` is declared in `packages.yaml`, so `brew bundle` installs the permanent copy at `/opt/homebrew/bin/chezmoi` and the bootstrap binary can be deleted.
 
+**One dead package stops the entire chain.** `brew bundle` attempts every entry and then exits non-zero if *any* failed, and `02-brew-bundle.sh` runs under `set -euo pipefail` — so a single formula that has left homebrew-core takes down not just the bundle but scripts 04 through 13 with it. The symptom is a machine with most of its packages, no Oh My Zsh, no macOS defaults and no launchd agents, and a `.zshrc` that errors on every line that `eval`s a missing tool. `chezmoi state dump | grep runAt` shows how far the chain actually got; the fix is to correct `packages.yaml` and re-apply, not to re-bootstrap. This is how `tflint` broke it in August 2026, and it will happen again the next time a formula moves to a tap.
+
 **Never re-run any of this under `sudo`.** macOS sudoers keeps `HOME`, so root-owned files land in the real home directory — chezmoi's own config among them, after which every non-root run fails with `invalid config: ...: permission denied`, an error naming neither sudo nor ownership. The first script chezmoi runs now refuses to start as root, but an already-poisoned machine needs `sudo chown -R "$(id -u):$(id -g)"` over `~/.config/chezmoi`, `~/.local/share/chezmoi`, `~/.cache/chezmoi`, plus anything `find ~ -maxdepth 3 -user root` turns up.
 
 ## What's in here
