@@ -16,6 +16,7 @@ brew:
   - terraform-linters/tap
   formulae:
   - age
+  - ansible
   - automake
   - bats-core
   - bison

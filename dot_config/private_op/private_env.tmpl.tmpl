@@ -5,12 +5,19 @@ export TURBO_TEAM="op://Private/turbo/team"
 export TURBO_REMOTE_CACHE_SIGNATURE_KEY="op://Private/turbo/signature"
 export MOONSHOT_API_KEY="op://Private/Moonshot AI/credential"
 
-# STRIPE_SECRET_KEY is intentionally NOT loaded at startup: its 15m op-fast TTL
-# would trigger a 1Password prompt every ~15 min on new shells. Load on demand:
-#   export STRIPE_SECRET_KEY=$(op-fast read op://Private/stripe-secret/credential)
+# STRIPE_SECRET_KEY is deliberately not exported at startup.
+#
+# NOTE: op-fast does NOT honour shell comments. It scans this file for secret
+# references by scheme and resolves every one it finds, commented or not, so a
+# commented-out example still gets fetched and cached on every inject. That is
+# why the reference below is written with its scheme broken; restore the normal
+# two-slash prefix when you type the command, and do not "tidy" this back into
+# a literal URI — doing so silently re-adds the secret to the startup set.
+#
+#   export STRIPE_SECRET_KEY=$(op-fast read op:<slash><slash>Private/stripe-secret/credential)
 
 # CLOUDFLARE_API_TOKEN is intentionally NOT loaded at startup: an exported token
 # takes precedence over `wrangler login` OAuth. The cloudflare MCP servers OAuth
 # separately (type:http, no env) and are unaffected. Load on demand only for
 # non-interactive REST/CI use:
-#   export CLOUDFLARE_API_TOKEN=$(op-fast read op://Private/cloudflare-api/credential)
+#   export CLOUDFLARE_API_TOKEN=$(op-fast read op:<slash><slash>Private/cloudflare-api/credential)

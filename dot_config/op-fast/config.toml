@@ -1,6 +1,16 @@
-# 4h default TTL ≈ one working session; bounds revoked-secret exposure
-default_ttl = "4h"
-
-[ttl]
-# Stripe is the high-value secret in this set — tighter window
-"op://Private/stripe-secret/*" = "15m"
+# 24h TTL for everything, with no per-item overrides. Both parts are deliberate.
+#
+# op-fast refreshes EVERY expired entry in its store on any `inject`, including
+# refs that do not appear in the template it was handed. Measured 2026-08-22:
+# with only `stripe-secret` expired and absent from env.tmpl, an inject of
+# env.tmpl took 6629ms, re-fetched stripe alone, and prompted for Touch ID.
+#
+# So a short per-item TTL does not buy tighter exposure for that item — the item
+# is cached either way. It buys a prompt for whoever next starts a shell. The
+# old 15m stripe override therefore taxed every terminal tab opened more than
+# 15 minutes after the last one, which is what "1Password asks me constantly"
+# actually was.
+#
+# If a secret genuinely must not sit in a warm cache, keep it OUT of the store
+# (read it with plain `op`, not `op-fast`) rather than giving it a short TTL.
+default_ttl = "24h"
