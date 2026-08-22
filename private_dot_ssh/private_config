@@ -1,0 +1,12 @@
+# Managed by chezmoi. Private key material lives in 1Password, never on disk:
+# the agent serves signatures over this socket, so `~/.ssh` holds no id_* files
+# and a lost laptop leaks nothing. Requires 1Password → Settings → Developer →
+# "Use the SSH agent"; without it the socket is absent and ssh falls back to
+# the system agent, which has no keys — the failure reads as "Permission
+# denied (publickey)" and names neither 1Password nor the toggle.
+Host *
+  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+
+Host github.com
+  User git
+  # 1Password prompts for Touch ID on first use per session, then caches.

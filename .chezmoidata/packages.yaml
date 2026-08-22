@@ -149,8 +149,6 @@ brew:
   - editorconfig.editorconfig
   - esbenp.prettier-vscode
   - gencer.html-slim-scss-css-class-completion
-  - github.copilot
-  - github.copilot-chat
   - gitlab.gitlab-workflow
   - mrmlnc.vscode-scss
   - ms-azuretools.vscode-containers
@@ -165,5 +163,4 @@ brew:
   - stylelint.vscode-stylelint
   - tyriar.lorem-ipsum
   - unifiedjs.vscode-mdx
-  - valentjn.vscode-ltex
   - wix.vscode-import-cost
