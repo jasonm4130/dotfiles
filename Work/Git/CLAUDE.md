@@ -26,7 +26,7 @@ Don't delegate at all when the task is trivial, tightly coupled to conversation 
 
 **Route Fable to planning and review, not to taking over implementation** — trigger 5 is the highest-value one, and if you conflate "Fable implemented it" with "a second pass caught it" you credit the model for what the second look did. Escalation means a new session or subagent at the higher tier, not raising effort in place — changing effort mid-conversation invalidates the prompt cache, so pick a level at the start of a session and hold it.
 
-**Effort is not a lever on the `Agent` tool.** `Workflow`'s `agent()` takes `opts.effort`; the plain `Agent` tool does not, so model tier is the only dial there. Inside a Workflow, prefer holding the model and lowering effort — Anthropic documents `low` as the fit for subagents working from a settled spec.
+**Effort on the `Agent` tool comes from the agent definition, not the call.** `Workflow`'s `agent()` takes `opts.effort`; the plain `Agent` tool has no per-call effort param, but agent frontmatter now supports `effort:` (low–max, overrides session effort for that agent) — so pin model + effort in `~/.claude/agents/*.md` for recurring worker roles, and use per-dispatch `model` alone for one-offs. Prefer holding the model and lowering effort — Anthropic documents `low` as the fit for subagents working from a settled spec.
 
 ## Cross-provider review: run codex-review without being asked
 
