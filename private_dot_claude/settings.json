@@ -184,7 +184,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "node ~/.claude/handoff-statusline.mjs"
+    "command": "~/.local/bin/claude-statusline"
   },
   "enabledPlugins": {
     "commit-commands@claude-plugins-official": true,
