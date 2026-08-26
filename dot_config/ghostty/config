@@ -3,7 +3,7 @@
 
 # Font: Monaspace Xenon — the terminal wears the slab-serif cut
 # (typewriter feel); Zed runs Neon with Radon italics.
-font-family = "Monaspace Xenon"
+font-family = "MonaspiceXe Nerd Font"
 font-family = "Symbols Nerd Font Mono"
 font-feature = calt
 font-feature = liga

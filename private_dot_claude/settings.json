@@ -76,9 +76,7 @@
   },
   "model": "fable",
   "disabledMcpjsonServers": [],
-  "skillOverrides": {
-    "deep-research": "off"
-  },
+  "skillOverrides": {},
   "hooks": {
     "PreToolUse": [
       {
@@ -178,7 +176,6 @@
     "rust-analyzer-lsp@claude-plugins-official": true,
     "cloudflare@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
-    "deep-dive@jasonm4130-claude-skills": true,
     "handoff@jasonm4130-claude-skills": true,
     "session-retro@jasonm4130-claude-skills": true,
     "workflow-model-guard@jasonm4130-claude-skills": true,
