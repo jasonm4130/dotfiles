@@ -7,29 +7,6 @@ set -uo pipefail
 
 PROJECT="${CLAUDE_PROJECT_DIR:-$PWD}"
 
-# settings.json references ~/.claude/handoff-statusline.mjs unconditionally, but
-# that file is written by the handoff plugin's setup.mjs and is NOT chezmoi-managed
-# — a fresh machine gets the reference without the file. Chezmoi cannot own it: the
-# plugin cache it is generated from does not exist until Claude Code has launched.
-# This hook runs at exactly the moment the cache is guaranteed present.
-#
-# CLAUDE_HOME_OVERRIDE (setup.mjs's documented test seam) sends the settings.json
-# patch to a throwaway dir, so only the version-agnostic wrapper is taken. Running
-# setup.mjs directly would compare its absolute desiredCommand against our tracked
-# tilde form, not match, and exit 1; --force would rewrite settings.json to an
-# absolute path and leave permanent chezmoi drift.
-if [ ! -f "$HOME/.claude/handoff-statusline.mjs" ]; then
-  op_setup=$(ls -d "$HOME"/.claude/plugins/cache/jasonm4130-claude-skills/handoff/*/scripts/setup.mjs \
-             2>/dev/null | sort -V | tail -1)
-  if [ -n "$op_setup" ]; then
-    op_tmp=$(mktemp -d)
-    CLAUDE_HOME_OVERRIDE="$op_tmp" node "$op_setup" >/dev/null 2>&1 || true
-    [ -f "$op_tmp/handoff-statusline.mjs" ] \
-      && cp "$op_tmp/handoff-statusline.mjs" "$HOME/.claude/handoff-statusline.mjs"
-    rm -rf "$op_tmp"
-  fi
-fi
-
 primer=$(mktemp)
 trap 'rm -f "$primer"' EXIT
 
@@ -62,7 +39,7 @@ trap 'rm -f "$primer"' EXIT
         if mkdir -p "$(dirname "$ack_file")" 2>/dev/null \
            && printf '%s|%s\n' "$review_after" "$today" > "$ack_file" 2>/dev/null; then
           printf '\n**Agent config is due a review.** `%s` is tuned for `%s` and its review_after date (%s) has passed. Offer the user a config sweep against current model guidance (plan: docs/plans/2026-07-28-opus5-agent-config-alignment.md); do not start one unprompted. Bump the marker when done.\n' \
-            "${agents_file/#$HOME/~}" "${tuned_for:-unknown}" "$review_after"
+            "${agents_file/#$HOME/\~}" "${tuned_for:-unknown}" "$review_after"
         fi
       fi
     fi
@@ -87,7 +64,7 @@ trap 'rm -f "$primer"' EXIT
               "$HOME/.claude/plans:native"; do
     d="${spec%:*}"; mode="${spec##*:}"
     [ -d "$d" ] || continue
-    rel="${d/#$HOME/~}"
+    rel="${d/#$HOME/\~}"
 
     # Most-recent first. `ls -1t` omits dotfiles already; the -f test drops
     # subdirectories (archive/) without piping ls into grep.

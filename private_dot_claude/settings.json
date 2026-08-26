@@ -1,7 +1,5 @@
 {
   "env": {
-    "HANDOFF_EFFECTIVE_MAX_TOKENS": "400000",
-    "HANDOFF_THRESHOLD_PCT": "999",
     "CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE": "1",
     "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB": "1",
     "TZ": "Australia/Brisbane",
@@ -69,15 +67,11 @@
       "Bash(for:*)",
       "Bash(cd:*)",
       "Bash(pwd:*)",
-      "WebFetch(domain:zed.dev)",
       "mcp__exa__web_search_exa",
       "mcp__exa__web_fetch_exa",
       "mcp__tavily__tavily_search"
     ],
-    "deny": [
-      "Skill(deep-research)",
-      "Skill(deep-research *)"
-    ],
+    "deny": [],
     "defaultMode": "auto"
   },
   "model": "fable",
@@ -88,7 +82,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
         "hooks": [
           {
             "type": "command",

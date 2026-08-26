@@ -19,21 +19,23 @@ if [ ! -t 0 ]; then
   hook_input=$(timeout 1 cat || true)
 fi
 
-python3 <<EOF
-import json, os, sys, datetime
+# The hook payload is passed on stdin and read with json.load — never
+# interpolated into the Python source. Interpolating it corrupted every payload
+# containing escapes or newlines (logging trigger "unknown") and raised
+# SyntaxError on unbalanced quotes.
+printf '%s' "$hook_input" | CMP_TS="$ts" CMP_PROJECT="$PROJECT" CMP_GIT_REV="$git_rev" python3 -c '
+import json, os, sys
 log_path = os.path.expanduser("~/.claude/compaction-log.jsonl")
 entry = {
-    "timestamp": "$ts",
-    "project": "$PROJECT",
-    "git_rev": "$git_rev",
+    "timestamp": os.environ.get("CMP_TS", ""),
+    "project": os.environ.get("CMP_PROJECT", ""),
+    "git_rev": os.environ.get("CMP_GIT_REV", ""),
     "trigger": "unknown",
 }
-hi = """$hook_input"""
 try:
-    if hi.strip():
-        d = json.loads(hi)
-        entry["trigger"] = d.get("matcher") or d.get("trigger") or "unknown"
-        entry["session_id"] = d.get("session_id", "")
+    d = json.load(sys.stdin)
+    entry["trigger"] = d.get("matcher") or d.get("trigger") or "unknown"
+    entry["session_id"] = d.get("session_id", "")
 except Exception:
     pass
 
@@ -46,10 +48,10 @@ print(json.dumps({
         "additionalContext": (
             "⚠️ Compaction is about to summarize this conversation. "
             "If there is reasoning, plans, or in-flight context worth keeping past the summary, "
-            "write it to a durable file in this repo NOW (e.g. \`docs/plans/<topic>.md\` or "
-            "\`notes/precompact-<short-summary>.md\`). After compaction, that file will be the "
+            "write it to a durable file in this repo NOW (e.g. `docs/plans/<topic>.md` or "
+            "`notes/precompact-<short-summary>.md`). After compaction, that file will be the "
             "only durable trace of pre-compact state."
         )
     }
 }))
-EOF
+'

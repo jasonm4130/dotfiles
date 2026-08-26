@@ -3,9 +3,11 @@
 /**
  * Secrets Scan Hook
  *
- * PreToolUse hook that intercepts Edit/Write/MultiEdit/NotebookEdit calls
- * and blocks if the new content contains common secret patterns (API keys,
- * tokens, private keys). Pattern matches the lsp-first-guard.js style.
+ * PreToolUse hook that intercepts Edit/Write/MultiEdit/NotebookEdit/Bash
+ * calls and blocks if the new content contains common secret patterns (API
+ * keys, tokens, private keys). Pattern matches the lsp-first-guard.js style.
+ * Bash is scanned because a heredoc or redirect writes a file without the
+ * write tools ever being involved.
  *
  * Prevents the leaked-key horror stories where an agent accidentally writes
  * a real API key into a tracked file (the kind of mistake that costs $200 or
@@ -65,7 +67,7 @@ function main(raw) {
 
   const { tool_name, tool_input } = input;
 
-  if (!['Edit', 'Write', 'MultiEdit', 'NotebookEdit'].includes(tool_name)) {
+  if (!['Edit', 'Write', 'MultiEdit', 'NotebookEdit', 'Bash'].includes(tool_name)) {
     process.exit(0);
   }
 
@@ -79,6 +81,10 @@ function main(raw) {
     content = edits.map(e => e.new_string || '').join('\n');
   } else if (tool_name === 'NotebookEdit') {
     content = tool_input?.new_source || '';
+  } else if (tool_name === 'Bash') {
+    // A heredoc/redirect through Bash writes a file without touching the write
+    // tools, so the command line gets the same scan as file content.
+    content = tool_input?.command || '';
   }
 
   if (!content) {

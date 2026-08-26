@@ -28,7 +28,17 @@ GIT_ROOT="${DISK_GUARD_GIT_ROOT:-$HOME/Work/Git}"
 free_gb() {
   # Available 1K-blocks (BSD/macOS df col 4) → GB. On any failure print a big
   # number so callers fail open (never warn, never block).
-  df -k "$HOME" 2>/dev/null | tail -1 | awk '{ printf "%d", $4/1024/1024 }' 2>/dev/null || echo 999999
+  # df can also SUCCEED with output this awk cannot parse (a wrapped long device
+  # name, a foreign locale, a non-POSIX layout), leaving $free empty or 0 — which
+  # blocked every cargo build on a healthy disk. -P forces the one-line POSIX
+  # layout, and anything non-numeric falls back to the fail-open sentinel.
+  local free
+  # awk prints nothing unless field 4 is actually a number — otherwise it would
+  # print "0" for a missing field, which is numeric, survives the guard below,
+  # and reads as a full disk. A genuine 0 still blocks; garbage must not.
+  free=$(df -Pk "$HOME" 2>/dev/null | tail -1 | awk '$4 ~ /^[0-9]+$/ { printf "%d", $4/1024/1024 }' 2>/dev/null)
+  case "$free" in ''|*[!0-9]*) free=999999 ;; esac
+  printf '%s' "$free"
 }
 
 case "${1:-check}" in

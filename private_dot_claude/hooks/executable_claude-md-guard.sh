@@ -47,9 +47,18 @@ MEM_ACT_BYTES=22528                     # 22KB — act before the cap bites
 LONG_LINE="${CMG_LONG_LINE:-400}"
 ROOTS="${CMG_ROOTS:-$HOME/Work/Git}"
 
-red() { printf '\033[31m%s\033[0m\n' "$1"; }
-yel() { printf '\033[33m%s\033[0m\n' "$1"; }
-grn() { printf '\033[32m%s\033[0m\n' "$1"; }
+# Colour only for a terminal. Findings are also embedded in the hook's JSON
+# output, where ANSI escapes would be noise (and check_file's output is captured
+# via command substitution, so $1 alone decides nothing).
+if [ -t 1 ]; then
+  red() { printf '\033[31m%s\033[0m\n' "$1"; }
+  yel() { printf '\033[33m%s\033[0m\n' "$1"; }
+  grn() { printf '\033[32m%s\033[0m\n' "$1"; }
+else
+  red() { printf '%s\n' "$1"; }
+  yel() { printf '%s\n' "$1"; }
+  grn() { printf '%s\n' "$1"; }
+fi
 
 # check_file <path> — prints findings, returns count of hard failures
 check_file() {
@@ -115,7 +124,7 @@ case "${1:-sweep}" in
   file)
     f="${2:?usage: claude-md-guard.sh file <path>}"
     b=$(wc -c < "$f" 2>/dev/null | tr -d ' ')
-    echo "${f/#$HOME/~}  (${b}B)"
+    echo "${f/#$HOME/\~}  (${b}B)"
     out=$(check_file "$f" 2>/dev/null)
     if [ -n "$out" ]; then printf '%s\n' "$out"; else grn "  ok"; fi
     ;;
@@ -126,7 +135,16 @@ case "${1:-sweep}" in
     case "$(basename "${p:-}")" in
       CLAUDE.md|AGENTS.md|CLAUDE.local.md|MEMORY.md)
         out=$(check_file "$p" 2>/dev/null)
-        [ -n "$out" ] && printf 'claude-md-guard on %s:\n%s\n' "${p/#$HOME/~}" "$out"
+        # Plain stdout from a PostToolUse hook is discarded by the harness —
+        # findings only reach the model through hookSpecificOutput.
+        [ -n "$out" ] && printf 'claude-md-guard on %s:\n%s\n' "${p/#$HOME/\~}" "$out" \
+          | CMG_EVENT=PostToolUse python3 -c '
+import json, os, sys
+print(json.dumps({"hookSpecificOutput": {
+    "hookEventName": os.environ["CMG_EVENT"],
+    "additionalContext": sys.stdin.read().strip(),
+}}))
+'
         ;;
     esac
     exit 0
@@ -168,7 +186,7 @@ case "${1:-sweep}" in
       out=$(check_file "$f" 2>/dev/null)
       if [ -n "$out" ]; then
         b=$(wc -c < "$f" | tr -d ' ')
-        printf '\n%s (%sB)\n%s\n' "${f/#$HOME/~}" "$b" "$out"
+        printf '\n%s (%sB)\n%s\n' "${f/#$HOME/\~}" "$b" "$out"
       fi
     done
     echo
