@@ -80,7 +80,7 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "opus",
+  "model": "fable",
   "disabledMcpjsonServers": [],
   "skillOverrides": {
     "deep-research": "off"
@@ -226,7 +226,7 @@
       }
     }
   },
-  "effortLevel": "high",
+  "effortLevel": "low",
   "autoCompactWindow": 400000,
   "askUserQuestionTimeout": "5m",
   "tui": "fullscreen",
@@ -234,5 +234,10 @@
   "theme": "dark",
   "remoteControlAtStartup": true,
   "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "modelSettings": {
+    "claude-fable-5": {
+      "effortLevel": "medium"
+    }
+  }
 }
