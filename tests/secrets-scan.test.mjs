@@ -37,8 +37,8 @@ function expectDeny(res, reasonSubstring) {
 
 // --- Allow paths ---
 
-test('non-write tool → allow (exit 0, no output)', () => {
-  const res = runHook({ tool_name: 'Bash', tool_input: { command: `echo ${FAKE_ANTHROPIC}` } });
+test('non-covered tool → allow (exit 0, no output)', () => {
+  const res = runHook({ tool_name: 'Glob', tool_input: { pattern: `**/${FAKE_ANTHROPIC}` } });
   assert.equal(res.status, 0);
   assert.equal(res.stdout, '');
 });
@@ -90,6 +90,17 @@ test('MultiEdit with secret in one edit → deny', () => {
     },
   });
   expectDeny(res, 'Private key header');
+});
+
+test('Bash command with secret → deny', () => {
+  const res = runHook({ tool_name: 'Bash', tool_input: { command: `echo ${FAKE_ANTHROPIC} > .env` } });
+  expectDeny(res, 'Anthropic API key');
+});
+
+test('Bash clean command → allow', () => {
+  const res = runHook({ tool_name: 'Bash', tool_input: { command: 'git status' } });
+  assert.equal(res.status, 0);
+  assert.equal(res.stdout, '');
 });
 
 // --- Fail-closed: protection hook blocks when it cannot verify safety ---
