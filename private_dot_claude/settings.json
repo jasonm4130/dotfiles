@@ -88,15 +88,6 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Grep",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ~/.claude/hooks/lsp-first-guard.js"
-          }
-        ]
-      },
-      {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit",
         "hooks": [
           {
