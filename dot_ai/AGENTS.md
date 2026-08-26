@@ -89,6 +89,16 @@ Opening, commenting on, or reopening an issue or PR on a third-party repo is out
 These instructions are global — loaded into every session of every tool from a single source-of-truth file managed by chezmoi. If you make a mistake the user has to correct, edit the chezmoi source (run `chezmoi source-path ~/.ai/AGENTS.md` to locate it) and then `chezmoi apply` to propagate to `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Do not edit the rendered copies directly — they get clobbered on next apply. End such suggestions with: "Update your AGENTS.md so you don't make that mistake again." This file grows by correction, not by speculation.
 
 <!-- claude-only:start -->
+## Skill selection and currency (Claude Code only)
+
+Formerly the superpowers-core SessionStart kernel; moved here 2026-08-26 so the rule lives in one place.
+
+1. Invoke a skill only when its description is a closer, more specific match than acting directly AND the work is non-trivial (multi-step, irreversible, or touches product source). Specificity wins: when two skills match, the narrower one; owned workflow skills beat generic ones. A concrete user instruction in the current turn overrides any skill for that concern. When invoking, announce "Using [skill] to [purpose]".
+2. When authoring skills, every description carries a negative scope ("do NOT use for…").
+3. If an answer turns on something that changes over time (versions, prices, releases, "current/latest", anything plausibly past the cutoff): never answer from memory — verify first. One load-bearing fact → a single search; a multi-angle / "state of X" question → the built-in /deep-research (tier its workers in the prompt). State verified-vs-remembered when load-bearing.
+4. A factual gap you can close → verify it; an intent you'd only guess at → ask one question.
+5. Offer session controls at the right moment, at most one, one line, without stalling: /rewind (undo uncommitted multi-file work), /branch (two substantive paths, expensive context), /fork (tangent needing this context), /goal <condition restated as a command whose output must appear, plus a turn bound> (outcome-bounded work).
+
 ## Delegate volume, keep judgment (Claude Code only)
 
 On a Fable or Opus session the main loop is a conductor, not a laborer. Push work that doesn't need main-loop judgment to subagents: broad search → `Explore` (sonnet), multi-file mechanical edits or well-specified implementation → a tiered worker (opus/sonnet — per-dispatch `model`, or a pinned agent definition in `~/.claude/agents/`). Keep in the main loop: single-file edits, anything tightly coupled to conversation context, latency-sensitive steps, and all judgment calls. Delegation is for volume, not for decisions. (Tiering mechanics and the don't-delegate caveats live in `~/Work/Git/CLAUDE.md` — this rule is only the default posture.)
