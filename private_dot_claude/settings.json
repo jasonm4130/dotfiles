@@ -204,15 +204,8 @@
       }
     }
   },
+  "outputStyle": "Concise",
   "effortLevel": "high",
-  "autoCompactWindow": 400000,
-  "askUserQuestionTimeout": "5m",
-  "tui": "fullscreen",
-  "skipWorkflowUsageWarning": true,
-  "theme": "dark",
-  "remoteControlAtStartup": true,
-  "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true,
   "modelSettings": {
     "claude-fable-5": {
       "effortLevel": "medium"
@@ -221,5 +214,12 @@
       "effortLevel": "high"
     }
   },
-  "outputStyle": "Concise"
+  "autoCompactWindow": 400000,
+  "askUserQuestionTimeout": "5m",
+  "tui": "fullscreen",
+  "skipWorkflowUsageWarning": true,
+  "theme": "dark",
+  "remoteControlAtStartup": true,
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true
 }
