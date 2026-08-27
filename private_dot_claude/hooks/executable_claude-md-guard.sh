@@ -31,7 +31,8 @@
 # Modes:
 #   sweep              audit every CLAUDE.md/AGENTS.md/MEMORY.md under the roots
 #   file <path>        check one file, human-readable
-#   hook               PostToolUse(Edit|Write): warn on stdin's file. Never blocks.
+#   hook               PostToolUse(Edit|Write|MultiEdit|Bash): warn on the guarded
+#                      files named in stdin. Never blocks.
 #   drift              chezmoi source vs rendered copies
 #
 # Fail-open everywhere: a buggy guard must never break a session.
@@ -130,23 +131,53 @@ case "${1:-sweep}" in
     ;;
 
   hook)
-    # PostToolUse(Edit|Write). Warn only — never block an edit.
-    p=$(python3 -c "import json,sys; d=json.load(sys.stdin); ti=d.get('tool_input',{}); print(ti.get('file_path') or ti.get('notebook_path') or '')" 2>/dev/null) || exit 0
-    case "$(basename "${p:-}")" in
-      CLAUDE.md|AGENTS.md|CLAUDE.local.md|MEMORY.md)
-        out=$(check_file "$p" 2>/dev/null)
-        # Plain stdout from a PostToolUse hook is discarded by the harness —
-        # findings only reach the model through hookSpecificOutput.
-        [ -n "$out" ] && printf 'claude-md-guard on %s:\n%s\n' "${p/#$HOME/\~}" "$out" \
-          | CMG_EVENT=PostToolUse python3 -c '
+    # PostToolUse(Edit|Write|MultiEdit|Bash). Warn only — never block an edit.
+    # Bash is covered because a heredoc, `sed -i` or `tee` rewrites an
+    # always-loaded instruction file without the write tools being involved.
+    # One guarded path per line; a token merely mentioned is enough (checking a
+    # file that was only read is free, and parsing shell redirection is not).
+    paths=$(python3 -c "
+import json, os, sys
+GUARDED = {'CLAUDE.md', 'AGENTS.md', 'CLAUDE.local.md', 'MEMORY.md'}
+d = json.load(sys.stdin)
+ti = d.get('tool_input', {}) or {}
+one = ti.get('file_path') or ti.get('notebook_path')
+if one:
+    toks = [one]
+else:
+    toks = (ti.get('command') or '').split()
+cwd = d.get('cwd') or os.getcwd()
+home = os.path.expanduser('~')
+for t in toks:
+    t = t.strip('\\'\"')
+    if not t or os.path.basename(t) not in GUARDED:
+        continue
+    if t.startswith('~/'):
+        t = home + t[1:]
+    elif t.startswith('\$HOME/'):
+        t = home + t[5:]
+    print(t if os.path.isabs(t) else os.path.join(cwd, t))
+" 2>/dev/null) || exit 0
+
+    all_out=""
+    while IFS= read -r p; do
+      [ -n "$p" ] && [ -f "$p" ] || continue
+      out=$(check_file "$p" 2>/dev/null)
+      [ -n "$out" ] || continue
+      all_out="${all_out}$(printf 'claude-md-guard on %s:\n%s' "${p/#$HOME/\~}" "$out")
+"
+    done <<< "$paths"
+
+    # Plain stdout from a PostToolUse hook is discarded by the harness —
+    # findings only reach the model through hookSpecificOutput.
+    [ -n "$all_out" ] && printf '%s' "$all_out" \
+      | CMG_EVENT=PostToolUse python3 -c '
 import json, os, sys
 print(json.dumps({"hookSpecificOutput": {
     "hookEventName": os.environ["CMG_EVENT"],
     "additionalContext": sys.stdin.read().strip(),
 }}))
 '
-        ;;
-    esac
     exit 0
     ;;
 

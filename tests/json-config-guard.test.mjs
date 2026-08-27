@@ -20,9 +20,10 @@ const hook = path.resolve(
 );
 
 /** Run the hook with `stdin`, resolving to {code, stderr}. */
-function run(stdin) {
+function run(stdin, env) {
   return new Promise((resolve) => {
-    const child = execFile('node', [hook], (err, _stdout, stderr) => {
+    const opts = env ? { env: { ...process.env, ...env } } : {};
+    const child = execFile('node', [hook], opts, (err, _stdout, stderr) => {
       resolve({ code: err?.code ?? 0, stderr: stderr ?? '' });
     });
     child.stdin.end(stdin);
@@ -85,4 +86,71 @@ test('fails open on unusable input', async () => {
 test('fails open when the file vanished between write and hook', async () => {
   const { code } = await run(payload(path.join(tmpdir(), 'nope-does-not-exist/settings.json')));
   assert.equal(code, 0);
+});
+
+/* ---- Bash payloads -------------------------------------------------------
+ * A `sed -i`, heredoc redirect or `tee` rewrites a config file without the
+ * write tools being involved, so the guard also reads Bash command lines.
+ */
+
+const bashPayload = (command, cwd) =>
+  JSON.stringify({ tool_name: 'Bash', cwd, tool_input: { command } });
+
+test('Bash command naming a broken guarded file exits 2 and names it', async (t) => {
+  const p = fixture(t, 'settings.json', '{"a":1,}');
+  const { code, stderr } = await run(bashPayload(`sed -i '' 's/a/b/' ${p}`));
+  assert.equal(code, 2);
+  assert.ok(stderr.includes(p), 'the error must name the offending file');
+});
+
+test('Bash command naming a valid guarded file exits 0', async (t) => {
+  const p = fixture(t, '.mcp.json', '{"mcpServers":{}}');
+  const { code, stderr } = await run(bashPayload(`cat > ${p} <<EOF`));
+  assert.equal(code, 0);
+  assert.equal(stderr, '');
+});
+
+test('Bash command naming no guarded file exits 0', async () => {
+  const { code } = await run(bashPayload('git status --short && ls -la'));
+  assert.equal(code, 0);
+});
+
+test('Bash command naming a guarded path that does not exist exits 0', async () => {
+  const p = path.join(tmpdir(), 'nope-does-not-exist/settings.json');
+  const { code } = await run(bashPayload(`tee ${p}`));
+  assert.equal(code, 0);
+});
+
+test('a ~/-prefixed guarded path resolves against the home directory', async (t) => {
+  // HOME is overridden for the child, so os.homedir() lands in the temp dir and
+  // the expansion is proven without writing into the real home.
+  const p = fixture(t, 'settings.json', '{"a":1,}');
+  const home = path.dirname(p);
+  const { code, stderr } = await run(bashPayload("sed -i '' s/a/b/ ~/settings.json"), { HOME: home });
+  assert.equal(code, 2);
+  assert.ok(stderr.includes(p), 'the ~ must be expanded to the home directory');
+});
+
+test('a $HOME/-prefixed guarded path resolves against the home directory', async (t) => {
+  const p = fixture(t, 'settings.json', '{"a":1,}');
+  const home = path.dirname(p);
+  const { code, stderr } = await run(bashPayload('tee $HOME/settings.json'), { HOME: home });
+  assert.equal(code, 2);
+  assert.ok(stderr.includes(p), '$HOME must be expanded to the home directory');
+});
+
+test('a relative guarded path resolves against the payload cwd', async (t) => {
+  const p = fixture(t, 'settings.json', '{"a":1,}');
+  const { code, stderr } = await run(bashPayload('sed -i "" s/a/b/ settings.json', path.dirname(p)));
+  assert.equal(code, 2);
+  assert.ok(stderr.includes(p), 'a relative path must resolve against payload.cwd');
+});
+
+test('two broken guarded files in one command are both named', async (t) => {
+  const a = fixture(t, 'settings.json', '{"a":1,}');
+  const b = fixture(t, 'settings.local.json', '{oops}');
+  const { code, stderr } = await run(bashPayload(`cp ${a} /dev/null; tee ${b}`));
+  assert.equal(code, 2);
+  assert.ok(stderr.includes(a), 'must name the first file');
+  assert.ok(stderr.includes(b), 'must name the second file');
 });
