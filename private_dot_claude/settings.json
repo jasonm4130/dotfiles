@@ -74,7 +74,7 @@
     "deny": [],
     "defaultMode": "auto"
   },
-  "model": "fable",
+  "model": "opus",
   "disabledMcpjsonServers": [],
   "skillOverrides": {},
   "hooks": {
@@ -204,7 +204,7 @@
       }
     }
   },
-  "effortLevel": "low",
+  "effortLevel": "high",
   "autoCompactWindow": 400000,
   "askUserQuestionTimeout": "5m",
   "tui": "fullscreen",
@@ -216,6 +216,10 @@
   "modelSettings": {
     "claude-fable-5": {
       "effortLevel": "medium"
+    },
+    "claude-opus-5": {
+      "effortLevel": "high"
     }
-  }
+  },
+  "outputStyle": "Concise"
 }
