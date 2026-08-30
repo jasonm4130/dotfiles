@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 # Builds the compiled hot-path Claude Code hooks.
 #
-# main.go:       {{ include "dot_local/src/claude-hooks/main.go" | sha256sum }}
-# hook.go:       {{ include "dot_local/src/claude-hooks/hook.go" | sha256sum }}
-# secrets.go:    {{ include "dot_local/src/claude-hooks/secrets.go" | sha256sum }}
-# jsonconfig.go: {{ include "dot_local/src/claude-hooks/jsonconfig.go" | sha256sum }}
-# lspfirst.go:   {{ include "dot_local/src/claude-hooks/lspfirst.go" | sha256sum }}
-# go.mod:        {{ include "dot_local/src/claude-hooks/go.mod" | sha256sum }}
+# sources: {{ output "sh" "-c" (printf "cat %s/dot_local/src/claude-hooks/*.go %s/dot_local/src/claude-hooks/go.mod | shasum -a 256 | cut -d\" \" -f1" .chezmoi.sourceDir .chezmoi.sourceDir) | trim }}
+#
+# One hash over every source file, NOT a per-file list: a per-file list has to be
+# edited whenever a source is added or removed, and a stale entry makes the whole
+# template fail to render (`include: no such file`), which takes down the apply.
 #
 # A hook is spawned per matching tool call, so what costs is process start, not
 # the work: ~20ms of node boot against ~2ms compiled. The sources are hashed
-# above rather than the built binary because Go builds are not bit-reproducible
-# across toolchains, so comparing output would rebuild on every apply.
+# above rather than the built binary because reading the sources is cheaper than a
+# build. (Go with -trimpath IS bit-reproducible — verified byte-identical across a
+# `go clean -cache` rebuild — so comparing the artifact would also be correct, just
+# slower.)
 #
 # Unlike the `ccguard` pilot in claude-skills, nothing is committed pre-built —
 # chezmoi has a build step, so there is no shipped artifact and no staleness

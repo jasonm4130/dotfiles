@@ -7,9 +7,8 @@
 // Dispatch is by argv[1] so a single binary replaces several hooks and pays
 // the build cost once.
 //
-//	claude-hooks secrets-scan       PreToolUse   Edit|Write|MultiEdit|NotebookEdit|Bash
-//	claude-hooks json-config-guard  PostToolUse  Edit|Write|MultiEdit|Bash
-//	claude-hooks lsp-first          PreToolUse   Grep
+//	claude-hooks secrets-scan   PreToolUse   Edit|Write|MultiEdit|NotebookEdit|Bash
+//	claude-hooks lsp-first      PreToolUse   Grep
 //
 // Unlike the `ccguard` pilot in the claude-skills repo, this binary is built
 // from source by chezmoi at apply time rather than committed. There is no
@@ -24,14 +23,12 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: claude-hooks <secrets-scan|json-config-guard|lsp-first>")
+		fmt.Fprintln(os.Stderr, "usage: claude-hooks <secrets-scan|lsp-first>")
 		os.Exit(2)
 	}
 	switch os.Args[1] {
 	case "secrets-scan":
 		secretsScan()
-	case "json-config-guard":
-		jsonConfigGuard()
 	case "lsp-first":
 		lspFirst()
 	default:

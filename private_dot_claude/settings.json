@@ -128,11 +128,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.local/bin/claude-hooks json-config-guard",
-            "timeout": 5
-          },
-          {
-            "type": "command",
             "command": "~/.claude/hooks/claude-md-guard.sh hook",
             "timeout": 5
           }
@@ -183,7 +178,6 @@
     "typescript-lsp@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
-    "cloudflare@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
     "handoff@jasonm4130-claude-skills": true,
     "session-retro@jasonm4130-claude-skills": true,
