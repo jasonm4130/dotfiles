@@ -6,11 +6,11 @@ Guidance that applies when working in any of Jason's code repos. Loaded lazily b
 
 In code files (TS, JS, Python, Rust, Go, …), reach for LSP before grep: `goToDefinition` and `findReferences` instead of grepping for a symbol, `hover` instead of reading a whole file for a type, `documentSymbol` instead of reading it for structure. Grep is for text — TODOs, string literals, log messages, config values — and for when LSP returns empty or is unavailable.
 
-The `lsp-first-guard.js` PreToolUse hook catches the Grep case only; nothing catches "read the whole file instead of `hover`", so the preference above is the part that has to be remembered.
+The `claude-hooks lsp-first` PreToolUse hook catches the Grep case only, and only when the relevant language server actually resolves; nothing catches "read the whole file instead of `hover`", so the preference above is the part that has to be remembered.
 
 ## Delegate with an explicit model tier
 
-When dispatching the Agent tool, always set `model` explicitly — subagents otherwise inherit the session model, which on an Opus/Fable session runs searches and mechanical work at the most expensive tier (measured: 73% of dispatches leaked this way before this rule existed). The `workflow-model-guard` plugin's Agent hook denies untiered dispatches and names the tiers in its deny reason.
+When dispatching the Agent tool, always set `model` explicitly — subagents otherwise inherit the session model, which on an Opus/Fable session runs searches and mechanical work at the most expensive tier (measured: 73% of dispatches leaked this way before this rule existed). The `gates` plugin's Agent hook (`pretooluse-guard-agent-model`) denies untiered dispatches and names the tiers in its deny reason.
 
 Don't delegate at all when the task is trivial, tightly coupled to conversation context, or latency-sensitive — a fresh subagent pays a cold-start and relay-loss cost that outweighs the context saving (Anthropic's own docs warn the same).
 
@@ -35,13 +35,13 @@ The `codex-plan-review` skill's own description carries the gates and when to fi
 - **Whole-branch, not per-task.** One diff pass on `main...HEAD`, never a Codex call inside each SDD task — per-task pays N× the paid-call cost and N× the reviewer's over-rejection surface to catch strictly less.
 - **Terra for automatic passes; escalate to Sol only when Jason asks for Sol by name.** Fable owns same-family escalation, and Terra ≈ Sol review quality at lower cost and latency.
 - **Pair reviewers on different tasks, not the same task.** Two reviewers agreeing is weak evidence, and cross-vendor pairs are the *most* correlated. The value comes from distinct lenses — one on strategy and adversarial pressure, one on factual grounding against sources. Corollary: don't send a reviewer an artifact it helped write.
-- **Exception — adversarial planning on an unsolved problem is generation, not corroboration.** Two reviewers *arguing opposite positions* on the same open problem produce candidate plans to weigh, not a claim two models endorsed, so the correlation argument doesn't bite. Reach for it on trigger 1 above; it is what unstuck `transcoder` on 2026-07-25 after ordinary sessions went round in circles. n=1 — a play worth trying when stuck, not a default, and never evidence the resulting plan is right.
+- **Exception — adversarial planning on an unsolved problem is generation, not corroboration.** Two reviewers *arguing opposite positions* on the same open problem produce candidate plans to weigh, not a claim two models endorsed, so the correlation argument doesn't bite. Reach for it on trigger 1 above; it is what unstuck `transcoder` after ordinary sessions went round in circles. n=1 — a play worth trying when stuck, not a default, and never evidence the resulting plan is right.
 
 **Reviewer names.** Defined in `~/.claude/CLAUDE.md`, which loads alongside this file. For convergence loops longer than the plugin's cap, drive `codex exec` directly — keeping its one non-negotiable rule: the reviewer never sees your self-assessment.
 
 ## Log noteworthy outcomes to the Obsidian vault
 
-When a session in this tree produces a noteworthy outcome — a shipped feature, a published blog post or deploy, a completed experiment or training run, a merged PR on a flagship project — append a one-line entry to today's daily note in the vault without asking (standing approval, Jason 2026-07-05); mention in the reply that it was logged. Note path: `~/Documents/Main/Daily/YYYY-MM-DD - Daily.md`, create from `_templates/Daily.md` if missing; add under `## 🏆 Wins`. Format: `- HH:MM [repo-name] outcome in one sentence` plus a `[ship]`/`[arch]`/`[win]`-style tag. Routine edits, WIP commits, and exploration don't qualify. This keeps the vault's daily record from undercounting code-side output.
+When a session in this tree produces a noteworthy outcome — a shipped feature, a published blog post or deploy, a completed experiment or training run, a merged PR on a flagship project — append a one-line entry to today's daily note in the vault without asking (standing approval from Jason); mention in the reply that it was logged. Note path: `~/Documents/Main/Daily/YYYY-MM-DD - Daily.md`, create from `_templates/Daily.md` if missing; add under `## 🏆 Wins`. Format: `- HH:MM [repo-name] outcome in one sentence` plus a `[ship]`/`[arch]`/`[win]`-style tag. Routine edits, WIP commits, and exploration don't qualify. This keeps the vault's daily record from undercounting code-side output.
 
 ## Test runners by stack
 
