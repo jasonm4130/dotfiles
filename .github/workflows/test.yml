@@ -24,6 +24,33 @@ jobs:
         # support (added in 21) — the shell must expand it.
         run: node --test tests/*.test.mjs
 
+  go-test:
+    # The compiled hot-path hooks. Runs on both OSes because the guards are
+    # plain stdin/stdout programs with no platform-specific behaviour, and a
+    # Linux failure would mean the source is not portable even though the
+    # binary is only ever built on macOS by chezmoi.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: dot_local/src/claude-hooks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: dot_local/src/claude-hooks/go.mod
+      - name: Vet
+        run: go vet ./...
+      - name: Check formatting
+        # gofmt -l prints files that need formatting and still exits 0, so the
+        # output has to be tested rather than the status.
+        run: test -z "$(gofmt -l .)" || { gofmt -d .; exit 1; }
+      - name: Test
+        run: go test ./...
+
   shellcheck:
     # ubuntu-latest ships shellcheck; the macOS images list SwiftLint as their
     # only linter, so a macOS job would die at `shellcheck: command not found`.

@@ -84,7 +84,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ~/.claude/hooks/secrets-scan.js"
+            "command": "~/.local/bin/claude-hooks secrets-scan"
           }
         ]
       },
@@ -94,6 +94,15 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/disk-guard.sh pretool"
+          }
+        ]
+      },
+      {
+        "matcher": "Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/claude-hooks lsp-first"
           }
         ]
       }
@@ -119,7 +128,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ~/.claude/hooks/json-config-guard.js",
+            "command": "~/.local/bin/claude-hooks json-config-guard",
             "timeout": 5
           },
           {

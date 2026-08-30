@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Builds the compiled hot-path Claude Code hooks.
+#
+# main.go:       {{ include "dot_local/src/claude-hooks/main.go" | sha256sum }}
+# hook.go:       {{ include "dot_local/src/claude-hooks/hook.go" | sha256sum }}
+# secrets.go:    {{ include "dot_local/src/claude-hooks/secrets.go" | sha256sum }}
+# jsonconfig.go: {{ include "dot_local/src/claude-hooks/jsonconfig.go" | sha256sum }}
+# lspfirst.go:   {{ include "dot_local/src/claude-hooks/lspfirst.go" | sha256sum }}
+# go.mod:        {{ include "dot_local/src/claude-hooks/go.mod" | sha256sum }}
+#
+# A hook is spawned per matching tool call, so what costs is process start, not
+# the work: ~20ms of node boot against ~2ms compiled. The sources are hashed
+# above rather than the built binary because Go builds are not bit-reproducible
+# across toolchains, so comparing output would rebuild on every apply.
+#
+# Unlike the `ccguard` pilot in claude-skills, nothing is committed pre-built —
+# chezmoi has a build step, so there is no shipped artifact and no staleness
+# hazard to guard against.
+set -euo pipefail
+
+SRC="$HOME/.local/src/claude-hooks"
+DEST="$HOME/.local/bin/claude-hooks"
+
+# Deliberately NOT a soft skip. lsp-doctor may shrug when a language server is
+# absent, but these three hooks include secrets-scan, and a settings.json that
+# points at a binary which was never built means every write goes unscanned with
+# no error anywhere. That is the exact silent-failure mode this whole binary
+# exists to end, so a missing toolchain is fatal and says what to do about it.
+if ! command -v go >/dev/null 2>&1; then
+  echo "❌ go not found — cannot build claude-hooks" >&2
+  echo "   secrets-scan, json-config-guard and lsp-first are all inert without it." >&2
+  echo "   Install it with: brew install go   (it is in this repo's Brewfile)" >&2
+  exit 1
+fi
+
+mkdir -p "$(dirname "$DEST")"
+
+# -trimpath keeps build paths out of the binary; -s -w drop the symbol and DWARF
+# tables, which is ~25% of a binary nothing ever debugs in place.
+if ! go build -C "$SRC" -ldflags="-s -w" -trimpath -o "$DEST" . ; then
+  echo "❌ claude-hooks failed to build — the hooks it backs are now inert" >&2
+  exit 1
+fi
+
+echo "✅ claude-hooks built → $DEST"

@@ -38,6 +38,7 @@ brew:
   - gitleaks
   - gnu-getopt
   - gnu-tar
+  - go
   - grep
   - hadolint
   - hudochenkov/sshpass/sshpass

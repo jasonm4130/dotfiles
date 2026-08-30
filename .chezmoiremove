@@ -1,0 +1,6 @@
+# Replaced by the compiled `claude-hooks` binary (run_onchange_after_15).
+# chezmoi does not delete a target just because its source was removed, so
+# without these two lines the old interpreters linger on every existing machine
+# — inert, since settings.json no longer points at them, but confusing to find.
+.claude/hooks/secrets-scan.js
+.claude/hooks/json-config-guard.js
