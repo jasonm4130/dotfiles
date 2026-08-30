@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+# Health check for the language servers Claude Code's LSP plugins drive.
+#
+# Both servers have gone down silently in the wild, by unrelated mechanisms:
+#
+#   rust-analyzer  A repo pinning a toolchain that lacks the rust-analyzer
+#                  component makes rustup's proxy fall back to the mise shim,
+#                  which resolves back to the proxy: "infinite recursion
+#                  detected", LSP crashes exit 1. The global rust pin (LSP audit
+#                  2026-07-09) fixed this OUTSIDE a pinned repo only.
+#
+#   tsserver       Global npm packages live under
+#                  ~/.local/share/mise/installs/node/<version>/lib, so moving
+#                  the `lts` alias orphans them and the binary leaves $PATH.
+#
+# Neither announces itself — the LSP tool just starts erroring, and grep
+# quietly becomes the fallback. Hence a probe you can run in one word.
+#
+# Usage:
+#   lsp-doctor            probe only; exits non-zero if any server is down
+#   lsp-doctor --repair   probe, fix what is down, re-probe
+#
+# NOTE: rust-analyzer availability is per ACTIVE toolchain, so a run from $HOME
+# tests the global pin, not a pin some other repo declares. --repair installs
+# the component for every INSTALLED toolchain, which is what closes that gap.
+
+set -uo pipefail
+
+REPAIR=0
+[[ "${1:-}" == "--repair" ]] && REPAIR=1
+
+FAILED=0
+declare -a REMEDIES=()
+
+# A server is healthy when its version command exits 0 AND prints something
+# version-shaped. Exit status alone is not enough: the rust-analyzer shim loop
+# was an executable file on $PATH that ran and emitted a fallback notice.
+probe() {
+  local bin="$1" out
+  command -v "$bin" >/dev/null 2>&1 || return 1
+  out="$("$bin" --version 2>&1)" || return 1
+  grep -qE '[0-9]+\.[0-9]+' <<<"$out" || return 1
+  grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' <<<"$out" | head -1
+}
+
+report() {
+  local mark="$1" name="$2" version="$3" note="$4"
+  printf '%s %-28s %-10s %s\n' "$mark" "$name" "$version" "$note"
+}
+
+check() {
+  local name="$1" bin="$2" note="$3" remedy="$4"
+  local version
+  if version="$(probe "$bin")"; then
+    report "✓" "$name" "$version" "$note"
+    return 0
+  fi
+  report "✗" "$name" "-" "not resolving"
+  REMEDIES+=("  $name → $remedy")
+  FAILED=1
+  return 1
+}
+
+# ── rust-analyzer ────────────────────────────────────────────────────────────
+repair_rust_analyzer() {
+  command -v rustup >/dev/null 2>&1 || return 1
+  # Every installed toolchain, not just the default — a repo's rust-toolchain.toml
+  # decides which one the LSP actually loads.
+  rustup toolchain list 2>/dev/null | awk '{print $1}' | while read -r tc; do
+    [[ -n "$tc" ]] || continue
+    rustup component add rust-analyzer --toolchain "$tc" 2>/dev/null \
+      && echo "  + rust-analyzer for $tc"
+  done
+}
+
+# ── typescript-language-server ───────────────────────────────────────────────
+repair_tsserver() {
+  # Deliberately NOT mise-managed: tls must require.resolve typescript as a
+  # sibling in the same node_modules tree, which mise's isolated per-package
+  # npm prefixes break (verified 2026-07-09). typescript@5, not 7 — the native
+  # TS7 port ships no tsserver.
+  command -v npm >/dev/null 2>&1 || return 1
+  npm install -g typescript-language-server typescript@5 >/dev/null 2>&1 || return 1
+  command -v mise >/dev/null 2>&1 && mise reshim >/dev/null 2>&1
+  echo "  + typescript-language-server + typescript@5 (npm -g), reshimmed"
+}
+
+# ── pyright ──────────────────────────────────────────────────────────────────
+repair_pyright() {
+  command -v mise >/dev/null 2>&1 || return 1
+  mise install npm:pyright@latest >/dev/null 2>&1 || return 1
+  mise reshim >/dev/null 2>&1
+  echo "  + pyright (mise), reshimmed"
+}
+
+run_checks() {
+  FAILED=0
+  REMEDIES=()
+  local rust_note tsnote
+  rust_note="$(rustup show active-toolchain 2>/dev/null | awk '{print $1}')"
+  tsnote="node $(mise current node 2>/dev/null || echo '?')"
+
+  check "rust-analyzer" rust-analyzer "${rust_note:-toolchain ?}" \
+    "rustup component add rust-analyzer --toolchain <pinned>"
+  check "typescript-language-server" typescript-language-server "$tsnote" \
+    "npm i -g typescript-language-server typescript@5 && mise reshim"
+  # pyright-langserver is the binary the plugin spawns, but it exits non-zero
+  # without a --stdio/--node-ipc transport arg, so probe the CLI twin instead.
+  check "pyright" pyright "mise" \
+    "mise install npm:pyright@latest && mise reshim"
+}
+
+echo "Language servers:"
+run_checks
+
+if (( FAILED )) && (( REPAIR )); then
+  echo
+  echo "Repairing:"
+  probe rust-analyzer              >/dev/null || repair_rust_analyzer
+  probe typescript-language-server >/dev/null || repair_tsserver
+  probe pyright                    >/dev/null || repair_pyright
+  hash -r 2>/dev/null || true
+  echo
+  echo "Re-probing:"
+  run_checks
+fi
+
+if (( FAILED )); then
+  echo
+  echo "Remedies:"
+  printf '%s\n' "${REMEDIES[@]}"
+  exit 1
+fi
+
+exit 0

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Re-runs when a toolchain moves out from under the language servers.
+# node version:    {{ if lookPath "mise" }}{{ output "mise" "current" "node" | trim }}{{ end }}
+# rust toolchains: {{ if lookPath "rustup" }}{{ output "sh" "-c" "rustup toolchain list | awk '{print $1}' | sort | tr '\\n' ' '" | trim }}{{ end }}
+# lsp-doctor hash: {{ include "dot_local/bin/executable_lsp-doctor" | sha256sum }}
+#
+# A node major bump orphans the global npm packages tsserver lives in, and a
+# newly pinned rust toolchain arrives without the rust-analyzer component. Both
+# failures are silent — the LSP tool just starts erroring and grep becomes the
+# fallback. lsp-doctor probes first and installs only what is missing, so a
+# spurious re-run (the `(active, default)` marker above is cwd-sensitive) costs
+# nothing.
+set -euo pipefail
+
+DOCTOR="$HOME/.local/bin/lsp-doctor"
+
+if [[ ! -x "$DOCTOR" ]]; then
+  echo "⏭  lsp-doctor not installed yet; skipping language-server check"
+  exit 0
+fi
+
+"$DOCTOR" --repair || {
+  echo "⚠️  some language servers are still down — see remedies above"
+  exit 0
+}
