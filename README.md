@@ -89,7 +89,7 @@ Run `chezmoi managed` for the authoritative file list.
 | Pull + apply remote changes | `chezmoi update` |
 | Settle source↔destination drift interactively | `chezmoi-drift` |
 | Check the language servers are actually up | `lsp-doctor` (add `--repair` to fix) |
-| Rebuild the compiled hook guards | `go build -C ~/.local/src/claude-hooks -o ~/.local/bin/claude-hooks .` (or just `chezmoi apply`) |
+| Rebuild the compiled hook guard | `go build -C ~/.local/src/claude-hooks -o ~/.local/bin/claude-hooks .` (or just `chezmoi apply`) |
 
 ## Design
 

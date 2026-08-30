@@ -6,7 +6,7 @@ Guidance that applies when working in any of Jason's code repos. Loaded lazily b
 
 In code files (TS, JS, Python, Rust, Go, …), reach for LSP before grep: `goToDefinition` and `findReferences` instead of grepping for a symbol, `hover` instead of reading a whole file for a type, `documentSymbol` instead of reading it for structure. Grep is for text — TODOs, string literals, log messages, config values — and for when LSP returns empty or is unavailable.
 
-The `claude-hooks lsp-first` PreToolUse hook catches the Grep case only, and only when the relevant language server actually resolves; nothing catches "read the whole file instead of `hover`", so the preference above is the part that has to be remembered.
+The `gates` plugin's `lsp-first` hook catches symbol searches issued as `Grep` or as a shell `rg`/`grep`, and only when the relevant language server resolves. Its deny message carries the escape hatch. Nothing catches "read the whole file instead of `hover`", so the preference above is the part to remember.
 
 ## Delegate with an explicit model tier
 

@@ -96,15 +96,6 @@
             "command": "~/.claude/hooks/disk-guard.sh pretool"
           }
         ]
-      },
-      {
-        "matcher": "Grep",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.local/bin/claude-hooks lsp-first"
-          }
-        ]
       }
     ],
     "SessionStart": [

@@ -10,10 +10,12 @@ they come from installed plugins (see [Scope](#scope)).
 
 ## Guards
 
-Two hot-path guards — `secrets-scan` and `lsp-first` — are
-subcommands of one compiled Go binary at `~/.local/bin/claude-hooks`, built from
-`dot_local/src/claude-hooks/` by `run_onchange_after_15-claude-hooks-build.sh.tmpl` on
-every apply. A hook is spawned per matching tool call, so what costs is process start, not
+One hot-path guard — `secrets-scan` — is the sole subcommand of a compiled Go binary at
+`~/.local/bin/claude-hooks`, built from `dot_local/src/exact_claude-hooks/` by
+`run_onchange_after_15-claude-hooks-build.sh.tmpl` on every apply. The `exact_` prefix is
+load-bearing: without it a file deleted from source lingers in the target, and since Go
+compiles unused functions without complaint, deleted code would keep shipping in the
+binary with nothing reporting it. A hook is spawned per matching tool call, so what costs is process start, not
 the work: 21.1 ms of node boot against 2.9 ms compiled, 7.3×.
 
 Nothing is committed pre-built, so there is no shipped artifact and no staleness hazard.
@@ -25,12 +27,13 @@ Guards follow a protection/advisory split:
 
 - **`secrets-scan` fails closed** — blocks writes it cannot scan, denying via
   `permissionDecision` JSON.
-- **Advisory guards fail open** — `lsp-first`, `claude-md-guard`, `disk-guard`.
+- **Advisory guards fail open** — `claude-md-guard`, `disk-guard`.
 
-`lsp-first` additionally checks that the language server it would redirect you to actually
-resolves on `PATH`, and stays silent when it does not. It was deleted once for "zero LSP
-adoption" when the real cause was that rust-analyzer and tsserver were both dead, so every
-nudge it emitted was unactionable.
+`lsp-first` used to live here too. It moved to the `gates` plugin in
+[claude-skills](https://github.com/jasonm4130/claude-skills) — it is generic, advisory and
+fails open, so it is distributable capability rather than machine state. `secrets-scan`
+stays because it fails **closed**, and a plugin's hooks fail open silently on documented
+loading paths.
 
 `disk-guard` blocks only heavy `cargo` builds and only under 8 GB free, on the reasoning
 that a wedged volume costs more than a refused build. `disk-guard.sh reclaim [--deep]`

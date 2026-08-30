@@ -8,7 +8,11 @@
 // the build cost once.
 //
 //	claude-hooks secrets-scan   PreToolUse   Edit|Write|MultiEdit|NotebookEdit|Bash
-//	claude-hooks lsp-first      PreToolUse   Grep
+//
+// `lsp-first` used to live here too. It moved to the `gates` plugin in the
+// claude-skills repo, which is where distributable capability belongs; this
+// binary keeps only `secrets-scan`, the one guard that fails CLOSED and so
+// cannot tolerate a plugin's silent fail-open loading paths.
 //
 // Unlike the `ccguard` pilot in the claude-skills repo, this binary is built
 // from source by chezmoi at apply time rather than committed. There is no
@@ -23,14 +27,12 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: claude-hooks <secrets-scan|lsp-first>")
+		fmt.Fprintln(os.Stderr, "usage: claude-hooks <secrets-scan>")
 		os.Exit(2)
 	}
 	switch os.Args[1] {
 	case "secrets-scan":
 		secretsScan()
-	case "lsp-first":
-		lspFirst()
 	default:
 		fmt.Fprintf(os.Stderr, "unknown hook %q\n", os.Args[1])
 		os.Exit(2)

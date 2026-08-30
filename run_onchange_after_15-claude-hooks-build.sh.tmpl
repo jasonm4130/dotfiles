@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Builds the compiled hot-path Claude Code hooks.
 #
-# sources: {{ output "sh" "-c" (printf "cat %s/dot_local/src/claude-hooks/*.go %s/dot_local/src/claude-hooks/go.mod | shasum -a 256 | cut -d\" \" -f1" .chezmoi.sourceDir .chezmoi.sourceDir) | trim }}
+# sources: {{ output "sh" "-c" (printf "cat %s/dot_local/src/exact_claude-hooks/*.go %s/dot_local/src/exact_claude-hooks/go.mod | shasum -a 256 | cut -d\" \" -f1" .chezmoi.sourceDir .chezmoi.sourceDir) | trim }}
 #
 # One hash over every source file, NOT a per-file list: a per-file list has to be
 # edited whenever a source is added or removed, and a stale entry makes the whole
@@ -29,7 +29,7 @@ DEST="$HOME/.local/bin/claude-hooks"
 # exists to end, so a missing toolchain is fatal and says what to do about it.
 if ! command -v go >/dev/null 2>&1; then
   echo "❌ go not found — cannot build claude-hooks" >&2
-  echo "   secrets-scan, json-config-guard and lsp-first are all inert without it." >&2
+  echo "   secrets-scan is inert without it." >&2
   echo "   Install it with: brew install go   (it is in this repo's Brewfile)" >&2
   exit 1
 fi
