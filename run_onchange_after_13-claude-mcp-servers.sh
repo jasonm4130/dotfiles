@@ -47,8 +47,6 @@ ensure() {
 # (verified with `ps -o args=` on a live process), and `op read` only ever takes
 # an op:// reference, never a secret.
 #
-#   printf 'add-generic-password -U -a "%s" -s exa-api-key -w "%s"\n' \
-#     "$USER" "$(op read 'op://Private/Exa API Key/credential')" | security -i
 #   printf 'add-generic-password -U -a "%s" -s tavily-api-key -w "%s"\n' \
 #     "$USER" "$(op read 'op://Private/tavily-api/credential')" | security -i
 #
@@ -64,13 +62,19 @@ ensure() {
 #   security find-generic-password -a "$USER" -s <service> -w >/dev/null 2>&1 \
 #     && echo SET || echo UNSET
 #
-# The `find-generic-password ... -w` inside the two ensure lines below is the
+# The `find-generic-password ... -w` inside the tavily ensure line below is the
 # one place the naked form is correct: its output is captured into an env var
 # for the server process and never reaches a terminal. Leave it as it is.
-ensure exa    -- sh -c 'EXA_API_KEY=$(security find-generic-password -a "$USER" -s exa-api-key -w) npx -y exa-mcp-server'
 ensure tavily -- sh -c 'TAVILY_API_KEY=$(security find-generic-password -a "$USER" -s tavily-api-key -w) npx -y tavily-mcp'
 ensure social --transport http https://social-mcp.jasonmatthew.dev/mcp
 ensure chrome-devtools -- npx chrome-devtools-mcp@latest
+# Registered directly rather than via the `cloudflare` plugin. That plugin
+# shipped five MCP servers and 13 skills; four of the servers need an OAuth
+# login that was never done, so they contributed nothing but two dead
+# authenticate/complete_authentication entries each to tool search, and the
+# skills were 43% of the whole skill-description budget against one
+# wrangler.jsonc in the tree. The docs server is the part that works.
+ensure cloudflare-docs --transport http https://docs.mcp.cloudflare.com/mcp
 ensure claude-design --transport http https://api.anthropic.com/v1/design/mcp
 
 # OAuth-backed servers need one interactive login per machine. Registration
