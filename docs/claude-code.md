@@ -4,9 +4,23 @@ How `~/.claude/` is configured by this repo. See [Scope](../README.md#scope) for
 lives here versus in the claude-skills marketplace.
 
 
-Settings, hooks, agents, MCP config and sounds under `~/.claude/`. Run
+Settings, hooks, agents, rules, MCP config and sounds under `~/.claude/`. Run
 `chezmoi managed | grep '^\.claude'` for the live list. Skills are **not** tracked here —
 they come from installed plugins (see [Scope](#scope)).
+
+`.chezmoiignore` denies everything under `.claude/` and re-admits named subdirectories, so
+**a new subdirectory is invisible to chezmoi until it is allowlisted there** — it applies
+clean and silently manages nothing.
+
+## Rules
+
+`~/.claude/rules/*.md` is loaded into every session regardless of working directory, which
+makes it the home for global guidance too bulky for `CLAUDE.md`. `harness-behaviours.md`
+lives here for that reason: Claude-only, and 13% of the global file before it moved.
+
+Verified rather than assumed — a canary rule was read back by `claude -p` from an unrelated
+cwd. Note that `paths:` glob scoping does **not** work at user level; a rule here is either
+loaded always or not present.
 
 ## Guards
 

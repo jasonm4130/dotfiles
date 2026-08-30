@@ -23,6 +23,8 @@ bootstrap.sh
 !.claude/agents/**/**
 !.claude/hooks/
 !.claude/hooks/**/**
+!.claude/rules/
+!.claude/rules/**/**
 !.claude/skills/
 !.claude/skills/**/**
 !.claude/mcp-servers/

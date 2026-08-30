@@ -68,7 +68,7 @@ turns up.
 
 | | |
 |---|---|
-| **[Claude Code](docs/claude-code.md)** | settings, hooks, agents, MCP config, guards, sounds |
+| **[Claude Code](docs/claude-code.md)** | settings, hooks, agents, rules, MCP config, guards, sounds |
 | **[Components](docs/components.md)** | zsh, mise, Starship, language servers, Ghostty, Zed, fonts, Codex, Brewfile, CI |
 | **[Maintenance](docs/maintenance.md)** | launchd jobs, one-time manual steps, fanfare voice clips |
 
