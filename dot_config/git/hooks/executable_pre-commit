@@ -3,6 +3,15 @@
 # (more reliable than `gitleaks git --pre-commit` which under-detects on macOS).
 set -e
 
+# A global core.hooksPath means a repo's own .git/hooks never run. Give repos
+# a per-repo hook back: .githooks/pre-commit, if present and executable, runs
+# first and a non-zero exit refuses the commit. Before the secret scan and its
+# early exits, so it runs on every commit.
+REPO_HOOK="$(git rev-parse --show-toplevel 2>/dev/null)/.githooks/pre-commit"
+if [ -x "$REPO_HOOK" ]; then
+  "$REPO_HOOK" "$@"
+fi
+
 if ! command -v gitleaks >/dev/null 2>&1; then
   echo "⚠ gitleaks not installed — skipping secret scan"
   exit 0
