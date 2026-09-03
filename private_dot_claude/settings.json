@@ -20,7 +20,6 @@
       "Write",
       "WebFetch",
       "WebSearch",
-      "Agent",
       "Workflow",
       "Bash(git status:*)",
       "Bash(git log:*)",
@@ -43,10 +42,7 @@
       "Bash(ls:*)",
       "Bash(cat:*)",
       "Bash(which:*)",
-      "Bash(node:*)",
-      "Bash(python:*)",
       "Bash(npm:*)",
-      "Bash(npx:*)",
       "Bash(pnpm:*)",
       "Bash(uv:*)",
       "Bash(wrangler:*)",
@@ -74,7 +70,7 @@
     "deny": [],
     "defaultMode": "auto"
   },
-  "model": "opus",
+  "model": "claude-fable-5-1[1m]",
   "disabledMcpjsonServers": [],
   "skillOverrides": {},
   "hooks": {
@@ -215,5 +211,33 @@
   "theme": "dark",
   "remoteControlAtStartup": true,
   "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "autoMode": {
+    "environment": [
+      "### Org-wide",
+      "**Organization**: None configured",
+      "**Cloud provider(s)**: None configured",
+      "**Repository visibility**: Not queryable here (no remote configured in this repo — Repo facts shows no remotes); assume private per shipped default",
+      "**Internal sharing / snippet hosting**: None configured — treat public paste/gist services as outside the trust boundary",
+      "**Secrets management**: 1Password (per ~/.claude/CLAUDE.md — `.env.op` with `op://Vault/Item/field` references, run via `op run --env-file .env.op -- <command>`; never plaintext)",
+      "**Default / protected branches**: Not queryable here — no remote configured and origin/HEAD unset",
+      "**CI/CD deploy targets**: None configured",
+      "**Network posture**: None configured",
+      "**Source control**: GitHub via the `gh` CLI (per ~/.claude/CLAUDE.md) — no remotes configured in this repo",
+      "**Trusted internal domains**: None configured",
+      "**Trusted cloud buckets**: None configured — the `npm-registry-packages` / `npm-registry-packages-npm-production` names found in config scans are standard npm-registry replication artifacts, not org-specific buckets, and were not corroborated by transcript-mining usage counts (config-derived, not usage-corroborated)",
+      "**Key internal services**: None configured",
+      "**Internal package registry**: None configured",
+      "**Sensitive data locations & audiences**: any file or store holding personal data, confidential business data, credentials, regulated data, or similarly sensitive material; preserve exact handles when known and share only with audiences cleared at the [named+specifics] bar",
+      "**Data retention / declassification**: None configured",
+      "**Sensitive remote targets**: any namespace, host, or container whose name carries `prod` or `production` as a whole word or name segment (hyphen/underscore/dot-delimited — e.g. matches `prod-db`, not `producer`)",
+      "**Protected deployment namespaces / environments**: None configured — fall back to the Sensitive remote targets heuristic",
+      "**Protected IaC scopes**: IAM, RBAC, networking, quota, and node-pool resources; anything whose name or tag carries `prod` or `production` as a whole word or name segment",
+      "### User-specific",
+      "**Primary use of Claude Code**: personal/hobby use and system administration (dotfiles management via chezmoi, Homebrew, 1Password CLI) — this checkout (`/Users/jasonmatthew`) has no tracked files and no remotes, so no software-development signal was found here",
+      "**Trusted repo**: This checkout at `/Users/jasonmatthew`, currently with 0 tracked files and no configured remotes — treat as an untracked/empty working directory rather than an established project",
+      "**Org-specific CLIs**: None configured — routine CLIs observed in this session are chezmoi, brew, op, mise, rustup (dotfiles/toolchain tooling), not org-specific services",
+      "**Routine under jasonmatthew/ prefix**: none identified — no remotes or org namespace found to scope a prefix to"
+    ]
+  }
 }
