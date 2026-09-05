@@ -18,7 +18,7 @@ it belongs here.
 
 One rule that follows from it and is easy to get wrong: **an override of a built-in
 belongs here, not in a plugin.** `~/.claude/agents/Explore.md` shadows the built-in
-`Explore` to pin `model: sonnet`; a plugin agent can only register as `plugin:name` and
+`Explore` to pin `model: sonnet` and deny the write tools; a plugin agent can only register as `plugin:name` and
 ranks below user-level, so the same file shipped as a plugin would stop shadowing anything.
 
 ## Bootstrap

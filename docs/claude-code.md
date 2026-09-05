@@ -16,7 +16,8 @@ clean and silently manages nothing.
 
 `~/.claude/rules/*.md` is loaded into every session regardless of working directory, which
 makes it the home for global guidance too bulky for `CLAUDE.md`. `harness-behaviours.md`
-lives here for that reason: Claude-only, and 13% of the global file before it moved.
+lives here for that reason: Claude-only, and 13% of the global file before it moved;
+`code-harness.md` holds the code-work half (sandbox, worktrees, stdin) and loads the same way.
 
 Verified rather than assumed — a canary rule was read back by `claude -p` from an unrelated
 cwd. Note that `paths:` glob scoping does **not** work at user level; a rule here is either

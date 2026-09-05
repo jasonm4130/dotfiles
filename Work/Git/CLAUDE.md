@@ -10,7 +10,7 @@ The `gates` plugin's `lsp-first` hook catches symbol searches issued as `Grep` o
 
 ## Delegate with an explicit model tier
 
-When dispatching the Agent tool, always set `model` explicitly — subagents otherwise inherit the session model, which on an Opus/Fable session runs searches and mechanical work at the most expensive tier (measured: 73% of dispatches leaked this way before this rule existed). The `gates` plugin's Agent hook (`pretooluse-guard-agent-model`) denies untiered dispatches and names the tiers in its deny reason.
+When dispatching the Agent tool, always set `model` explicitly; subagents otherwise inherit the session model. Fable stays in the main loop as coordinator and reviewer. `Explore` and `worker` run Sonnet 5 with the Opus 5 advisor (`advisorModel: opus`, inherited by every subagent whose model accepts it). Send a task to Opus 5 instead when it needs judgment about the spec, when a wrong attempt is expensive to detect (no tests, cross-file semantics), or after one Sonnet rework: a second Sonnet attempt costs what the Opus first pass would have.
 
 Don't delegate at all when the task is trivial, tightly coupled to conversation context, or latency-sensitive — a fresh subagent pays a cold-start and relay-loss cost that outweighs the context saving (Anthropic's own docs warn the same).
 
