@@ -115,6 +115,12 @@ The statusLine is a compiled binary at `~/.local/bin/claude-statusline` (source:
 The tab-title hook plays ElevenLabs voice clips on finish/needs-input (fanfare), falling
 back to the Glass chime when no clips are generated.
 
+The herdr SessionStart hook (`hooks/herdr-agent-state.sh`, in the Brewfile as `herdr`) reports
+the session id to the local herdr socket so a Claude pane can be restored after a server
+restart; it exits at once outside herdr. herdr owns the script: `herdr integration install
+claude` rewrites it and the settings entry, so after a herdr update re-add both here rather
+than editing the source by hand.
+
 `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1` in the settings `env` block strips Anthropic and cloud
 credentials from Bash, hook and MCP-stdio subprocesses — `secrets-scan` catches secrets on
 the way out, the scrub caps what a subprocess can read. That block also pins

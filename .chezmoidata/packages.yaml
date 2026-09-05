@@ -41,6 +41,7 @@ brew:
   - go
   - grep
   - hadolint
+  - herdr
   - hudochenkov/sshpass/sshpass
   - jasonm4130/tap/pipespy
   - make

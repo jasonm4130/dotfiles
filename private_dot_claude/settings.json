@@ -155,6 +155,16 @@
             "command": "~/.local/bin/claude-stay-awake.sh"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/jasonmatthew/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PostToolUse": [
