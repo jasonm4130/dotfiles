@@ -93,7 +93,7 @@ Always `git add <specific paths>` then commit — never `git commit -a`/`-am`. I
 
 Python is `uv` (never pip or conda), src layout, ruff, pytest. GPU is Modal (L4, A10G fallback). Edge is Cloudflare Workers/Pages, Terraform for infra, wrangler for deploys. GitHub via `gh`. Editor is Zed.
 
-**Secrets are always 1Password, never plaintext.** A project needing secret env vars gets a `.env.op` committed to the repo (it holds only `op://Vault/Item/field` references, no secrets) and runs as `op run --env-file .env.op -- <command>`. Create items with `op item create`; never ask Jason to paste an API key — point him at `op item edit`. Add `!.env.op` to the `.gitignore` exceptions.
+**Secrets are always 1Password, never plaintext.** A project needing secret env vars gets a `.env.op` committed to the repo (it holds only `op://Vault/Item/field` references, no secrets) and runs as `op run --env-file .env.op -- <command>`. On this Mac `op` is a shim to `op-fast` (Keychain cache, 24h TTL) so that does not prompt; after rotating a secret run `op-fast store clear`. Create items with `op item create`; never ask Jason to paste an API key — point him at `op item edit`. Add `!.env.op` to the `.gitignore` exceptions.
 
 For anything shipped, prefer Anthropic APIs; avoid an OpenAI dependency — he has OpenRouter, not OpenAI, which matters for embedding and utility APIs. (GPT via the `codex` CLI for reviews is separate and fine.)
 

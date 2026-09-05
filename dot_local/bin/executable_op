@@ -1,0 +1,12 @@
+#!/bin/sh
+# `op` -> op-fast: same CLI, answered from a Keychain cache (TTL in
+# ~/.config/op-fast/config.toml), so `op run`/`op read` in any repo or script
+# stop prompting 1Password. Non-cached subcommands pass straight through.
+#
+# OP_FAST_COMMAND is load-bearing: op-fast locates the real binary by looking
+# up "op" on PATH, and this shim is first on PATH, so without the pin it would
+# exec itself forever.
+#
+# Bypass the cache:        /opt/homebrew/bin/op ...
+# After rotating a secret: op-fast store clear
+OP_FAST_COMMAND=/opt/homebrew/bin/op exec /opt/homebrew/bin/op-fast "$@"
