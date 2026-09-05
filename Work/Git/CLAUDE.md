@@ -32,7 +32,7 @@ Don't delegate at all when the task is trivial, tightly coupled to conversation 
 
 The `codex-plan-review` skill's own description carries the gates and when to fire them; invoke it automatically rather than waiting to be prompted. What the skill does not say:
 
-- **Whole-branch, not per-task.** One diff pass on `main...HEAD`, never a Codex call inside each SDD task — per-task pays N× the paid-call cost and N× the reviewer's over-rejection surface to catch strictly less.
+- **Whole-branch, not per-task.** One diff pass on `main...HEAD`, never a Codex call per plan task — per-task pays N× the paid-call cost and N× the reviewer's over-rejection surface to catch strictly less.
 - **Terra for automatic passes; escalate to Sol only when Jason asks for Sol by name.** Fable owns same-family escalation, and Terra ≈ Sol review quality at lower cost and latency.
 - **Pair reviewers on different tasks, not the same task.** Two reviewers agreeing is weak evidence, and cross-vendor pairs are the *most* correlated. The value comes from distinct lenses — one on strategy and adversarial pressure, one on factual grounding against sources. Corollary: don't send a reviewer an artifact it helped write.
 - **Exception — adversarial planning on an unsolved problem is generation, not corroboration.** Two reviewers *arguing opposite positions* on the same open problem produce candidate plans to weigh, not a claim two models endorsed, so the correlation argument doesn't bite. Reach for it on trigger 1 above; it is what unstuck `transcoder` after ordinary sessions went round in circles. n=1 — a play worth trying when stuck, not a default, and never evidence the resulting plan is right.
@@ -45,7 +45,7 @@ When a session in this tree produces a noteworthy outcome — a shipped feature,
 
 ## Test runners by stack
 
-When the `test-driven-development` skill is driving, quote the red→green transition using the repo's actual runner. Defaults by stack — use the repo's existing runner if it differs (check `package.json` scripts / `Makefile` / `pyproject.toml`):
+When a change is test-first, quote the red→green transition using the repo's actual runner. Defaults by stack — use the repo's existing runner if it differs (check `package.json` scripts / `Makefile` / `pyproject.toml`):
 
 | Stack | Run tests with |
 |---|---|
@@ -57,4 +57,4 @@ When the `test-driven-development` skill is driving, quote the red→green trans
 
 ## Implementation plan path
 
-The `# Task N` files SDD executes go in `docs/superpowers/plans/YYYY-MM-DD-<slug>.md`, or the repo's existing plans dir.
+The `# Task N` plans Nightshift lands go in `docs/plans/YYYY-MM-DD-<slug>.md`, or the repo's existing plans dir.
