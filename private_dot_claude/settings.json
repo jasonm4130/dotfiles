@@ -172,10 +172,10 @@
     "adr@jasonm4130-claude-skills": true,
     "ship-gate@jasonm4130-claude-skills": true,
     "codex-review@jasonm4130-claude-skills": true,
-    "frontend-design@jasonm4130-claude-skills": true,
     "writing-artifacts@jasonm4130-claude-skills": true,
     "domain-modeling@jasonm4130-claude-skills": true,
-    "claude-code-setup@claude-plugins-official": true
+    "claude-code-setup@claude-plugins-official": true,
+    "nightshift@jasonm4130-claude-skills": true
   },
   "extraKnownMarketplaces": {
     "jasonm4130-claude-skills": {
