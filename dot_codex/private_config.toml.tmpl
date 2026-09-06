@@ -3,6 +3,14 @@
 {{- if stat $path -}}
 {{- $live = fromToml (include $path) -}}
 {{- end -}}
+{{- $features := get $live "features" | default dict -}}
+{{- $_ := set $features "memories" true -}}
+{{- $_ := set $live "features" $features -}}
+{{- $memories := get $live "memories" | default dict -}}
+{{- $_ := set $memories "generate_memories" true -}}
+{{- $_ := set $memories "use_memories" true -}}
+{{- $_ := set $memories "min_rate_limit_remaining_percent" 25 -}}
+{{- $_ := set $live "memories" $memories -}}
 {{- $tui := get $live "tui" | default dict -}}
 {{- if not (hasKey $tui "status_line") -}}
 {{- $_ := set $tui "status_line" (list "model-with-reasoning" "context-remaining" "current-dir" "five-hour-limit" "weekly-limit") -}}
@@ -16,7 +24,8 @@ approvals_reviewer = "auto_review"
 project_doc_fallback_filenames = ["CLAUDE.md"]
 
 # Preserve settings written by Codex (hook trust, projects, UI and integrations).
-# Only the four defaults above are owned by this template. Runtime state stays
+# The four defaults above and native memory enable/use/generation plus its 25%
+# quota reserve are owned by this template. Other runtime state stays
 # on this machine, rather than copying trusted hashes into the dotfiles repo.
 # New machines also get a quota-aware status line; existing choices survive.
 {{ toToml (omit $live "model" "model_reasoning_effort" "approvals_reviewer" "project_doc_fallback_filenames") -}}

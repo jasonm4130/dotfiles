@@ -30,7 +30,8 @@ allowance. No credits, paid API fallback or unattended runs were enabled.
 ## Ownership and persistence
 
 `dot_codex/private_config.toml.tmpl` manages model, effort, approval reviewer and
-the `CLAUDE.md` fallback. It preserves other live settings, including hook trust,
+the `CLAUDE.md` fallback, plus native memory enable/use/generation and its 25%
+remaining-quota threshold. It preserves other live settings, including hook trust,
 project trust, UI choices and integrations. New machines get quota footer
 defaults; existing footer choices survive. The rendered config remains mode
 0600. Changing a preserved setting happens through Codex, not by deleting a
@@ -55,6 +56,60 @@ The writing skill is a chezmoi-managed symlink from
 `~/.agents/skills/writing-artifacts` into the claude-skills checkout.
 It has one source and its adjacent resources remain available. A new machine
 needs that checkout at `~/Work/Git/claude-skills` before using the skill.
+
+## Memory and setup iteration
+
+Native local memory is enabled. It is separate from ChatGPT web memory.
+Use `/memories` for per-chat controls. Generation happens in the background;
+required rules still belong in AGENTS.md or repository documentation.
+See [memory controls](https://learn.chatgpt.com/docs/customization/memories).
+
+The selective migration covers transcoder, ambient, claude-skills and
+ai-dashboard. Four curated, project-scoped summaries replace the raw imported
+input; Claude's originals remain untouched. The raw import is archived at
+`~/.local/state/codex-memory-migration/2026-09-06/imported-originals/`.
+The active resources live below
+`~/.codex/memories/extensions/external_agent_import/resources/`.
+Do not bulk reimport over this curation or sync generated memory into dotfiles.
+
+CLI 0.153.4 required `features.external_agent_memory_import=true` for its import
+detector. That flag was process-local, not persisted. The native import returned
+four MEMORY successes and `failures: []`; no settings, hooks, skills or chats
+were imported. File import alone did not pass fresh-session recall: the first
+test returned `MEMORY_NOT_LOADED`, requiring consolidation into the native index.
+
+The raw archive was compared byte-for-byte with Claude's current files:
+`CLAUDE_ORIGINALS_MATCH_ARCHIVE: 144 files`. Active curated input contains only
+four scope.json/MEMORY.md pairs: `CURATED_MEMORY_INPUT: 4 projects, 5813 bytes`.
+Curated seeds are also retained under the archive's sibling `curated/` directory.
+
+Ordinary Codex sessions restrict memory writes to `extensions/ad_hoc/notes/`;
+they do not own generated root indexes. A native-session note write succeeded:
+`Created extensions/ad_hoc/notes/2026-09-06-migration-ready.md (2298 bytes; four explicit project scopes).`
+The migration also supplies a scoped provenance note in that directory.
+No scheduler database or generated index was manually modified. Automatic
+consolidation remains to be observed; do not mistake import success for an
+end-to-end background-learning result.
+
+A second fresh ai-dashboard session allowed native memory-file lookups but no
+repository, Claude or web reads. It read the root registry and again returned
+`MEMORY_NOT_LOADED`. At the end of this pass the scheduler's only consolidation
+record remained `done` at 10:41:41 UTC, and the registry still reported no
+consolidated evidence. Immediate recall is therefore not working yet. Retry the
+same three-fact check after normal eligible sessions have had time to consolidate;
+do not promise that merely reopening a session will fix it. The explicit project
+handoffs remain the current reliable continuation route.
+
+Final config reads confirmed memory enable/use/generation and threshold 25;
+all four global hooks remained enabled and trusted, with empty errors/warnings.
+Config and hook regression tests returned `pass 5`, `fail 0`. The socket fixture
+first hit sandbox `EPERM`; the same suite passed with local socket access.
+The live config remains mode 0600. Later runtime additions to project trust were
+preserved; a subsequent chezmoi diff showed only their formatting normalization.
+
+The [setup audit](codex-setup-audit-2026-09-06.md) records the practitioner
+comparison and a task-based improvement workflow. The baseline is not a proven
+optimum. Project guard ports and Nightwatch remain separate readiness gates.
 
 ## Verified on September 6, 2026
 
