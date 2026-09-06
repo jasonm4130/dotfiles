@@ -11,6 +11,13 @@
 {{- $_ := set $memories "use_memories" true -}}
 {{- $_ := set $memories "min_rate_limit_remaining_percent" 25 -}}
 {{- $_ := set $live "memories" $memories -}}
+{{- $mcp := get $live "mcp_servers" | default dict -}}
+{{- range $name, $url := dict "openaiDeveloperDocs" "https://developers.openai.com/mcp" "cloudflare-docs" "https://docs.mcp.cloudflare.com/mcp" -}}
+{{- if not (hasKey $mcp $name) -}}
+{{- $_ := set $mcp $name (dict "url" $url "enabled" true "startup_timeout_sec" 30 "tool_timeout_sec" 60) -}}
+{{- end -}}
+{{- end -}}
+{{- $_ := set $live "mcp_servers" $mcp -}}
 {{- $tui := get $live "tui" | default dict -}}
 {{- if not (hasKey $tui "status_line") -}}
 {{- $_ := set $tui "status_line" (list "model-with-reasoning" "context-remaining" "current-dir" "five-hour-limit" "weekly-limit") -}}
@@ -28,4 +35,5 @@ project_doc_fallback_filenames = ["CLAUDE.md"]
 # quota reserve are owned by this template. Other runtime state stays
 # on this machine, rather than copying trusted hashes into the dotfiles repo.
 # New machines also get a quota-aware status line; existing choices survive.
+# Seed documentation MCPs if absent; preserve their later local customization.
 {{ toToml (omit $live "model" "model_reasoning_effort" "approvals_reviewer" "project_doc_fallback_filenames") -}}

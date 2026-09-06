@@ -11,6 +11,16 @@ Start `codex` in the project's directory. Use `codex --profile review` for
 Terra medium in a read-only session. The review profile does not run reviews
 automatically. Sol remains an explicit escalation, not a background default.
 
+Resume saved work with `codex resume` (project-filtered picker),
+`codex resume --last`, or `codex resume --all` (all directories).
+Use `codex resume <session-id-or-name>` for a specific chat. Inside Codex,
+`/resume` opens the picker and `/rename` gives a chat a recognizable name.
+Use `/fork` to branch a conversation without replacing the original.
+Resume restores saved conversation history; it does not depend on cross-session
+memory consolidation. Ephemeral verification sessions are not saved for resume.
+These controls were checked against installed CLI help and the
+[CLI command documentation](https://learn.chatgpt.com/docs/developer-commands?surface=cli).
+
 Run `codex-usage` for the account's reported remaining allowance and reset times.
 Use `codex-usage --json` for structured output. This command starts Codex's
 documented app-server account read, never a model request. A failed read is an
@@ -111,6 +121,50 @@ The [setup audit](codex-setup-audit-2026-09-06.md) records the practitioner
 comparison and a task-based improvement workflow. The baseline is not a proven
 optimum. Project guard ports and Nightwatch remain separate readiness gates.
 
+## MCP connections
+
+Two documentation servers are enabled through the chezmoi config template.
+New entries are seeded only when absent; subsequent local customization,
+including `enabled = false`, survives apply. No credentials or packages are
+needed for these connections. Removing an entry entirely causes the template
+to seed it again; disable it explicitly instead.
+
+| Server | Endpoint | Runtime verification |
+|---|---|---|
+| OpenAI Developer Docs | `https://developers.openai.com/mcp` | `connected`; five tools; `search_openai_docs` returned results and `fetch_openai_doc` returned `# Slash commands`. |
+| Cloudflare docs | `https://docs.mcp.cloudflare.com/mcp` | `connected`; two tools; `search_cloudflare_documentation` returned `https://developers.cloudflare.com/workers/wrangler/commands/workers/`. |
+
+The checks used Codex app-server's actual MCP client, not just HTTP reachability
+or config parsing. No model calls were needed. `codex mcp list` labels these
+servers' auth as `Unsupported`; both nevertheless connected and answered tools
+without credentials. That label is not a startup-failure verdict.
+
+Restart the local Codex client after configuration changes, then use `/mcp`
+to inspect active connections. Use `codex resume` when restarting to continue
+saved work. Existing sessions do not acquire new tools merely because a file
+was edited. See [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp),
+[OpenAI Docs MCP](https://developers.openai.com/learn/docs-mcp), and
+[Cloudflare's Codex setup](https://developers.cloudflare.com/agent-setup/codex/).
+
+Other Claude connections were assessed, not silently copied:
+
+- Chrome DevTools 1.8.0 already exists in the npm cache. Its executed help lists
+  `--isolated`, `--headless`, and telemetry opt-outs. Browser control is not
+  configured yet; an isolated profile is the proposed default, not access to
+  Jason's normal signed-in tabs. No browser workload was run in this pass.
+- The social MCP returned `social MCP HTTP 401` to an unauthenticated initialize
+  request. It needs a separate Codex login/access decision. Claude tokens were
+  not read or copied; no social account tool was called.
+- Tavily remains unconfigured to avoid adding paid-search credentials alongside
+  native web search without a demonstrated need. No Tavily query was made.
+- Claude Design remains unconfigured. Its Anthropic endpoint and Claude-side
+  authentication are not evidence of an authorized Codex connection.
+
+The updated config/hook test suite verifies seeding, custom-server preservation,
+runtime trust preservation, idempotent rendering and the existing hook fixtures.
+It returned `pass 6`, `fail 0`; scoped chezmoi diff and Git whitespace checks
+returned no output.
+
 ## Verified on September 6, 2026
 
 | Surface | Actual evidence | Scope |
@@ -166,7 +220,7 @@ The scoped `chezmoi diff` and `git diff --check` returned no output.
 | gates/ship-gate/retro | Not imported. Their Claude state, hook outputs and worker routing require a deliberate port. Do not interpret plugin names in old instructions as installed Codex capabilities. |
 | ADR/domain-modeling/Nightshift skills | Writing was portable and installed. ADR routes into `nightshift:plan`; keep that dependency explicit rather than installing a broken entry point. |
 | LSP plugins | Claude registrations do not provide a Codex LSP tool. The adapted convention uses LSP when exposed and targeted search otherwise. |
-| Custom MCP services | `codex mcp list` returned `No MCP servers configured yet.` Chrome, Cloudflare docs, Tavily, social and claude-design were inventoried, not connected or exercised in Codex. Built-in app tools are separate. |
+| Custom MCP services | OpenAI and Cloudflare documentation MCPs are now connected and tool-tested; see MCP connections above. Chrome, Tavily, social and Claude Design remain unconfigured. Built-in app tools are separate. |
 | Installed Codex plugins | CLI inventory lists plugin-management 0.1.0, openai-templates 0.1.1 and deep-research-work 0.1.14, enabled. Their external account actions were not exercised. |
 | Nightwatch | Launcher still uses `claude -p` and Workflow with Opus/Sonnet phases. A runtime port, not a model substitution; no overnight workload launched. |
 | wattop | Dollar estimates remain distinct from subscription allowance. Existing QA and runtime-storage support need a separate ai-dashboard session. |

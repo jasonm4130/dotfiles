@@ -27,6 +27,9 @@ test('new config enables native memory with quota reserve', t => {
   assert.deepEqual(value.memories, {generate_memories: true, use_memories: true, min_rate_limit_remaining_percent: 25});
   assert.equal(value.features.external_agent_memory_import, undefined);
   assert.ok(value.tui.status_line.includes('weekly-limit'));
+  assert.equal(value.mcp_servers.openaiDeveloperDocs.url, 'https://developers.openai.com/mcp');
+  assert.equal(value.mcp_servers['cloudflare-docs'].url, 'https://docs.mcp.cloudflare.com/mcp');
+  assert.equal(value.mcp_servers.openaiDeveloperDocs.enabled, true);
 });
 
 test('memory defaults preserve runtime state and render idempotently', t => {
@@ -57,4 +60,18 @@ example = 4
   assert.deepEqual(first.value.tui.status_line, ['current-dir']);
   assert.equal(first.value.tui.model_availability_nux.example, 4);
   assert.equal(render().rendered, first.rendered);
+});
+
+test('documentation MCP seeds preserve explicit settings and other servers', t => {
+  const {value} = fixture(t, `[mcp_servers.openaiDeveloperDocs]
+url = "https://fixture.invalid/mcp"
+enabled = false
+[mcp_servers.private]
+command = "fixture-server"
+env_vars = ["TOKEN_FROM_ENV"]
+`)();
+  assert.equal(value.mcp_servers.openaiDeveloperDocs.url, 'https://fixture.invalid/mcp');
+  assert.equal(value.mcp_servers.openaiDeveloperDocs.enabled, false);
+  assert.deepEqual(value.mcp_servers.private.env_vars, ['TOKEN_FROM_ENV']);
+  assert.equal(value.mcp_servers['cloudflare-docs'].enabled, true);
 });
