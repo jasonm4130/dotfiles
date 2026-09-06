@@ -6,20 +6,21 @@ the project's commands and invariants. The September 2026 migration record is
 
 ## Models and reviews
 
-Astra at medium effort is the interactive default. Use Terra for a bounded
-routine review (`codex exec --profile review`), or routine work when Jason
-chooses it. Reserve higher reasoning effort for a demonstrated need.
-Do not start background agents or review loops merely because they are available.
-For authorized delegation, give each worker a complete bounded task, an explicit
-model and acceptance check. Escalate after one unsuccessful cheaper-model repair
-when further attempts would repeat the same uncertainty.
+Astra at medium effort is the interactive orchestrator. For substantial delegated
+implementation, use `~/.codex/skills/work-loop/SKILL.md`: Terra handles bounded
+work, Sol handles harder implementation via `codex exec --profile work-sol`,
+and fresh Astra sessions provide focused advice and independent review.
+`codex --profile work` selects this workflow explicitly. Trivial edits stay local;
+do not spawn agents merely because they are available. The legacy `review`
+profile remains an explicit Terra read-only review, not the work-loop final reviewer.
 
-Review a whole branch once at the appropriate boundary. Keep the reviewer's
-prompt free of the author's self-assessment. Verify findings against the current
-code before changing anything. A Terra review of Astra's work is a same-provider
-review; the old Claude-to-Codex cross-provider description no longer applies.
-Sol still means GPT Sol via the Codex CLI. Fable still means Claude Fable;
-neither name authorizes substituting a different reviewer.
+Give each worker a bounded task, explicit model, checkout and acceptance check.
+Use a fresh reviewer without the author's self-assessment or advisor transcript.
+Verify findings against current code before changing it. Escalate after one
+unsuccessful repair when another attempt would repeat the same uncertainty.
+Higher reasoning effort needs a demonstrated reason, not a permanent blanket setting.
+Sol means GPT Sol through the Codex CLI. Fable means Claude Fable; do not substitute
+one for the other. A same-provider review is not cross-provider validation.
 
 ## Execution
 
