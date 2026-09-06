@@ -22,6 +22,15 @@ Tool-agnostic instructions used by Claude Code, Codex, Gemini, etc.
 - Finish the whole task, not just the easy parts. If part of the scope is blocked, complete everything else and say explicitly what was left out and why — scaling the work down is the user's call.
 <!-- codex-only:end -->
 
+<!-- codex-only:start -->
+## Codex code work
+
+When working under `~/Work/Git/`, read `~/.ai/codex-code-work.md` before acting.
+That file carries the Codex adaptation of the shared code-work conventions.
+For the September 2026 migration and project resume points, read
+`~/.local/share/chezmoi/docs/codex-migration-2026-09-06.md` when relevant.
+<!-- codex-only:end -->
+
 ## Lead with anything that changes his next action
 
 A warning, caveat, risk, cost, or unexpected finding goes in the **first line** of the reply, never mid-paragraph or as a trailing note. Buried information fails silently: it draws no objection because he never saw it. If it would change what he does next, it leads.

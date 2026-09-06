@@ -1,0 +1,68 @@
+#!/usr/bin/env node
+// Read subscription allowance through Codex; never start a model request.
+const { spawn } = require('node:child_process');
+const readline = require('node:readline');
+
+async function main() {
+  const args = process.argv.slice(2);
+  if (args.some(arg => arg !== '--json')) throw new Error('usage: codex-usage [--json]');
+  const child = spawn('codex', ['app-server', '--listen', 'stdio://'], {
+    stdio: ['pipe', 'pipe', 'ignore'],
+  });
+  const send = message => child.stdin.write(JSON.stringify(message) + '\n');
+  const response = await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Codex usage request timed out')), 20000);
+    const lines = readline.createInterface({ input: child.stdout });
+    const finish = (error, value) => {
+      clearTimeout(timer);
+      lines.close();
+      child.kill();
+      error ? reject(error) : resolve(value);
+    };
+    child.on('error', error => finish(error));
+    child.on('exit', () => finish(new Error('Codex exited before returning usage')));
+    child.stdin.on('error', error => finish(error));
+    lines.on('line', line => {
+      let message;
+      try { message = JSON.parse(line); } catch { return; }
+      if (message.id !== 1 && message.id !== 2) return;
+      if (message.error) return finish(new Error(message.error.message));
+      if (message.id === 1) {
+        send({ method: 'initialized', params: {} });
+        send({ id: 2, method: 'account/rateLimits/read', params: {} });
+      } else {
+        finish(null, message.result);
+      }
+    });
+    send({ id: 1, method: 'initialize', params: {
+      clientInfo: { name: 'dotfiles_usage', version: '1.0' },
+      capabilities: { experimentalApi: true },
+    } });
+  }).finally(() => child.kill());
+  const buckets = response?.rateLimitsByLimitId ?? { codex: response?.rateLimits };
+  const windows = [];
+  for (const [bucket, limits] of Object.entries(buckets)) {
+    for (const window of ['primary', 'secondary']) {
+      const value = limits?.[window];
+      if (!value) continue;
+      if (!Number.isFinite(value.usedPercent) || !Number.isFinite(value.resetsAt)) {
+        throw new Error('Codex returned an unrecognized usage window');
+      }
+      windows.push({ bucket, window, usedPercent: value.usedPercent,
+        remainingPercent: 100 - value.usedPercent,
+        durationMinutes: value.windowDurationMins,
+        resetsAt: new Date(value.resetsAt * 1000).toISOString() });
+    }
+  }
+  if (!windows.length) throw new Error('Codex returned no subscription usage windows');
+  const result = { observedAt: new Date().toISOString(), windows };
+  if (args.includes('--json')) console.log(JSON.stringify(result, null, 2));
+  else {
+    for (const value of windows) {
+      console.log(`${value.bucket}/${value.window}: ${value.remainingPercent}% remaining; resets ${value.resetsAt}`);
+    }
+    console.log('Reported percentages may be rounded. Bucket names do not establish model mappings.');
+  }
+}
+
+main().catch(error => { console.error(`codex-usage: ${error.message}`); process.exitCode = 1; });

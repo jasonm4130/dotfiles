@@ -1,0 +1,22 @@
+{{- $live := dict -}}
+{{- $path := joinPath .chezmoi.homeDir ".codex/config.toml" -}}
+{{- if stat $path -}}
+{{- $live = fromToml (include $path) -}}
+{{- end -}}
+{{- $tui := get $live "tui" | default dict -}}
+{{- if not (hasKey $tui "status_line") -}}
+{{- $_ := set $tui "status_line" (list "model-with-reasoning" "context-remaining" "current-dir" "five-hour-limit" "weekly-limit") -}}
+{{- $_ := set $live "tui" $tui -}}
+{{- end -}}
+# Interactive work uses Astra; routine reviews use `codex --profile review`.
+# Keep background callers explicit about their model.
+model = "gpt-6-astra"
+model_reasoning_effort = "medium"
+approvals_reviewer = "auto_review"
+project_doc_fallback_filenames = ["CLAUDE.md"]
+
+# Preserve settings written by Codex (hook trust, projects, UI and integrations).
+# Only the four defaults above are owned by this template. Runtime state stays
+# on this machine, rather than copying trusted hashes into the dotfiles repo.
+# New machines also get a quota-aware status line; existing choices survive.
+{{ toToml (omit $live "model" "model_reasoning_effort" "approvals_reviewer" "project_doc_fallback_filenames") -}}

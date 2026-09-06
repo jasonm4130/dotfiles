@@ -47,6 +47,7 @@ MEM_WARN_BYTES=18432                    # 18KB — review
 MEM_ACT_BYTES=22528                     # 22KB — act before the cap bites
 LONG_LINE="${CMG_LONG_LINE:-400}"
 ROOTS="${CMG_ROOTS:-$HOME/Work/Git}"
+MODE="${1:-sweep}"
 
 # Colour only for a terminal. Findings are also embedded in the hook's JSON
 # output, where ANSI escapes would be noise (and check_file's output is captured
@@ -68,6 +69,17 @@ check_file() {
   base=$(basename "$f")
   b=$(wc -c < "$f" 2>/dev/null | tr -d ' ') || return 0
   l=$(wc -l < "$f" 2>/dev/null | tr -d ' ') || return 0
+
+  if [ "$MODE" = "codex-hook" ]; then
+    # Claude's MEMORY.md cap and @-import rules are not Codex guarantees.
+    # Report local size heuristics only; instruction discovery is separate.
+    if [ "$b" -gt "$MAX_BYTES" ]; then
+      red "  review instruction size: ${b}B > ${MAX_BYTES}B local review threshold (not a measured context truncation)"
+    elif [ "$b" -gt "$WARN_BYTES" ]; then
+      yel "  review instruction size: ${b}B > ${WARN_BYTES}B local review threshold"
+    fi
+    return 0
+  fi
 
   if [ "$base" = "MEMORY.md" ]; then
     # The only hard, enforced limit. Over it = silent context loss.
@@ -130,7 +142,7 @@ case "${1:-sweep}" in
     if [ -n "$out" ]; then printf '%s\n' "$out"; else grn "  ok"; fi
     ;;
 
-  hook)
+  hook|codex-hook)
     # PostToolUse(Edit|Write|MultiEdit|Bash). Warn only — never block an edit.
     # Bash is covered because a heredoc, `sed -i` or `tee` rewrites an
     # always-loaded instruction file without the write tools being involved.

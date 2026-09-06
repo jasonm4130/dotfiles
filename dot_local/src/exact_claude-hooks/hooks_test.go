@@ -115,6 +115,13 @@ func TestSecretsScanBlocks(t *testing.T) {
 	}
 }
 
+func TestSecretsScanCodexPatch(t *testing.T) {
+	patch := "*** Begin Patch\n*** Add File: example.txt\n+" + "sk-ant-" + strings.Repeat("a", 30) + "\n*** End Patch"
+	assertDenies(t, run(t, "secrets-scan", `{"tool_name":"apply_patch","tool_input":{"command":`+mustJSON(patch)+`}}`), "Codex patch with synthetic secret")
+	assertAllows(t, run(t, "secrets-scan", `{"tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\n*** Add File: example.txt\n+safe\n*** End Patch"}}`), "clean Codex patch")
+	assertDenies(t, run(t, "secrets-scan", `{"tool_name":"apply_patch","tool_input":{}}`), "Codex patch with missing command")
+}
+
 func TestSecretsScanAllows(t *testing.T) {
 	cases := []struct{ label, payload string }{
 		{"clean content", `{"tool_name":"Write","tool_input":{"content":"hello world"}}`},

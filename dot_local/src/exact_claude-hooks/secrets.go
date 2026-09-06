@@ -72,6 +72,13 @@ func secretsScan() {
 		// A heredoc/redirect through Bash writes a file without touching the
 		// write tools, so the command line gets the same scan as file content.
 		content = in.ToolInput.Command
+	case "apply_patch":
+		// Codex sends the patch in command, not Claude's content/new_string.
+		// An absent field means the payload was not scanned; block schema drift.
+		content = in.ToolInput.Command
+		if content == "" {
+			deny("SECRETS-SCAN", "SECRETS-SCAN: Codex patch has no command — failing closed because the patch could not be scanned.")
+		}
 	default:
 		os.Exit(0)
 	}
