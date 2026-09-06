@@ -1,4 +1,4 @@
-# Opt-in orchestration for local code work; base permissions and hooks remain active.
+# Explicit alias for the default local work loop; base permissions and hooks remain active.
 model = "gpt-6-astra"
 model_reasoning_effort = "medium"
 developer_instructions = """

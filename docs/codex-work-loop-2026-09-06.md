@@ -22,6 +22,9 @@ his own work; none of the sources establishes this exact combination as best.
 
 ## Specification
 
+Ordinary launches load the work-loop instructions and worker defaults from the
+global config. The `work` profile remains an explicit alias.
+
 Create five personal profiles: `work` (Astra orchestrator), `work-terra`,
 `work-sol`, `work-advisor`, and `work-review`. Keep the existing `review`
 profile unchanged for compatibility. All roles start at medium effort.

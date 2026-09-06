@@ -26,17 +26,27 @@
 {{- $_ := set $tui "status_line" (list "model-with-reasoning" "context-remaining" "current-dir" "five-hour-limit" "weekly-limit") -}}
 {{- $_ := set $live "tui" $tui -}}
 {{- end -}}
-# Interactive work uses Astra; routine reviews use `codex --profile review`.
+# Ordinary launches use the Astra work loop; worker callers select explicit profiles.
 # Keep background callers explicit about their model.
 model = "gpt-6-astra"
 model_reasoning_effort = "medium"
 approvals_reviewer = "auto_review"
 project_doc_fallback_filenames = ["CLAUDE.md"]
+developer_instructions = """
+Use the work-loop skill at ~/.codex/skills/work-loop/SKILL.md for substantive code work.
+Act as the orchestrator: own scope, delegate bounded implementation, resolve advisor requests,
+and accept changes using observed checks and fresh review. Handle trivial edits directly.
+"""
 
 # Preserve settings written by Codex (hook trust, projects, UI and integrations).
-# The four defaults above and native memory enable/use/generation plus its 25%
+# The defaults above, worker routing, and native memory settings with their 25%
 # quota reserve are owned by this template. Other runtime state stays
 # on this machine, rather than copying trusted hashes into the dotfiles repo.
 # New machines also get a quota-aware status line; existing choices survive.
 # Seed documentation MCPs if absent; preserve their later local customization.
-{{ toToml (omit $live "model" "model_reasoning_effort" "approvals_reviewer" "project_doc_fallback_filenames") -}}
+{{- $agents := get $live "agents" | default dict -}}
+{{- $_ := set $agents "default_subagent_model" "gpt-5.6-terra" -}}
+{{- $_ := set $agents "default_subagent_reasoning_effort" "medium" -}}
+{{- $_ := set $agents "max_concurrent_threads_per_session" 3 -}}
+{{- $_ := set $live "agents" $agents }}
+{{ toToml (omit $live "model" "model_reasoning_effort" "approvals_reviewer" "project_doc_fallback_filenames" "developer_instructions") -}}

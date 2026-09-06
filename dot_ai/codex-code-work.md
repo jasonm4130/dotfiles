@@ -10,7 +10,8 @@ Astra at medium effort is the interactive orchestrator. For substantial delegate
 implementation, use `~/.codex/skills/work-loop/SKILL.md`: Terra handles bounded
 work, Sol handles harder implementation via `codex exec --profile work-sol`,
 and fresh Astra sessions provide focused advice and independent review.
-`codex --profile work` selects this workflow explicitly. Trivial edits stay local;
+Ordinary Codex launches load this workflow by default; `--profile work` remains
+an explicit alias. Trivial edits stay local;
 do not spawn agents merely because they are available. The legacy `review`
 profile remains an explicit Terra read-only review, not the work-loop final reviewer.
 
