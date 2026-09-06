@@ -17,6 +17,9 @@
 {{- $_ := set $mcp $name (dict "url" $url "enabled" true "startup_timeout_sec" 30 "tool_timeout_sec" 60) -}}
 {{- end -}}
 {{- end -}}
+{{- if not (hasKey $mcp "chrome-devtools") -}}
+{{- $_ := set $mcp "chrome-devtools" (dict "command" "npx" "args" (list "--offline" "--yes" "chrome-devtools-mcp@1.8.0" "--isolated" "--headless" "--no-usage-statistics" "--no-performance-crux") "enabled" true "startup_timeout_sec" 30 "tool_timeout_sec" 60) -}}
+{{- end -}}
 {{- $_ := set $live "mcp_servers" $mcp -}}
 {{- $tui := get $live "tui" | default dict -}}
 {{- if not (hasKey $tui "status_line") -}}

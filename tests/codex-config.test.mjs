@@ -30,6 +30,7 @@ test('new config enables native memory with quota reserve', t => {
   assert.equal(value.mcp_servers.openaiDeveloperDocs.url, 'https://developers.openai.com/mcp');
   assert.equal(value.mcp_servers['cloudflare-docs'].url, 'https://docs.mcp.cloudflare.com/mcp');
   assert.equal(value.mcp_servers.openaiDeveloperDocs.enabled, true);
+  assert.deepEqual(value.mcp_servers['chrome-devtools'].args, ['--offline', '--yes', 'chrome-devtools-mcp@1.8.0', '--isolated', '--headless', '--no-usage-statistics', '--no-performance-crux']);
 });
 
 test('memory defaults preserve runtime state and render idempotently', t => {

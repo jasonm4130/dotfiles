@@ -1,0 +1,73 @@
+#!/usr/bin/env node
+// Interactive policy, separate from Nightshift's unattended-worker restrictions.
+// Textual tripwires, not a shell parser or a substitute for branch protection.
+const {execFileSync} = require('node:child_process');
+const {readFileSync} = require('node:fs');
+const {join, resolve} = require('node:path');
+
+function git(cwd, ...args) {
+  return execFileSync('git', args, {cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 2000});
+}
+function deny(reason) {
+  process.stdout.write(JSON.stringify({hookSpecificOutput: {
+    hookEventName: 'PreToolUse', permissionDecision: 'deny',
+    permissionDecisionReason: `codex-project-guard: ${reason}`,
+  }}));
+}
+function main() {
+  const p = JSON.parse(readFileSync(0, 'utf8'));
+  if (p.tool_name !== 'Bash') return;
+  const command = String(p.tool_input?.command || '');
+  let cwd = p.cwd || process.cwd();
+  // Account for the common single-repository command forms. Complex shell
+  // routing is outside this textual guard's contract; use the tool's workdir.
+  const directory = command.match(/(?:^\s*cd\s+|\bgit\s+-C\s+)(?:"([^"$`]+)"|'([^']+)'|([^\s;&|$`]+))/);
+  if (directory) cwd = resolve(cwd, directory[1] || directory[2] || directory[3]);
+  let root, remote;
+  try {
+    root = git(cwd, 'rev-parse', '--show-toplevel').trim();
+    remote = git(root, 'remote', 'get-url', 'origin').trim();
+  } catch { return; } // Outside a configured Git project.
+  const repo = remote.match(/github\.com[:/](jasonm4130-labs\/(?:transcoder|ambient)|jasonm4130\/claude-skills)(?:\.git)?$/)?.[1];
+  if (!repo) return;
+
+  if (/\bgh\b[^\n]*\s--admin\b/.test(command)) return deny('Do not bypass required checks with --admin. Wait for CI or ask Jason.');
+  if (/\bgit\b[^\n;&|]*\bpush\b[^\n;&|]*(?:\s(?:--force(?:-with-lease|-if-includes)?(?:=\S*)?|-\w*f\w*|\+\S+)(?:\s|$))/.test(command)) {
+    return deny('Force pushes rewrite reviewed history. Ask Jason before proceeding.');
+  }
+  if (/\bgit\b[^\n;&|]*\bcommit\b[^\n;&|]*\s(?:--no-verify|-n)(?:\s|$)/.test(command)) {
+    return deny('Do not skip the pre-commit checks. Fix the failure or ask Jason.');
+  }
+  if (/\bgh\s+(?:workflow\s+(?:disable|enable)|variable\s+(?:set|delete|remove))\b/.test(command)) {
+    return deny('Changing CI workflows or their switches needs Jason’s explicit review.');
+  }
+  if (/\bgh\s+api\b/.test(command) && /(?:\s(?:-X|--method)[= ]+(?!GET\b)\w+|\s(?:-f|-F|--field|--raw-field|--input)(?:[= ]|$))/.test(command)
+      && /\/(?:protection|rulesets|actions|merge|git\/refs|variables)(?:\b|\/)/.test(command)) {
+    return deny('Use the reviewed CI/merge workflow; direct API changes to its controls need Jason’s review.');
+  }
+
+  if (repo.endsWith('/transcoder')) {
+    const output = execFileSync('node', [join(root, '.claude/hooks/nextest-guard.mjs')], {
+      input: JSON.stringify(p), encoding: 'utf8', timeout: 2000,
+    });
+    if (output.trim()) { process.stdout.write(output); return; }
+    if (/\bgh\s+pr\s+create\b/.test(command)) {
+      const base = command.match(/(?:--base[= ]+|-B\s+)["']?([\w./-]+)/)?.[1];
+      if (base && base !== 'main' && base !== 'origin/main') {
+        return deny(`PR base ${base} does not get this repository’s main-branch CI. Ask Jason to confirm the stacked PR; do not retry around this hook. After confirmation, Jason can run the exact command in his terminal.`);
+      }
+    }
+  } else if (/\bgit\b[^\n;&|]*\bcommit\b/.test(command)) {
+    // Reuse the upstream test policy, without its independent overnight CI guard.
+    // Normalize global Git options for the existing hook's commit recognizer.
+    const normalized = command.replace(/\bgit\b[^\n;&|]*?\bcommit\b/g, 'git commit');
+    const output = execFileSync('node', [join(root, '.claude/hooks/tests-are-readonly.mjs')], {
+      input: JSON.stringify({...p, cwd, tool_input: {...p.tool_input, command: normalized}}),
+      encoding: 'utf8', timeout: 2000,
+    });
+    if (output.trim()) process.stdout.write(output);
+  }
+}
+try { main(); } catch (error) {
+  deny(`Could not evaluate the project policy (${error.code || error.name}). Stop and repair the guard before retrying.`);
+}

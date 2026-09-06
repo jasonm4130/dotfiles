@@ -1,9 +1,9 @@
 # Codex operation and verification
 
 Jason's interactive baseline is Astra at medium effort, authenticated with
-ChatGPT Pro 20×. The global protections below are active and tested. Claude's
-project guards and Nightwatch are not yet a working Codex workflow; use the
-compatibility table before resuming unattended work.
+ChatGPT Pro 20×. Global protections and daytime project guards are active and
+tested. Native memory recall is still pending consolidation. Nightwatch is not
+yet a working Codex workflow; use the compatibility table before unattended work.
 
 ## Daily use
 
@@ -119,7 +119,8 @@ preserved; a subsequent chezmoi diff showed only their formatting normalization.
 
 The [setup audit](codex-setup-audit-2026-09-06.md) records the practitioner
 comparison and a task-based improvement workflow. The baseline is not a proven
-optimum. Project guard ports and Nightwatch remain separate readiness gates.
+optimum. The [daytime follow-up](codex-followup-2026-09-06.md) records the guard
+policy and browser checks. Nightwatch remains a separate readiness gate.
 
 ## MCP connections
 
@@ -133,6 +134,7 @@ to seed it again; disable it explicitly instead.
 |---|---|---|
 | OpenAI Developer Docs | `https://developers.openai.com/mcp` | `connected`; five tools; `search_openai_docs` returned results and `fetch_openai_doc` returned `# Slash commands`. |
 | Cloudflare docs | `https://docs.mcp.cloudflare.com/mcp` | `connected`; two tools; `search_cloudflare_documentation` returned `https://developers.cloudflare.com/workers/wrangler/commands/workers/`. |
+| Chrome DevTools | Cached `npx --offline --yes chrome-devtools-mcp@1.8.0` | `connected`; synthetic DOM returned `CHROME_DOM_OK`; test tab closed. |
 
 The checks used Codex app-server's actual MCP client, not just HTTP reachability
 or config parsing. No model calls were needed. `codex mcp list` labels these
@@ -148,10 +150,9 @@ was edited. See [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/
 
 Other Claude connections were assessed, not silently copied:
 
-- Chrome DevTools 1.8.0 already exists in the npm cache. Its executed help lists
-  `--isolated`, `--headless`, and telemetry opt-outs. Browser control is not
-  configured yet; an isolated profile is the proposed default, not access to
-  Jason's normal signed-in tabs. No browser workload was run in this pass.
+- Chrome DevTools now uses `--isolated --headless --no-usage-statistics
+  --no-performance-crux`. It does not attach Jason's signed-in browser. The
+  pinned package must exist in the npm cache; offline startup will not download it.
 - The social MCP returned `social MCP HTTP 401` to an unauthenticated initialize
   request. It needs a separate Codex login/access decision. Claude tokens were
   not read or copied; no social account tool was called.
@@ -214,13 +215,13 @@ The scoped `chezmoi diff` and `git diff --check` returned no output.
 | Claude PreCompact hook | Not copied: it writes Claude's compaction log and claims its checkpoint is the only durable trace. That claim does not describe Codex history. |
 | Stay-awake wrapper | Not imported as an every-session background process. Use an explicitly scoped `caffeinate` for an authorized long terminal run. |
 | Claude title/fanfare/statusline | Tests pass for Claude. Codex uses its native title/footer; Claude's `terminalSequence` and Notification event were not assumed compatible. Custom voice clips were not ported. |
-| Transcoder nextest guard | Direct payload tests returned deny for blanket workspace serialization and allow for nextest. Not installed in Codex project scope yet. |
-| Transcoder PR-base guard | Direct test returned `ask`. Codex documents `ask` as unsupported and fail-open for PreToolUse; port the decision semantics before enabling. No PR was created. |
-| Ambient and claude-skills project guards | Seven tests passed in each repo. Existing settings are Claude-only; Codex project activation remains necessary, including coverage of new `.codex/` configuration paths. |
+| Transcoder nextest guard | The trusted daytime dispatcher invokes the existing guard. Fixture checks allow nextest and deny blanket workspace serialization. |
+| Transcoder PR-base guard | Daytime policy denies non-main PRs and asks the agent to seek Jason's confirmation. A native Codex probe was blocked. Confirmed exceptions are run by Jason, not by disabling the guard. |
+| Ambient and claude-skills project guards | Daytime policy is active by Git remote. Native status/deny probes passed in both repositories. Tests cover staged test removal; ordinary commits and merges remain allowed. Overnight guards are unchanged. |
 | gates/ship-gate/retro | Not imported. Their Claude state, hook outputs and worker routing require a deliberate port. Do not interpret plugin names in old instructions as installed Codex capabilities. |
 | ADR/domain-modeling/Nightshift skills | Writing was portable and installed. ADR routes into `nightshift:plan`; keep that dependency explicit rather than installing a broken entry point. |
 | LSP plugins | Claude registrations do not provide a Codex LSP tool. The adapted convention uses LSP when exposed and targeted search otherwise. |
-| Custom MCP services | OpenAI and Cloudflare documentation MCPs are now connected and tool-tested; see MCP connections above. Chrome, Tavily, social and Claude Design remain unconfigured. Built-in app tools are separate. |
+| Custom MCP services | OpenAI docs, Cloudflare docs, and isolated Chrome are connected and tool-tested. Tavily, social and Claude Design remain unconfigured. Built-in app tools are separate. |
 | Installed Codex plugins | CLI inventory lists plugin-management 0.1.0, openai-templates 0.1.1 and deep-research-work 0.1.14, enabled. Their external account actions were not exercised. |
 | Nightwatch | Launcher still uses `claude -p` and Workflow with Opus/Sonnet phases. A runtime port, not a model substitution; no overnight workload launched. |
 | wattop | Dollar estimates remain distinct from subscription allowance. Existing QA and runtime-storage support need a separate ai-dashboard session. |
@@ -235,8 +236,8 @@ The primary references are [Codex hooks](https://learn.chatgpt.com/docs/hooks),
 ## Next project sessions
 
 Use the [four resume points](codex-migration-2026-09-06.md#project-resume-points).
-For each repository, first migrate its guard configuration with safe deny/allow
-fixtures and trust its hooks. Then resume the project task. Keep Nightwatch's
+Resume daytime project tasks with the trusted guard and the documented memory
+handoffs. Test native memory recall after consolidation. Keep Nightwatch's
 runtime port in claude-skills; preserve its independent verification, queue,
 resume and no-push/no-merge contracts. This is required before treating Codex
 as a replacement for the overnight workflow after September 25.
