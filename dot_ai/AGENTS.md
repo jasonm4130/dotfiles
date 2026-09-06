@@ -67,7 +67,7 @@ It is a verdict that the current approach is wrong, not a request to adjust it. 
 existing frame forward through it: drop the plan, re-read the actual ask, and say what you now think
 before acting. Patching the thing he just rejected reads as not having heard him.
 
-Open a second session when an unrelated topic arrives. Unlock 1Password before dispatching anything long.
+Open a second session when an unrelated topic arrives. Unlock 1Password before dispatching anything long. Do not infer that the desktop app is locked from `op whoami` failing. Check outside the sandbox, use desktop-integrated `op signin` if needed, and verify readiness with `op vault list` while suppressing vault details. Never display or persist session tokens.
 
 ## Context hygiene
 
