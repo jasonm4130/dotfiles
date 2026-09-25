@@ -4,7 +4,8 @@
 onboarding = false
 
 [theme]
-name = "terminal"
+name = "one-dark"
+auto_switch = false
 [theme.custom]
 sidebar_bg = "#221f22"
 active_row_bg = "#2d2a2e"

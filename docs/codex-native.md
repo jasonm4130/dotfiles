@@ -15,7 +15,8 @@ updates; the native daemon also reported automatic updates enabled at setup.
 The shared daemon held both plain `codex` and explicit `--remote unix://` test
 sessions on September 11. No terminal wrapper is required. Chezmoi also loads
 `dev.jasonmatthew.codex-shared-server`, which sets the desktop's built-in
-`CODEX_APP_SERVER_USE_LOCAL_DAEMON=1` launch option at login. Restart the desktop
+`CODEX_APP_SERVER_USE_LOCAL_DAEMON=0` launch option at login, so the desktop app
+runs its own server rather than attaching to the shared daemon. Restart the desktop
 after changing this option. This option was verified in the installed app's
 code; it may need rechecking after app updates.
 
