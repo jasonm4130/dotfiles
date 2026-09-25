@@ -218,7 +218,6 @@
     }
   },
   "autoCompactWindow": 400000,
-  "advisorModel": "opus",
   "askUserQuestionTimeout": "5m",
   "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
