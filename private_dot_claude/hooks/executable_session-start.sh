@@ -20,7 +20,7 @@ trap 'rm -f "$primer"' EXIT
   # Deliberately NOT a scheduled job: a previous weekly launchd automation got
   # deleted for firing regardless of need. This is silent until the date passes,
   # then nudges at most weekly, and never starts the review itself.
-  agents_file="${CLAUDE_AGENTS_FILE:-$HOME/.ai/AGENTS.md}"
+  agents_file="${CLAUDE_AGENTS_FILE:-$HOME/.codex/AGENTS.md}"
   ack_file="${CLAUDE_CONFIG_REVIEW_ACK:-$HOME/.claude/.config-review-ack}"
   if [ -r "$agents_file" ]; then
     marker=$(grep -o '<!-- config-review:[^>]*-->' "$agents_file" 2>/dev/null | head -1)
@@ -60,8 +60,7 @@ trap 'rm -f "$primer"' EXIT
   # would flag every file it owns — noisier than the bug this fixes.
   for spec in "$PROJECT/docs/plans:check" \
               "$PROJECT/docs/superpowers/plans:check" \
-              "$PROJECT/.claude/plans:check" \
-              "$HOME/.claude/plans:native"; do
+              "$PROJECT/.claude/plans:check"; do
     d="${spec%:*}"; mode="${spec##*:}"
     [ -d "$d" ] || continue
     rel="${d/#$HOME/\~}"

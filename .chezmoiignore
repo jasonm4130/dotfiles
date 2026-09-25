@@ -6,6 +6,8 @@ docs/**
 tests
 tests/**
 bootstrap.sh
+AGENTS.md
+CLAUDE.md
 .gitignore
 .github
 .github/**
@@ -16,7 +18,7 @@ bootstrap.sh
 
 # Re-allow ancestor + tracked files/dirs (deep paths use **/**)
 !.claude/
-# CLAUDE.md is rendered by run_onchange_after_07-agents-md-sync, NOT chezmoi-tracked
+!.claude/CLAUDE.md
 !.claude/settings.json
 !.claude/.mcp.json
 !.claude/agents/

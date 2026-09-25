@@ -56,6 +56,6 @@ model = "gpt-6-astra"
 model_reasoning_effort = "low"
 service_tier = "default"
 approvals_reviewer = "auto_review"
-project_doc_fallback_filenames = []
+{{ toToml (dict "developer_instructions" (includeTemplate "codex-developer-instructions.md" . | trim)) }}project_doc_fallback_filenames = []
 
 {{ toToml (omit $live "model" "model_reasoning_effort" "service_tier" "approvals_reviewer" "project_doc_fallback_filenames" "developer_instructions") -}}
