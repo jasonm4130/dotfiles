@@ -1,4 +1,5 @@
-{{- $path := joinPath .chezmoi.homeDir ".codex/config.toml" -}}
+{{- $home := .chezmoi.homeDir -}}
+{{- $path := joinPath $home ".codex/config.toml" -}}
 {{- $live := dict -}}
 {{- if stat $path -}}
 {{- $live = fromToml (include $path) -}}
@@ -19,28 +20,38 @@
 {{- $_ := set $memories "use_memories" true -}}
 {{- $_ := set $memories "min_rate_limit_remaining_percent" 25 -}}
 {{- $_ := set $live "memories" $memories -}}
+{{/* Commands get a core env only, so secrets exported by an `op run` parent do not reach them. */}}
+{{- $shellenv := get $live "shell_environment_policy" | default dict -}}
+{{- $_ := set $shellenv "inherit" "core" -}}
+{{- $shellset := get $shellenv "set" | default dict -}}
+{{- $_ := set $shellset "TZ" "Australia/Brisbane" -}}
+{{- $_ := set $shellenv "set" $shellset -}}
+{{- $_ := set $live "shell_environment_policy" $shellenv -}}
 {{/* Retire disabled custom MCP definitions; plugin connections are separate. */}}
 {{- $mcp := get $live "mcp_servers" | default dict -}}
 {{- range $name := list "chrome-devtools" "claude-design" "cloudflare-docs" "openaiDeveloperDocs" "social" "tavily" -}}
 {{- if hasKey $mcp $name -}}
-{{- if eq (get (get $mcp $name) "enabled") false -}}
+{{- if eq (toString (get (get $mcp $name) "enabled")) "false" -}}
 {{- $_ := unset $mcp $name -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
 {{- $_ := set $live "mcp_servers" $mcp -}}
-{{/* Keep retired workflows disabled without modifying their source files. */}}
+{{/* Drop stale disables: work-loop is deleted; writing-artifacts is shared with Codex. */}}
 {{- $skills := get $live "skills" | default dict -}}
 {{- $kept := list -}}
 {{- range $entry := get $skills "config" | default list -}}
-{{- if not (has (get $entry "name") (list "work-loop" "writing-artifacts")) -}}
+{{- $stale := list "work-loop" "writing-artifacts" -}}
+{{- if not (or (has (get $entry "name") $stale) (has (base (toString (get $entry "path"))) $stale)) -}}
 {{- $kept = append $kept $entry -}}
 {{- end -}}
 {{- end -}}
-{{- $kept = append $kept (dict "name" "work-loop" "enabled" false) -}}
-{{- $kept = append $kept (dict "name" "writing-artifacts" "enabled" false) -}}
+{{- if $kept -}}
 {{- $_ := set $skills "config" $kept -}}
 {{- $_ := set $live "skills" $skills -}}
+{{- else -}}
+{{- $_ := unset $live "skills" -}}
+{{- end -}}
 model = "gpt-6-astra"
 model_reasoning_effort = "low"
 service_tier = "default"

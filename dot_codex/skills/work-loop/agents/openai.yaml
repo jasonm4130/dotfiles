@@ -1,4 +1,0 @@
-interface:
-  display_name: "Work Loop"
-  short_description: "Astra orchestration with Terra and Sol workers"
-  default_prompt: "Use $work-loop to implement a bounded change with focused advice and independent review."
