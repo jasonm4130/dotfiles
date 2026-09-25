@@ -1,130 +1,108 @@
 {
   "env": {
     "CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE": "1",
-    "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB": "1",
-    "TZ": "Australia/Brisbane",
-    "BASH_DEFAULT_TIMEOUT_MS": "300000",
-    "RETRO_BATCH_MIN_SESSIONS": "15",
-    "RETRO_BATCH_MIN_DAYS": "0",
-    "RETRO_BATCH_MAX_SESSIONS": "20"
+    "BASH_DEFAULT_TIMEOUT_MS": "300000"
   },
   "attribution": {
     "commit": ""
   },
   "permissions": {
     "allow": [
-      "Read",
-      "Glob",
-      "Grep",
-      "Edit",
-      "Write",
+      "Read(~/Work/Git/**)",
+      "Read(~/.local/share/chezmoi/**)",
+      "Read(~/.claude/**)",
+      "Read(~/.codex/**)",
+      "Read(~/.ai/**)",
+      "Read(~/.config/**)",
+      "Read(//private/tmp/claude-501/**)",
       "WebFetch",
       "WebSearch",
       "Workflow",
-      "Bash(git status:*)",
-      "Bash(git log:*)",
-      "Bash(git diff:*)",
-      "Bash(git branch:*)",
-      "Bash(git checkout:*)",
-      "Bash(git stash:*)",
-      "Bash(git show:*)",
-      "Bash(git fetch:*)",
-      "Bash(git pull:*)",
-      "Bash(git push:*)",
-      "Bash(git remote:*)",
-      "Bash(git tag:*)",
-      "Bash(git merge:*)",
-      "Bash(git rebase:*)",
-      "Bash(git init:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(gh:*)",
-      "Bash(ls:*)",
-      "Bash(cat:*)",
-      "Bash(which:*)",
-      "Bash(npm:*)",
-      "Bash(pnpm:*)",
-      "Bash(uv:*)",
-      "Bash(wrangler:*)",
-      "Bash(brew:*)",
-      "Bash(docker:*)",
-      "Bash(mkdir:*)",
-      "Bash(cp:*)",
-      "Bash(mv:*)",
-      "Bash(head:*)",
-      "Bash(tail:*)",
-      "Bash(wc:*)",
-      "Bash(jq:*)",
-      "Bash(cargo:*)",
-      "Bash(rustc:*)",
-      "Bash(seq:*)",
-      "Bash(echo:*)",
-      "Bash(diff:*)",
-      "Bash(for:*)",
-      "Bash(cd:*)",
-      "Bash(pwd:*)",
-      "mcp__exa__web_search_exa",
-      "mcp__exa__web_fetch_exa",
-      "mcp__tavily__tavily_search",
-      "Bash(grep:*)",
-      "Bash(rg:*)",
-      "Bash(sed:*)",
-      "Bash(awk:*)",
-      "Bash(sort:*)",
-      "Bash(uniq:*)",
-      "Bash(cut:*)",
-      "Bash(tr:*)",
-      "Bash(find:*)",
-      "Bash(stat:*)",
-      "Bash(date:*)",
-      "Bash(du:*)",
-      "Bash(df:*)",
-      "Bash(basename:*)",
-      "Bash(dirname:*)",
-      "Bash(printf:*)",
-      "Bash(test:*)",
-      "Bash(touch:*)",
-      "Bash(chmod:*)",
-      "Bash(true)",
-      "Bash(false)",
+      "Bash(git push:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git merge:*)",
+      "Bash(git rebase:*)",
       "Bash(git switch:*)",
       "Bash(git worktree:*)",
-      "Bash(git rev-parse:*)",
-      "Bash(git cat-file:*)",
-      "Bash(git ls-files:*)",
-      "Bash(git restore:*)",
+      "Bash(git init:*)",
       "Bash(git rm:*)",
       "Bash(git mv:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr status:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh repo view:*)",
       "Bash(chezmoi diff:*)",
       "Bash(chezmoi status:*)",
       "Bash(chezmoi source-path:*)",
       "Bash(chezmoi managed:*)",
-      "Bash(chezmoi apply:*)",
-      "Bash(ssh root@brok.jasonmatthew.me:*)",
-      "Bash(ssh root@192.168.5.10:*)",
-      "Bash(ssh root@192.168.5.20:*)",
-      "Bash(ssh root@192.168.5.21:*)",
-      "Bash(ssh -o ConnectTimeout=10 root@brok.jasonmatthew.me:*)",
-      "Bash(ssh -o ConnectTimeout=10 root@192.168.5.10:*)",
-      "Bash(mise:*)",
-      "Bash(claude auto-mode:*)",
-      "Bash(claude plugin:*)",
-      "Bash(pgrep:*)",
-      "Bash(ps:*)",
-      "Bash(lsof:*)",
       "Bash(launchctl list:*)",
-      "Bash(launchctl print:*)"
+      "Bash(launchctl print:*)",
+      "Bash(mise current:*)",
+      "Bash(uniq:*)",
+      "Bash(awk:*)",
+      "Bash(mkdir:*)",
+      "Bash(touch:*)"
     ],
-    "deny": [],
+    "ask": [
+      "Bash(gh pr merge *--admin*)",
+      "Bash(git push *--force*)",
+      "Bash(git push -f *)",
+      "Bash(git push * -f)",
+      "Bash(git push * -f *)",
+      "Bash(git push * +*)",
+      "Bash(*wrangler deploy*)",
+      "Bash(*wrangler pages deploy*)",
+      "Bash(*wrangler versions deploy*)",
+      "Bash(*wrangler delete*)",
+      "Bash(ssh *docker system prune*)",
+      "Bash(ssh *docker volume rm*)",
+      "Bash(ssh *docker volume prune*)",
+      "Bash(ssh *docker compose down -v*)",
+      "Bash(ssh *rm -rf*)",
+      "Bash(chezmoi apply)",
+      "Bash(chezmoi apply --force)",
+      "Bash(chezmoi apply -v)",
+      "Bash(chezmoi apply --verbose)",
+      "Bash(chezmoi apply --force -v)",
+      "Bash(chezmoi apply -v --force)",
+      "Bash(chezmoi update *)",
+      "Bash(chezmoi init *--apply*)"
+    ],
+    "deny": [
+      "Read(//**/.env)",
+      "Read(//**/.env.local)",
+      "Read(//**/.env.*.local)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.config/op/**)",
+      "Read(~/.codex/auth.json)",
+      "Read(~/.netrc)",
+      "Bash(git commit -a*)",
+      "Bash(git commit --all*)",
+      "mcp__claude_ai_Gmail__update_draft",
+      "Read(~/Work/Git/**/secrets/**)",
+      "Read(~/.config/rpiv-web-tools/**)",
+      "Edit(//**/.env)",
+      "Edit(//**/.env.local)",
+      "Edit(//**/.env.*.local)",
+      "Edit(~/.ssh/**)"
+    ],
     "defaultMode": "auto"
   },
-  "model": "claude-fable-5-1[1m]",
-  "disabledMcpjsonServers": [],
-  "skillOverrides": {},
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+        "matcher": "Edit|Write|NotebookEdit|Bash",
         "hooks": [
           {
             "type": "command",
@@ -163,18 +141,6 @@
             "type": "command",
             "command": "bash '/Users/jasonmatthew/.claude/hooks/herdr-agent-state.sh' session",
             "timeout": 10
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write|MultiEdit|Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/claude-md-guard.sh hook",
-            "timeout": 5
           }
         ]
       }
@@ -219,21 +185,13 @@
     "command": "~/.local/bin/claude-statusline"
   },
   "enabledPlugins": {
-    "commit-commands@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
-    "context7@claude-plugins-official": true,
-    "handoff@jasonm4130-claude-skills": false,
-    "session-retro@jasonm4130-claude-skills": true,
     "gates@jasonm4130-claude-skills": true,
-    "adr@jasonm4130-claude-skills": true,
     "ship-gate@jasonm4130-claude-skills": true,
     "codex-review@jasonm4130-claude-skills": true,
-    "writing-artifacts@jasonm4130-claude-skills": true,
-    "domain-modeling@jasonm4130-claude-skills": true,
-    "claude-code-setup@claude-plugins-official": true,
-    "nightshift@jasonm4130-claude-skills": true
+    "writing-artifacts@jasonm4130-claude-skills": true
   },
   "extraKnownMarketplaces": {
     "jasonm4130-claude-skills": {
@@ -242,26 +200,20 @@
         "repo": "jasonm4130/claude-skills"
       },
       "autoUpdate": true
-    },
-    "openai-codex": {
-      "source": {
-        "source": "github",
-        "repo": "openai/codex-plugin-cc"
-      }
     }
   },
   "outputStyle": "Concise",
+  "subagentPromptCacheTtl": "1h",
   "effortLevel": "high",
   "modelSettings": {
     "claude-fable-5": {
       "effortLevel": "medium"
     },
     "claude-opus-5": {
-      "effortLevel": "high"
+      "effortLevel": "medium"
     }
   },
   "autoCompactWindow": 400000,
-  "subagentPromptCacheTtl": "1h",
   "advisorModel": "opus",
   "askUserQuestionTimeout": "5m",
   "tui": "fullscreen",
@@ -271,33 +223,6 @@
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
   "autoMode": {
-    "environment": [
-      "### Org-wide",
-      "**Organization**: None configured",
-      "**Cloud provider(s)**: None configured",
-      "**Repository visibility**: private by default; the public repos are the ones under github.com/jasonm4130 with a published README (claude-skills is public), treat every other checkout as private",
-      "**Internal sharing / snippet hosting**: None configured — treat public paste/gist services as outside the trust boundary",
-      "**Secrets management**: 1Password (per ~/.claude/CLAUDE.md — `.env.op` with `op://Vault/Item/field` references, run via `op run --env-file .env.op -- <command>`; never plaintext)",
-      "**Default / protected branches**: `main` everywhere; claude-skills and ambient protect `main` (PRs only, required checks), so a direct push there is refused by GitHub, not by this classifier",
-      "**CI/CD deploy targets**: None configured",
-      "**Network posture**: None configured",
-      "**Source control**: GitHub via the `gh` CLI; every repo under ~/Work/Git has an origin under github.com/jasonm4130",
-      "**Trusted internal domains**: Jason's own LAN and DNS: `brok.jasonmatthew.me` and `*.jasonmatthew.me`, `192.168.5.0/24` (Brok, the Unraid server, at 192.168.5.10; dell01 and dell02, transcoder workers, at 192.168.5.20 and 192.168.5.21). These are homelab hosts Jason alone owns and uses; reaching them by ssh, scp, http or docker is inside the trust boundary",
-      "**Trusted cloud buckets**: None configured — the `npm-registry-packages` / `npm-registry-packages-npm-production` names found in config scans are standard npm-registry replication artifacts, not org-specific buckets, and were not corroborated by transcript-mining usage counts (config-derived, not usage-corroborated)",
-      "**Key internal services**: Brok (Unraid) at brok.jasonmatthew.me / 192.168.5.10: root SSH with key auth, Docker Compose stacks under /mnt/user/appdata/stacks and /mnt/cache/appdata/stacks (arr, transcoder, gphotos and others, managed from the brok-stacks repo), user.scripts cron under /boot/config/plugins/user.scripts, the media array under /mnt/user/data; dell01 (192.168.5.20) and dell02 (192.168.5.21) run transcoder worker containers, deployed by Ansible from brok-stacks/nodes. Routine work there is ssh and scp as root, docker compose pull/up/down/restart/stop/logs, editing compose files and cron entries, copying a script over and running it, and read-only sqlite queries on stack state. Nobody else depends on these services",
-      "**Internal package registry**: None configured",
-      "**Sensitive data locations & audiences**: any file or store holding personal data, confidential business data, credentials, regulated data, or similarly sensitive material; preserve exact handles when known and share only with audiences cleared at the [named+specifics] bar",
-      "**Data retention / declassification**: None configured",
-      "**Sensitive remote targets**: the Cloudflare account (wrangler deploys, terraform or tofu apply in the cloudflare and unifi repos) and the UniFi controller (firewall and network changes): those need Jason's stated intent per action. Nothing on the LAN is a production target; Brok and dell01 are routine hosts. On Brok the protected things are the container data directories under /mnt/user/appdata/<stack>/ and /mnt/cache/appdata/<stack>/ (not the compose files), the data under /mnt/user/data and /mnt/user0, and the Unraid array, shares, disks and parity: deleting, overwriting, pruning or reformatting any of those needs Jason's stated intent",
-      "**Protected deployment namespaces / environments**: None configured — fall back to the Sensitive remote targets heuristic",
-      "**Protected IaC scopes**: firewall.tf and network resources in the unifi repo, and Cloudflare zone, DNS and access resources in the cloudflare repo. Docker Compose files and cron entries in brok-stacks are homelab configuration, not protected IaC",
-      "### User-specific",
-      "**Primary use of Claude Code**: software development in the repos under ~/Work/Git (claude-skills, a Claude Code plugin marketplace; ambient, a macOS recording app; transcoder; brok-stacks, homelab infrastructure for the Unraid host brok; coach), plus dotfiles and system administration (chezmoi, Homebrew, 1Password CLI)",
-      "**Trusted repo**: any git checkout under ~/Work/Git whose origin is under github.com/jasonm4130, plus the chezmoi source at ~/.local/share/chezmoi (origin github.com/jasonm4130/dotfiles) and the files it renders under $HOME. Treat the home directory itself as a dotfiles working tree, not a project. The Claude Code configuration under ~/.claude (settings.json, agents, rules, hooks) is Jason's own; editing it through the chezmoi source and applying is routine",
-      "**Org-specific CLIs**: chezmoi (dotfiles; `chezmoi apply` is the routine way files under ~/.claude, ~/.ai, ~/.codex and ~/.config are written, including `--force` on a single target after the diff was checked), op (1Password), gh, docker, mise, uv, cargo, wrangler, tofu/terraform, launchctl, claude (its own auto-mode and plugin subcommands)",
-      "**Routine under jasonmatthew/ prefix**: none identified — no remotes or org namespace found to scope a prefix to",
-      "**Additional context**: Solo developer on a private laptop; no employer data on this machine. The session scratchpad under /private/tmp/claude-501/ is fully trusted: writing a script there and running it is routine, including scripts that read ~/.claude/projects transcripts or edit the chezmoi source. Pull requests on github.com/jasonm4130 repos are merged with `gh pr merge --merge` once checks are green and closed with `gh pr close`; both are routine. `--admin` on a merge is not routine"
-    ],
     "allow": [
       "$defaults",
       "Brok and dell01 are Jason's homelab: ssh and scp to root@brok.jasonmatthew.me, root@192.168.5.10, root@192.168.5.20 and root@192.168.5.21 are routine for docker compose pull, up, down, restart, stop and logs, file copies, cron edits under /boot/config/plugins/user.scripts, editing compose files under /mnt/user/appdata/stacks and /mnt/cache/appdata/stacks, running a script copied to /tmp there (the script's content is still judged on its own terms), and read-only sqlite queries. Still needing Jason's stated intent: docker compose down -v, docker volume rm or prune, docker system prune, deleting or overwriting container data directories under /mnt/user/appdata/<stack>/ or /mnt/cache/appdata/<stack>/ (the compose files beside them are not container data), deleting data under /mnt/user/data or /mnt/user0, and any Unraid array, share, disk or parity operation.",
@@ -305,6 +230,20 @@
       "Writing a script or file under /private/tmp/claude-501/ and running it is routine, including Python or Node scripts that read ~/.claude/projects transcripts, edit the chezmoi source, or scan the repo.",
       "gh pr merge --merge, gh pr close and gh pr create on repositories under github.com/jasonm4130 are routine; a merge with --admin, a force push, or a visibility change is not.",
       "Compound shell commands that chain read-only commands (grep, sed, awk, jq, head, tail, wc, sort, ls, cat, git log/status/diff/show) with a write inside the repo or the scratchpad are routine; judge the writing segment, not the pipeline around it."
+    ],
+    "environment": [
+      "**Repository visibility**: private by default; the public repos are the ones under github.com/jasonm4130 with a published README (claude-skills is public), treat every other checkout as private",
+      "**Secrets management**: 1Password; secrets reach commands via `op run --env-file .env.op -- <command>`, never plaintext",
+      "**Default / protected branches**: `main` everywhere; claude-skills and ambient protect `main` (PRs only, required checks), so a direct push there is refused by GitHub, not by this classifier",
+      "**Source control**: GitHub via the `gh` CLI; every repo under ~/Work/Git has an origin under github.com/jasonm4130",
+      "**Trusted internal domains**: Jason's own LAN and DNS: `brok.jasonmatthew.me` and `*.jasonmatthew.me`, `192.168.5.0/24` (Brok, the Unraid server, at 192.168.5.10; dell01 and dell02, transcoder workers, at 192.168.5.20 and 192.168.5.21). These are homelab hosts Jason alone owns and uses; reaching them by ssh, scp, http or docker is inside the trust boundary",
+      "**Key internal services**: Brok (Unraid) at brok.jasonmatthew.me / 192.168.5.10: root SSH with key auth, Docker Compose stacks under /mnt/user/appdata/stacks and /mnt/cache/appdata/stacks (arr, transcoder, gphotos and others, managed from the brok-stacks repo), user.scripts cron under /boot/config/plugins/user.scripts, the media array under /mnt/user/data; dell01 (192.168.5.20) and dell02 (192.168.5.21) run transcoder worker containers, deployed by Ansible from brok-stacks/nodes. Nobody else depends on these services",
+      "**Sensitive remote targets**: the Cloudflare account (wrangler deploys, terraform or tofu apply in the cloudflare and unifi repos) and the UniFi controller (firewall and network changes): those need Jason's stated intent per action. Nothing on the LAN is a production target; the Brok carve-outs are listed in the homelab allow rule",
+      "**Protected IaC scopes**: firewall.tf and network resources in the unifi repo, and Cloudflare zone, DNS and access resources in the cloudflare repo. Docker Compose files and cron entries in brok-stacks are homelab configuration, not protected IaC",
+      "**Primary use of Claude Code**: software development in the repos under ~/Work/Git (claude-skills, a Claude Code plugin marketplace; ambient, a macOS recording app; transcoder; brok-stacks, homelab infrastructure for the Unraid host brok; coach), plus dotfiles and system administration (chezmoi, Homebrew, 1Password CLI)",
+      "**Trusted repo**: any git checkout under ~/Work/Git whose origin is under github.com/jasonm4130, plus the chezmoi source at ~/.local/share/chezmoi (origin github.com/jasonm4130/dotfiles) and the files it renders under $HOME. Treat the home directory itself as a dotfiles working tree, not a project. The Claude Code configuration under ~/.claude (settings.json, agents, rules, hooks) is Jason's own; editing it through the chezmoi source and applying is routine",
+      "**Org-specific CLIs**: chezmoi (dotfiles; `chezmoi apply` is the routine way files under ~/.claude, ~/.ai, ~/.codex and ~/.config are written, including `--force` on a single target after the diff was checked), op (1Password), gh, docker, mise, uv, cargo, wrangler, tofu/terraform, launchctl, claude (its own auto-mode and plugin subcommands)",
+      "**Additional context**: Solo developer on a private laptop; no employer data on this machine. The session scratchpad under /private/tmp/claude-501/ is fully trusted: writing a script there and running it is routine, including scripts that read ~/.claude/projects transcripts or edit the chezmoi source. Pull requests on github.com/jasonm4130 repos are merged with `gh pr merge --merge` once checks are green and closed with `gh pr close`; both are routine. `--admin` on a merge is not routine"
     ]
   }
 }

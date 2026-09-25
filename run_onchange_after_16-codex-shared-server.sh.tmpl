@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Login setting: {{ include "private_Library/private_LaunchAgents/dev.jasonmatthew.codex-shared-server.plist" | sha256sum }}
+set -euo pipefail
+
+codex_launch_domain="gui/$(id -u)"
+codex_launch_label="dev.jasonmatthew.codex-shared-server"
+codex_launch_plist="$HOME/Library/LaunchAgents/$codex_launch_label.plist"
+if launchctl print "$codex_launch_domain/$codex_launch_label" >/dev/null 2>&1; then
+    launchctl kickstart "$codex_launch_domain/$codex_launch_label"
+else
+    launchctl bootstrap "$codex_launch_domain" "$codex_launch_plist"
+fi

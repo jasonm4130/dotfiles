@@ -8,7 +8,6 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const herdr = fileURLToPath(new URL('../dot_codex/executable_herdr-agent-state.sh', import.meta.url));
-const guard = fileURLToPath(new URL('../private_dot_claude/hooks/executable_claude-md-guard.sh', import.meta.url));
 function run(script, arg, payload, env = process.env) {
   return new Promise((resolve, reject) => {
     const child = execFile('bash', [script, arg], { env, timeout: 5000 }, (error, stdout) => {
@@ -17,19 +16,6 @@ function run(script, arg, payload, env = process.env) {
     child.stdin.end(JSON.stringify(payload));
   });
 }
-
-test('Codex apply_patch receives the instruction-size advisory', async t => {
-  const dir = mkdtempSync(join(tmpdir(), 'codex-advisory-'));
-  t.after(() => rmSync(dir, { recursive: true, force: true }));
-  writeFileSync(join(dir, 'MEMORY.md'), 'x'.repeat(300) + '\n' + 'oversized\n'.repeat(3000));
-  const output = JSON.parse(await run(guard, 'codex-hook', {
-    cwd: dir, tool_name: 'apply_patch',
-    tool_input: { command: '*** Begin Patch\n*** Update File: MEMORY.md\n@@\n+note\n*** End Patch' },
-  }));
-  assert.match(output.hookSpecificOutput.additionalContext, /local review threshold/);
-  assert.doesNotMatch(output.hookSpecificOutput.additionalContext, /TRUNCATED|NOT loaded|cap bites/);
-  assert.equal(output.hookSpecificOutput.hookEventName, 'PostToolUse');
-});
 
 test('native Herdr Codex hook reports the correct session to a local socket', async t => {
   const dir = mkdtempSync(join(tmpdir(), 'codex-herdr-'));

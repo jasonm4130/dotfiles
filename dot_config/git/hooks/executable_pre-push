@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Delegate to the repository's pre-push checks when global hooks are enabled.
+set -e
+
+repo_root="$(git rev-parse --show-toplevel)"
+repo_hook="$repo_root/.githooks/pre-push"
+if [ -x "$repo_hook" ]; then
+  exec "$repo_hook" "$@"
+fi

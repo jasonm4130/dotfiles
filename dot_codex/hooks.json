@@ -10,50 +10,6 @@
           }
         ]
       }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.local/bin/codex-project-guard",
-            "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": "Bash|apply_patch",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.local/bin/claude-hooks secrets-scan",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/disk-guard.sh pretool",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash|apply_patch",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/claude-md-guard.sh codex-hook",
-            "timeout": 5
-          }
-        ]
-      }
     ]
   }
 }

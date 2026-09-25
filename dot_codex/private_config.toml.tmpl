@@ -1,42 +1,61 @@
+{{- $home := .chezmoi.homeDir -}}
+{{- $path := joinPath $home ".codex/config.toml" -}}
 {{- $live := dict -}}
-{{- $path := joinPath .chezmoi.homeDir ".codex/config.toml" -}}
 {{- if stat $path -}}
 {{- $live = fromToml (include $path) -}}
 {{- end -}}
+{{/* Own a small policy layer; preserve app state, permissions and connections. */}}
+{{- $agents := get $live "agents" | default dict -}}
+{{- $_ := unset $agents "max_threads" -}}
+{{- $_ := set $agents "default_subagent_model" "gpt-6-sol" -}}
+{{- $_ := set $agents "default_subagent_reasoning_effort" "medium" -}}
+{{- $_ := set $agents "max_concurrent_threads_per_session" 2 -}}
+{{- $_ := set $live "agents" $agents -}}
 {{- $features := get $live "features" | default dict -}}
 {{- $_ := set $features "memories" true -}}
+{{- $_ := set $features "prevent_idle_sleep" true -}}
 {{- $_ := set $live "features" $features -}}
 {{- $memories := get $live "memories" | default dict -}}
 {{- $_ := set $memories "generate_memories" true -}}
 {{- $_ := set $memories "use_memories" true -}}
 {{- $_ := set $memories "min_rate_limit_remaining_percent" 25 -}}
 {{- $_ := set $live "memories" $memories -}}
+{{/* Commands get a core env only, so secrets exported by an `op run` parent do not reach them. */}}
+{{- $shellenv := get $live "shell_environment_policy" | default dict -}}
+{{- $_ := set $shellenv "inherit" "core" -}}
+{{- $shellset := get $shellenv "set" | default dict -}}
+{{- $_ := set $shellset "TZ" "Australia/Brisbane" -}}
+{{- $_ := set $shellenv "set" $shellset -}}
+{{- $_ := set $live "shell_environment_policy" $shellenv -}}
+{{/* Retire disabled custom MCP definitions; plugin connections are separate. */}}
 {{- $mcp := get $live "mcp_servers" | default dict -}}
-{{- range $name, $url := dict "openaiDeveloperDocs" "https://developers.openai.com/mcp" "cloudflare-docs" "https://docs.mcp.cloudflare.com/mcp" -}}
-{{- if not (hasKey $mcp $name) -}}
-{{- $_ := set $mcp $name (dict "url" $url "enabled" true "startup_timeout_sec" 30 "tool_timeout_sec" 60) -}}
+{{- range $name := list "chrome-devtools" "claude-design" "cloudflare-docs" "openaiDeveloperDocs" "social" "tavily" -}}
+{{- if hasKey $mcp $name -}}
+{{- if eq (toString (get (get $mcp $name) "enabled")) "false" -}}
+{{- $_ := unset $mcp $name -}}
 {{- end -}}
 {{- end -}}
-{{- if not (hasKey $mcp "chrome-devtools") -}}
-{{- $_ := set $mcp "chrome-devtools" (dict "command" "npx" "args" (list "--offline" "--yes" "chrome-devtools-mcp@1.8.0" "--isolated" "--headless" "--no-usage-statistics" "--no-performance-crux") "enabled" true "startup_timeout_sec" 30 "tool_timeout_sec" 60) -}}
 {{- end -}}
 {{- $_ := set $live "mcp_servers" $mcp -}}
-{{- $tui := get $live "tui" | default dict -}}
-{{- if not (hasKey $tui "status_line") -}}
-{{- $_ := set $tui "status_line" (list "model-with-reasoning" "context-remaining" "current-dir" "five-hour-limit" "weekly-limit") -}}
-{{- $_ := set $live "tui" $tui -}}
+{{/* Drop stale disables: work-loop is deleted; writing-artifacts is shared with Codex. */}}
+{{- $skills := get $live "skills" | default dict -}}
+{{- $kept := list -}}
+{{- range $entry := get $skills "config" | default list -}}
+{{- $stale := list "work-loop" "writing-artifacts" -}}
+{{- if not (or (has (get $entry "name") $stale) (has (base (toString (get $entry "path"))) $stale)) -}}
+{{- $kept = append $kept $entry -}}
 {{- end -}}
-# Interactive work uses Astra; routine reviews use `codex --profile review`.
-# Keep background callers explicit about their model.
+{{- end -}}
+{{- if $kept -}}
+{{- $_ := set $skills "config" $kept -}}
+{{- $_ := set $live "skills" $skills -}}
+{{- else -}}
+{{- $_ := unset $live "skills" -}}
+{{- end -}}
 model = "gpt-6-astra"
-model_reasoning_effort = "medium"
+model_reasoning_effort = "low"
+service_tier = "default"
 approvals_reviewer = "auto_review"
-project_doc_fallback_filenames = ["CLAUDE.md"]
+{{ toToml (dict "developer_instructions" (includeTemplate "codex-developer-instructions.md" . | trim)) }}project_doc_fallback_filenames = []
 
-# Preserve settings written by Codex (hook trust, projects, UI and integrations).
-# The four defaults above and native memory enable/use/generation plus its 25%
-# quota reserve are owned by this template. Other runtime state stays
-# on this machine, rather than copying trusted hashes into the dotfiles repo.
-# New machines also get a quota-aware status line; existing choices survive.
-# Seed documentation MCPs if absent; preserve their later local customization.
-{{ toToml (omit $live "model" "model_reasoning_effort" "approvals_reviewer" "project_doc_fallback_filenames") -}}
+{{ toToml (omit $live "model" "model_reasoning_effort" "service_tier" "approvals_reviewer" "project_doc_fallback_filenames" "developer_instructions") -}}

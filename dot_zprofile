@@ -1,3 +1,7 @@
+# The following lines were added by Docker Desktop to add commands to your PATH.
+export PATH="$PATH:/Users/jasonmatthew/.docker/bin"
+# End of Docker Desktop section.
+
 # Homebrew
 eval "$(/opt/homebrew/bin/brew shellenv)"
 
@@ -12,3 +16,7 @@ export CLOUDSDK_PYTHON="$(mise which python 2>/dev/null || echo /usr/bin/python3
 # and sees none of them — use `op run` in that app's own config instead.
 # Shared with .zshrc; the sentinel inside keeps it to one inject per tab.
 [ -r "$HOME/.config/op/load-env.zsh" ] && source "$HOME/.config/op/load-env.zsh"
+
+# >>> Codex installer >>>
+export PATH="$HOME/.local/bin:$PATH"
+# <<< Codex installer <<<
