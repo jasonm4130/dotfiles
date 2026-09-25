@@ -73,7 +73,6 @@ brew:
   - balenaetcher
   - bambu-connect
   - bambu-studio
-  - claude-code
   - discord
   - displaylink
   - docker-desktop
