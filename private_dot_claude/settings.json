@@ -4,7 +4,8 @@
     "BASH_DEFAULT_TIMEOUT_MS": "300000"
   },
   "attribution": {
-    "commit": ""
+    "commit": "",
+    "pr": ""
   },
   "permissions": {
     "allow": [
@@ -52,6 +53,26 @@
       "Bash(mkdir:*)",
       "Bash(touch:*)"
     ],
+    "deny": [
+      "Read(//**/.env)",
+      "Read(//**/.env.local)",
+      "Read(//**/.env.*.local)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.config/op/**)",
+      "Read(~/.codex/auth.json)",
+      "Read(~/.netrc)",
+      "Bash(git commit -a*)",
+      "Bash(git commit --all*)",
+      "mcp__claude_ai_Gmail__update_draft",
+      "Read(~/Work/Git/**/secrets/**)",
+      "Read(~/.config/rpiv-web-tools/**)",
+      "Edit(//**/.env)",
+      "Edit(//**/.env.local)",
+      "Edit(//**/.env.*.local)",
+      "Edit(~/.ssh/**)"
+    ],
     "ask": [
       "Bash(gh pr merge *--admin*)",
       "Bash(git push *--force*)",
@@ -76,26 +97,6 @@
       "Bash(chezmoi apply -v --force)",
       "Bash(chezmoi update *)",
       "Bash(chezmoi init *--apply*)"
-    ],
-    "deny": [
-      "Read(//**/.env)",
-      "Read(//**/.env.local)",
-      "Read(//**/.env.*.local)",
-      "Read(~/.ssh/**)",
-      "Read(~/.aws/**)",
-      "Read(~/.gnupg/**)",
-      "Read(~/.config/op/**)",
-      "Read(~/.codex/auth.json)",
-      "Read(~/.netrc)",
-      "Bash(git commit -a*)",
-      "Bash(git commit --all*)",
-      "mcp__claude_ai_Gmail__update_draft",
-      "Read(~/Work/Git/**/secrets/**)",
-      "Read(~/.config/rpiv-web-tools/**)",
-      "Edit(//**/.env)",
-      "Edit(//**/.env.local)",
-      "Edit(//**/.env.*.local)",
-      "Edit(~/.ssh/**)"
     ],
     "defaultMode": "auto"
   },
@@ -190,8 +191,11 @@
     "rust-analyzer-lsp@claude-plugins-official": true,
     "gates@jasonm4130-claude-skills": true,
     "ship-gate@jasonm4130-claude-skills": true,
-    "codex-review@jasonm4130-claude-skills": true,
-    "writing-artifacts@jasonm4130-claude-skills": true
+    "skill-creator@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "claude-code-setup@claude-plugins-official": true,
+    "cloudflare@claude-plugins-official": true,
+    "codex-review@jasonm4130-claude-skills": true
   },
   "extraKnownMarketplaces": {
     "jasonm4130-claude-skills": {
