@@ -19,7 +19,6 @@ brew:
   - bison
   - chezmoi
   - chruby
-  - cirruslabs/cli/tart
   - cloudflare/cloudflare/cf-terraforming
   - cometkim/tap/op-fast
   - getagentseal/codeburn/codeburn
