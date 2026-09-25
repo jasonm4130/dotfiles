@@ -18,6 +18,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+      - name: Install chezmoi
+        # codex-config.test.mjs renders templates with `chezmoi execute-template`.
+        run: |
+          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$RUNNER_TEMP/bin"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: Run hook & script tests
         # Unquoted glob, not a bare directory: Node 22's test runner errors on
         # a directory arg (Node 20 scanned it), and Node 20 has no native glob
@@ -36,12 +41,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        working-directory: dot_local/src/claude-hooks
+        working-directory: dot_local/src/exact_claude-hooks
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: dot_local/src/claude-hooks/go.mod
+          go-version-file: dot_local/src/exact_claude-hooks/go.mod
       - name: Vet
         run: go vet ./...
       - name: Check formatting

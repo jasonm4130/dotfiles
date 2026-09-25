@@ -21,7 +21,6 @@ import path from 'node:path';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const settingsPath = path.join(repoRoot, 'private_dot_claude/settings.json');
-const mcpPath = path.join(repoRoot, 'private_dot_claude/dot_mcp.json');
 
 /**
  * Files under ~/.claude/ that settings.json may reference without this repo
@@ -88,11 +87,6 @@ test('settings.json is valid JSON', () => {
     () => JSON.parse(raw),
     'Claude Code silently drops config it cannot parse — every hook in this repo would stop firing.',
   );
-});
-
-test('dot_mcp.json is valid JSON', () => {
-  const raw = readFileSync(mcpPath, 'utf8');
-  assert.doesNotThrow(() => JSON.parse(raw));
 });
 
 test('every ~/.claude script referenced by settings.json is shipped by this repo', () => {
