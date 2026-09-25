@@ -74,9 +74,9 @@ brew:
   - bambu-connect
   - bambu-studio
   - claude-code
-  - codex
   - discord
   - displaylink
+  - docker-desktop
   - figma
   - firefox@developer-edition
   - flux-app

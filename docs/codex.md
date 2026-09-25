@@ -1,5 +1,9 @@
 # Codex operation and verification
 
+For the independent Codex baseline, use
+[the current operating guide](codex-native.md). The observations below record
+the September 6 migration; they are not current runtime health checks.
+
 Jason's interactive baseline is Astra at medium effort, authenticated with
 ChatGPT Pro 20×. Global protections and daytime project guards are active and
 tested. Native memory recall is still pending consolidation. Nightwatch is not

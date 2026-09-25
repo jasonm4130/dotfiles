@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Render ~/.ai/AGENTS.md into per-tool config files.
+# Render ~/.ai/AGENTS.md into Claude Code's config file.
 # Re-run automatically by chezmoi via run_onchange_after_07-agents-md-sync.
 #
 # Section fences let one source file target both tools. Each marker must be
@@ -7,11 +7,6 @@
 #
 #   <!-- codex-only:start -->   ...   <!-- codex-only:end -->
 #   <!-- claude-only:start -->  ...   <!-- claude-only:end -->
-#
-# Claude Code ships equivalents of some guidance in its own system prompt, so
-# repeating it there burns context twice. Codex has no such system prompt, where
-# the same text is load-bearing. Fenced blocks reach only their target; unfenced
-# content — the vast majority — goes to both.
 #
 # Order matters: validate the source, render to temp files, check those, and only
 # then move them into place. Writing to the live paths first means a malformed
@@ -21,7 +16,6 @@ set -euo pipefail
 AI_DIR="$HOME/.ai"
 SRC="$AI_DIR/AGENTS.md"
 CLAUDE_DEST="$HOME/.claude/CLAUDE.md"
-CODEX_DEST="$HOME/.codex/AGENTS.md"
 
 die() { echo "❌ $*" >&2; exit 1; }
 
@@ -82,8 +76,8 @@ fi
 # ---------------------------------------------------------------------------
 # Render to temp files.
 # ---------------------------------------------------------------------------
-tmp_claude=$(mktemp) && tmp_codex=$(mktemp)
-trap 'rm -f "$tmp_claude" "$tmp_codex"' EXIT
+tmp_claude=$(mktemp)
+trap 'rm -f "$tmp_claude"' EXIT
 
 # render <marker-to-drop> <dest>
 render() {
@@ -97,31 +91,25 @@ render() {
 }
 
 render codex-only "$tmp_claude"   # Claude Code reads this — drop Codex-only blocks
-render claude-only "$tmp_codex"   # Codex reads this — drop Claude-only blocks
 
 # ---------------------------------------------------------------------------
 # Check the rendered output before it goes live. ERE (-E), not BRE alternation:
 # `\|` is a GNU/ugrep extension BSD grep ignores, and since this checks for
 # *absence*, a grep that can't parse the pattern returns no-match and passes.
 # ---------------------------------------------------------------------------
-for f in "$tmp_claude" "$tmp_codex"; do
-  [ -s "$f" ] || die "render produced an empty file — refusing to install"
-  grep -Eq '(codex|claude)-only:(start|end)' "$f" && die "fence marker survived into a render"
-done
-# Both renders must keep everything that was never fenced.
+[ -s "$tmp_claude" ] || die "render produced an empty Claude file — refusing to install"
+grep -Eq '(codex|claude)-only:(start|end)' "$tmp_claude" && die "fence marker survived into Claude render"
+# Claude's render must keep everything that was never fenced.
 unfenced=$(awk '
   index($0, ":start -->") { skip = 1; next }
   index($0, ":end -->")   { skip = 0; next }
   !skip
 ' "$SRC" | grep -c '^## ' || true)
-for f in "$tmp_claude" "$tmp_codex"; do
-  got=$(grep -c '^## ' "$f" || true)
-  [ "$got" -ge "$unfenced" ] || die "render dropped sections (expected ≥$unfenced headings, got $got)"
-done
+got=$(grep -c '^## ' "$tmp_claude" || true)
+[ "$got" -ge "$unfenced" ] || die "render dropped sections (expected ≥$unfenced headings, got $got)"
 
-mkdir -p "$(dirname "$CLAUDE_DEST")" "$(dirname "$CODEX_DEST")"
+mkdir -p "$(dirname "$CLAUDE_DEST")"
 mv "$tmp_claude" "$CLAUDE_DEST"
-mv "$tmp_codex" "$CODEX_DEST"
 
-printf '✅ rendered AGENTS.md → ~/.claude/CLAUDE.md (%s lines) and ~/.codex/AGENTS.md (%s lines)\n' \
-  "$(wc -l < "$CLAUDE_DEST" | tr -d ' ')" "$(wc -l < "$CODEX_DEST" | tr -d ' ')"
+printf '✅ rendered AGENTS.md → ~/.claude/CLAUDE.md (%s lines)\n' \
+  "$(wc -l < "$CLAUDE_DEST" | tr -d ' ')"

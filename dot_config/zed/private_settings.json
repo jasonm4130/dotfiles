@@ -30,6 +30,18 @@
   "ui_font_size": 14,
 
   "theme": "Monokai Pro (CE)",
+  "auto_install_extensions": {
+    "monokai-pro-ce": true,
+    "astro": true,
+    "html": true,
+    "scss": true,
+    "toml": true,
+    "terraform": true,
+    "dockerfile": true,
+    "docker-compose": true,
+    "sql": true,
+    "make": true
+  },
   "indent_guides": {
     "enabled": true,
     "line_width": 1,
@@ -76,7 +88,7 @@
   "use_autoclose": true,
   "auto_signature_help": true,
   "show_signature_help_after_edits": true,
-  "auto_save": "on_focus_change",
+  "autosave": "on_focus_change",
   "format_on_save": "on",
   "remove_trailing_whitespace_on_save": true,
   "ensure_final_newline_on_save": true,
@@ -108,12 +120,7 @@
     }
   },
 
-  "formatter": {
-    "external": {
-      "command": "prettier",
-      "arguments": ["--stdin-filepath", "{buffer_path}"]
-    }
-  },
+  "formatter": "auto",
 
   "terminal": {
     "font_family": "Monaspace Xenon",
@@ -137,10 +144,10 @@
   },
 
   "languages": {
-    "JavaScript":  { "format_on_save": "off", "tab_size": 2 },
-    "JSX":         { "format_on_save": "off", "tab_size": 2 },
-    "TypeScript":  { "format_on_save": "off", "tab_size": 2 },
-    "TSX":         { "format_on_save": "off", "tab_size": 2 },
+    "JavaScript":  { "format_on_save": "on", "tab_size": 2 },
+    "JSX":         { "format_on_save": "on", "tab_size": 2 },
+    "TypeScript":  { "format_on_save": "on", "tab_size": 2 },
+    "TSX":         { "format_on_save": "on", "tab_size": 2 },
 
     "Python": {
       "tab_size": 4,
@@ -172,15 +179,7 @@
     "TOML": { "tab_size": 2, "format_on_save": "on" },
 
     "JSON":  { "format_on_save": "on" },
-    "JSONC": {
-      "format_on_save": "on",
-      "formatter": {
-        "external": {
-          "command": "prettier",
-          "arguments": ["--stdin-filepath", "{buffer_path}"]
-        }
-      }
-    },
+    "JSONC": { "format_on_save": "on" },
 
     "Dart": { "format_on_save": "on", "tab_size": 2 },
     "SCSS": { "format_on_save": "on", "tab_size": 2 }
@@ -202,7 +201,6 @@
     "rust-analyzer": {
       "initialization_options": {
         "check": { "command": "clippy" },
-        "cargo": { "features": "all" },
         "completion": { "snippets": { "custom": {} } },
         "inlayHints": {
           "bindingModeHints": { "enable": false },

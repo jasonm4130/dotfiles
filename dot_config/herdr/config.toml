@@ -25,6 +25,8 @@ tab_bar_right_separator = "  "
 
 [ui.sidebar.agents]
 rows = [["state_icon", "workspace", "tab"], ["terminal_title_stripped"]]
+# Codex uses its task name above the workspace; other agents keep their layout.
+rows_by_agent.codex = [["state_icon", { token = "agent", bold = true }], ["workspace", "tab"]]
 
 [ui.sidebar.spaces]
 rows = [["state_icon", "workspace"], ["branch", "git_status"]]

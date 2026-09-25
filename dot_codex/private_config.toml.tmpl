@@ -1,52 +1,50 @@
-{{- $live := dict -}}
 {{- $path := joinPath .chezmoi.homeDir ".codex/config.toml" -}}
+{{- $live := dict -}}
 {{- if stat $path -}}
 {{- $live = fromToml (include $path) -}}
 {{- end -}}
+{{/* Own a small policy layer; preserve app state, permissions and connections. */}}
+{{- $agents := get $live "agents" | default dict -}}
+{{- $_ := unset $agents "max_threads" -}}
+{{- $_ := set $agents "default_subagent_model" "gpt-6-sol" -}}
+{{- $_ := set $agents "default_subagent_reasoning_effort" "medium" -}}
+{{- $_ := set $agents "max_concurrent_threads_per_session" 2 -}}
+{{- $_ := set $live "agents" $agents -}}
 {{- $features := get $live "features" | default dict -}}
 {{- $_ := set $features "memories" true -}}
+{{- $_ := set $features "prevent_idle_sleep" true -}}
 {{- $_ := set $live "features" $features -}}
 {{- $memories := get $live "memories" | default dict -}}
 {{- $_ := set $memories "generate_memories" true -}}
 {{- $_ := set $memories "use_memories" true -}}
 {{- $_ := set $memories "min_rate_limit_remaining_percent" 25 -}}
 {{- $_ := set $live "memories" $memories -}}
+{{/* Retire disabled custom MCP definitions; plugin connections are separate. */}}
 {{- $mcp := get $live "mcp_servers" | default dict -}}
-{{- range $name, $url := dict "openaiDeveloperDocs" "https://developers.openai.com/mcp" "cloudflare-docs" "https://docs.mcp.cloudflare.com/mcp" -}}
-{{- if not (hasKey $mcp $name) -}}
-{{- $_ := set $mcp $name (dict "url" $url "enabled" true "startup_timeout_sec" 30 "tool_timeout_sec" 60) -}}
+{{- range $name := list "chrome-devtools" "claude-design" "cloudflare-docs" "openaiDeveloperDocs" "social" "tavily" -}}
+{{- if hasKey $mcp $name -}}
+{{- if eq (get (get $mcp $name) "enabled") false -}}
+{{- $_ := unset $mcp $name -}}
 {{- end -}}
 {{- end -}}
-{{- if not (hasKey $mcp "chrome-devtools") -}}
-{{- $_ := set $mcp "chrome-devtools" (dict "command" "npx" "args" (list "--offline" "--yes" "chrome-devtools-mcp@1.8.0" "--isolated" "--headless" "--no-usage-statistics" "--no-performance-crux") "enabled" true "startup_timeout_sec" 30 "tool_timeout_sec" 60) -}}
 {{- end -}}
 {{- $_ := set $live "mcp_servers" $mcp -}}
-{{- $tui := get $live "tui" | default dict -}}
-{{- if not (hasKey $tui "status_line") -}}
-{{- $_ := set $tui "status_line" (list "model-with-reasoning" "context-remaining" "current-dir" "five-hour-limit" "weekly-limit") -}}
-{{- $_ := set $live "tui" $tui -}}
+{{/* Keep retired workflows disabled without modifying their source files. */}}
+{{- $skills := get $live "skills" | default dict -}}
+{{- $kept := list -}}
+{{- range $entry := get $skills "config" | default list -}}
+{{- if not (has (get $entry "name") (list "work-loop" "writing-artifacts")) -}}
+{{- $kept = append $kept $entry -}}
 {{- end -}}
-# Ordinary launches use the Astra work loop; worker callers select explicit profiles.
-# Keep background callers explicit about their model.
+{{- end -}}
+{{- $kept = append $kept (dict "name" "work-loop" "enabled" false) -}}
+{{- $kept = append $kept (dict "name" "writing-artifacts" "enabled" false) -}}
+{{- $_ := set $skills "config" $kept -}}
+{{- $_ := set $live "skills" $skills -}}
 model = "gpt-6-astra"
-model_reasoning_effort = "medium"
+model_reasoning_effort = "low"
+service_tier = "default"
 approvals_reviewer = "auto_review"
-project_doc_fallback_filenames = ["CLAUDE.md"]
-developer_instructions = """
-Use the work-loop skill at ~/.codex/skills/work-loop/SKILL.md for substantive code work.
-Act as the orchestrator: own scope, delegate bounded implementation, resolve advisor requests,
-and accept changes using observed checks and fresh review. Handle trivial edits directly.
-"""
+project_doc_fallback_filenames = []
 
-# Preserve settings written by Codex (hook trust, projects, UI and integrations).
-# The defaults above, worker routing, and native memory settings with their 25%
-# quota reserve are owned by this template. Other runtime state stays
-# on this machine, rather than copying trusted hashes into the dotfiles repo.
-# New machines also get a quota-aware status line; existing choices survive.
-# Seed documentation MCPs if absent; preserve their later local customization.
-{{- $agents := get $live "agents" | default dict -}}
-{{- $_ := set $agents "default_subagent_model" "gpt-5.6-terra" -}}
-{{- $_ := set $agents "default_subagent_reasoning_effort" "medium" -}}
-{{- $_ := set $agents "max_concurrent_threads_per_session" 3 -}}
-{{- $_ := set $live "agents" $agents }}
-{{ toToml (omit $live "model" "model_reasoning_effort" "approvals_reviewer" "project_doc_fallback_filenames" "developer_instructions") -}}
+{{ toToml (omit $live "model" "model_reasoning_effort" "service_tier" "approvals_reviewer" "project_doc_fallback_filenames" "developer_instructions") -}}

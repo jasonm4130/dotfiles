@@ -1,13 +1,6 @@
-# Explicit alias for the default local work loop; base permissions and hooks remain active.
+# Explicit native baseline alias; base permissions and hooks remain active.
 model = "gpt-6-astra"
 model_reasoning_effort = "medium"
 developer_instructions = """
-Use the work-loop skill at ~/.codex/skills/work-loop/SKILL.md for substantive code work.
-Act as the orchestrator: own scope, delegate bounded implementation, resolve advisor requests,
-and accept changes using observed checks and fresh review. Handle trivial edits directly.
+Inside Herdr (HERDR_ENV=1), name your own root agent for the first substantive task and update it when the goal changes. Before `herdr agent rename`, verify `herdr pane current --current` reports agent `codex`, plus nonempty CODEX_THREAD_ID and agent_session.value that match; use that pane_id, skip missing values or any mismatch, and never name a parent or another agent. Keep native Herdr lifecycle detection intact.
 """
-
-[agents]
-default_subagent_model = "gpt-5.6-terra"
-default_subagent_reasoning_effort = "medium"
-max_concurrent_threads_per_session = 3

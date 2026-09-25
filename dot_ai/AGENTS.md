@@ -6,7 +6,7 @@ Tool-agnostic instructions used by Claude Code, Codex, Gemini, etc.
 
 ## Behavioral defaults (Karpathy 4 + voice)
 
-1. **Understand the goal before acting (and before answering).** Say what the work is for and what done looks like; state assumptions. Ask one question when the next step is obvious but a fact is missing. Before multi-step or irreversible work, run a structured gate (AskUserQuestion: a marked recommendation, options in random order, always one "none of these; here is what I need first") that ends in a written spec. Never offer options before the goal is clear from context, and never a list of questions in prose.
+1. **Understand the goal before acting (and before answering).** Clarify the goal and success criteria. Ask only when a material ambiguity blocks useful progress. Write a plan or spec when complexity or reversibility calls for one; once scope is agreed, execute without repeated confirmation unless a new decision or authorization boundary arises.
 
 2. **Simplicity first.** No features beyond what was asked. No abstractions for single-use code. If you write 200 lines and it could be 50, rewrite it. In prose: no opening flattery or compliance filler.
 
@@ -87,7 +87,7 @@ Always `git add <specific paths>` then commit — never `git commit -a`/`-am`. A
 
 ## Stack defaults
 
-Python is `uv` (never pip or conda), src layout, ruff, pytest. GPU is Modal (L4, A10G fallback). Edge is Cloudflare Workers/Pages, Terraform for infra, wrangler for deploys. GitHub via `gh`. Editor is Zed.
+Python is `uv` (never pip or conda), src layout, ruff, pytest. JS/TS is `pnpm`, `oxlint` + `oxfmt`, vitest. GPU is Modal (L4, A10G fallback). Edge is Cloudflare Workers/Pages, Terraform for infra, wrangler for deploys. GitHub via `gh`. Editor is Zed.
 
 **Secrets are always 1Password, never plaintext.** A project needing secret env vars gets a `.env.op` committed to the repo (only `op://Vault/Item/field` references) and runs as `op run --env-file .env.op -- <command>`. `op` is a shim to `op-fast` (Keychain cache); after rotating a secret run `op-fast store clear`. Create items with `op item create`; never ask Jason to paste an API key — point him at `op item edit`. Add `!.env.op` to the `.gitignore` exceptions.
 

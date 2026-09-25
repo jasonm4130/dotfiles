@@ -101,6 +101,15 @@ codex exec --profile work-sol -C /absolute/worktree --json \
   - < /absolute/run/worker-prompt.md > /absolute/run/worker-events.jsonl
 ```
 
+On macOS, launch headless CLI workers, advisors and reviewers with
+`caffeinate -i codex exec ...` (including `exec resume`), preserving the same
+arguments and redirections. The assertion lasts for the command and releases
+automatically on exit. Interactive Codex uses the managed
+`features.prevent_idle_sleep = true` setting; the installed CLI did not acquire
+that native assertion in a headless execution probe. For a long workflow outside
+the interactive CLI, also keep its local test/build command under
+`caffeinate -i <command>`. Let the display sleep; do not change system power settings.
+
 A prompt provided as an argument needs `< /dev/null` for background execution.
 Use the harness's async execution rather than a detached shell process, so the
 orchestrator can inspect progress and cancel it. Never bypass hook trust or
