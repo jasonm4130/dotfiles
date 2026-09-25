@@ -60,7 +60,7 @@ case "${1:-check}" in
     # Disk critically low: only block the heavy builds that would fill it.
     cmd=$(python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',d).get('command',''))" 2>/dev/null || echo "")
     case "$cmd" in
-      *"cargo build"*|*"cargo test"*|*"cargo clippy"*|*"cargo component"*|*"cargo xtask"*|*"cargo run"*|*"cargo doc"*|*"cargo bench"*)
+      *"cargo build"*|*"cargo test"*|*"cargo clippy"*|*"cargo component"*|*"cargo xtask"*|*"cargo run"*|*"cargo doc"*|*"cargo bench"*|*"cargo nextest"*)
         echo "BLOCKED by disk-guard: only ${free}GB free (< ${BLOCK_GB}GB). A workspace build will likely fail and wedge the session. Run: ~/.claude/hooks/disk-guard.sh reclaim --deep" >&2
         exit 2
         ;;

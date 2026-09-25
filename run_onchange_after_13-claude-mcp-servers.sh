@@ -6,10 +6,11 @@ set -euo pipefail
 # this machine. Registered into ~/.claude.json ("mcpServers") via
 # `claude mcp add -s user`.
 #
-# This is a run_onchange script: edit it (add/remove a line) and the next
-# `chezmoi apply` reconciles the set. Registration is add-if-missing, so it is
-# idempotent and never disturbs an already-working server. To CHANGE an existing
-# server's definition, `claude mcp remove <name> -s user` first, then re-apply.
+# This is a run_onchange script: add an `ensure` line and the next
+# `chezmoi apply` registers it. Registration is add-if-missing only, so it is
+# idempotent and never disturbs an already-working server — but deleting a line
+# here removes nothing: run `claude mcp remove <name> -s user` as well. To CHANGE
+# an existing server's definition, remove it that way first, then re-apply.
 #
 # NB: ~/.claude/.mcp.json is NOT read by Claude Code for user scope — this
 # script, not that file, is the mechanism.
@@ -29,8 +30,9 @@ ensure() {
   claude mcp add "$name" -s user "$@"
 }
 
-# API keys are pulled from the macOS keychain at launch time — the $(...) and
-# "$USER" are single-quoted so they stay literal here and evaluate per-launch.
+# A server that needs an API key should pull it from the macOS keychain at
+# launch time — single-quote the $(...) and "$USER" in its ensure line so they
+# stay literal here and evaluate per-launch.
 #
 # The keychain entries themselves are NOT created here — seeding them is a
 # one-time manual step per machine, because chezmoi runs before 1Password may be
@@ -47,8 +49,8 @@ ensure() {
 # (verified with `ps -o args=` on a live process), and `op read` only ever takes
 # an op:// reference, never a secret.
 #
-#   printf 'add-generic-password -U -a "%s" -s tavily-api-key -w "%s"\n' \
-#     "$USER" "$(op read 'op://Private/tavily-api/credential')" | security -i
+#   printf 'add-generic-password -U -a "%s" -s <service> -w "%s"\n' \
+#     "$USER" "$(op read 'op://Private/<item>/credential')" | security -i
 #
 # `security -i` re-tokenises the line and strips backslashes even inside quotes
 # (spaces, $, and quotes survive). If a key ever contains a backslash, pass it
@@ -62,12 +64,9 @@ ensure() {
 #   security find-generic-password -a "$USER" -s <service> -w >/dev/null 2>&1 \
 #     && echo SET || echo UNSET
 #
-# The `find-generic-password ... -w` inside the tavily ensure line below is the
-# one place the naked form is correct: its output is captured into an env var
-# for the server process and never reaches a terminal. Leave it as it is.
-ensure tavily -- sh -c 'TAVILY_API_KEY=$(security find-generic-password -a "$USER" -s tavily-api-key -w) npx -y tavily-mcp'
+# Inside such an ensure line the naked form is correct: its output is captured
+# into an env var for the server process and never reaches a terminal.
 ensure social --transport http https://social-mcp.jasonmatthew.dev/mcp
-ensure chrome-devtools -- npx chrome-devtools-mcp@latest
 # Registered directly rather than via the `cloudflare` plugin. That plugin
 # shipped five MCP servers and 13 skills; four of the servers need an OAuth
 # login that was never done, so they contributed nothing but two dead
@@ -75,7 +74,6 @@ ensure chrome-devtools -- npx chrome-devtools-mcp@latest
 # skills were 43% of the whole skill-description budget against one
 # wrangler.jsonc in the tree. The docs server is the part that works.
 ensure cloudflare-docs --transport http https://docs.mcp.cloudflare.com/mcp
-ensure claude-design --transport http https://api.anthropic.com/v1/design/mcp
 
 # OAuth-backed servers need one interactive login per machine. Registration
 # above only records the URL; the token lives in the login keychain under

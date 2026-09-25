@@ -20,17 +20,12 @@ CLAUDE.md
 !.claude/
 !.claude/CLAUDE.md
 !.claude/settings.json
-!.claude/.mcp.json
 !.claude/agents/
 !.claude/agents/**/**
 !.claude/hooks/
 !.claude/hooks/**/**
 !.claude/rules/
 !.claude/rules/**/**
-!.claude/skills/
-!.claude/skills/**/**
-!.claude/mcp-servers/
-!.claude/mcp-servers/**/**
 !.claude/sounds/
 !.claude/sounds/**/**
 

@@ -4,6 +4,11 @@ import {mkdtempSync, readFileSync, writeFileSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {execFileSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+
+// Render against this checkout, not whatever source dir the machine's chezmoi
+// config names (CI has none; a worktree would otherwise test main's config).
+const sourceDir = fileURLToPath(new URL('..', import.meta.url));
 
 const source = readFileSync(new URL('../dot_codex/private_config.toml.tmpl', import.meta.url), 'utf8');
 const hooks = JSON.parse(readFileSync(new URL('../dot_codex/hooks.json', import.meta.url), 'utf8'));
@@ -18,8 +23,8 @@ function fixture(t, initial = '') {
     .replaceAll('.chezmoi.homeDir', '"/fixture-home"')
     .replaceAll('.chezmoi.workingTree', '"/fixture-home/.local/share/chezmoi"');
   return () => {
-    const rendered = execFileSync('chezmoi', ['execute-template'], {input: template, encoding: 'utf8'});
-    const value = JSON.parse(execFileSync('chezmoi', ['execute-template', '--with-stdin', '{{ fromToml .chezmoi.stdin | toJson }}'], {input: rendered, encoding: 'utf8'}));
+    const rendered = execFileSync('chezmoi', ['execute-template', '--source', sourceDir], {input: template, encoding: 'utf8'});
+    const value = JSON.parse(execFileSync('chezmoi', ['execute-template', '--source', sourceDir, '--with-stdin', '{{ fromToml .chezmoi.stdin | toJson }}'], {input: rendered, encoding: 'utf8'}));
     writeFileSync(path, rendered);
     return {rendered, value};
   };

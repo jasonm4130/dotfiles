@@ -140,6 +140,7 @@ test('pretool blocks heavy cargo builds when the disk is critically low', (t) =>
   for (const command of [
     'cargo build', 'cargo test', 'cargo clippy', 'cargo run',
     'cargo doc', 'cargo bench', 'cargo xtask ci', 'cargo component build',
+    'cargo nextest run',
   ]) {
     const r = runGuard(['pretool'], {
       home, blockGb: STARVED,
