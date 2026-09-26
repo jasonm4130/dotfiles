@@ -14,7 +14,8 @@ marketplace.
 
 The test: *could a stranger install this and have it work?* If yes it belongs in a plugin.
 If it references this machine's paths, this prose's calibration, or this machine's state,
-it belongs here.
+it belongs here. A third-party skill bound to a locally installed tool is installation too:
+herdr's skill renders from the herdr binary (see [Claude Code setup](docs/claude-code.md)).
 
 One rule that follows from it and is easy to get wrong: **an override of a built-in
 belongs here, not in a plugin.** `~/.claude/agents/Explore.md` shadows the built-in

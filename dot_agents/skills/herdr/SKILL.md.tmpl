@@ -1,0 +1,5 @@
+{{- /* Herdr's agent skill, rendered from the installed binary so it matches the release
+       (`herdr --skill` is the release-matched copy). No herdr on this machine, no skill. */ -}}
+{{- if lookPath "herdr" -}}
+{{ output "herdr" "--skill" }}
+{{- end -}}

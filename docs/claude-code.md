@@ -6,7 +6,10 @@ lives here versus in the claude-skills marketplace.
 
 Settings, hooks, agents, rules, MCP config and sounds under `~/.claude/`. Run
 `chezmoi managed | grep '^\.claude'` for the live list. Skills are **not** tracked here —
-they come from installed plugins (see [Scope](#scope)).
+they come from installed plugins (see [Scope](#scope)) — with one exception: herdr's agent
+skill. `~/.agents/skills/herdr/SKILL.md` renders `herdr --skill` (the copy bundled with the
+installed binary, so it matches the release), and `~/.claude/skills/herdr` links to it; the
+allowlist admits only that link, because `~/.claude/skills/synced` belongs to claude.ai.
 
 `.chezmoiignore` denies everything under `.claude/` and re-admits named subdirectories, so
 **a new subdirectory is invisible to chezmoi until it is allowlisted there** — it applies

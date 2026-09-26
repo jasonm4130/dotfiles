@@ -28,6 +28,9 @@ CLAUDE.md
 !.claude/rules/**/**
 !.claude/sounds/
 !.claude/sounds/**/**
+# Only the herdr skill link: skills/synced belongs to claude.ai.
+!.claude/skills/
+!.claude/skills/herdr
 
 # Belt-and-braces: explicit re-ignores (parent ignore covers them, but be loud)
 .claude/.claude.json
