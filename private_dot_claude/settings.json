@@ -117,6 +117,10 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/disk-guard.sh pretool"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/kill-guard.py pretool"
           }
         ]
       }
