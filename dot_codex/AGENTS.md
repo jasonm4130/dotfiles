@@ -27,7 +27,7 @@ A repo's own AGENTS.md wins where it conflicts with this file.
 ## Stack
 - Python: uv only (`uv add`, `uv run`, `uvx`), never pip, poetry or conda. Lint `uv run ruff check`, format `uv run ruff format`, test `uv run pytest`. New packages use a src/ layout.
 - JS/TS: pnpm only (`pnpm add`, `pnpm exec`, `pnpm dlx`), never npm, yarn or npx. Prefer package.json scripts, else `pnpm exec oxlint`, `pnpm exec oxfmt`, `pnpm exec vitest run`.
-- GitHub via `gh`; edge on Cloudflare Workers via wrangler; GPU on Modal. Shipped AI uses Anthropic APIs, never an OpenAI dependency (the `codex` CLI for reviews is fine).
+- GitHub via `gh`; edge on Cloudflare Workers via wrangler; GPU on Modal. Shipped AI can use any provider or model (Anthropic, OpenAI, Workers AI, open weights): pick by measured quality, cost and latency on the task's own eval. Claude is for local coding.
 - Secrets come only from 1Password: commit a `.env.op` of `op://Vault/Item/field` references (with `!.env.op` in .gitignore) and run `op run --env-file .env.op -- <cmd>`. Never put a secret value in a file, command or output, and never ask him to paste one: name the item and point him at `op item create`/`op item edit`.
 - Before a long run that needs secrets, check `op vault list >/dev/null` (outside any sandbox); a failing `op whoami` does not mean the app is locked.
 
