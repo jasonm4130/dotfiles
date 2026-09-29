@@ -130,6 +130,7 @@ const EXPECTED_PLUGINS = [
   'gates@jasonm4130-claude-skills',
   'pyright-lsp@claude-plugins-official',
   'rust-analyzer-lsp@claude-plugins-official',
+  'session-retro@jasonm4130-claude-skills',
   'ship-gate@jasonm4130-claude-skills',
   'skill-creator@claude-plugins-official',
   'typescript-lsp@claude-plugins-official',

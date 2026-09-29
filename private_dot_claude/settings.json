@@ -199,7 +199,8 @@
     "code-simplifier@claude-plugins-official": true,
     "claude-code-setup@claude-plugins-official": true,
     "cloudflare@claude-plugins-official": true,
-    "codex-review@jasonm4130-claude-skills": true
+    "codex-review@jasonm4130-claude-skills": true,
+    "session-retro@jasonm4130-claude-skills": true
   },
   "extraKnownMarketplaces": {
     "jasonm4130-claude-skills": {
