@@ -116,6 +116,40 @@ test('every ~/.claude script referenced by settings.json is shipped by this repo
   );
 });
 
+/**
+ * The plugins this config deliberately enables. 7c5394c, titled as a
+ * permissions change, dropped eight plugins including session-retro, and
+ * nothing noticed for four days. Changing this list is fine; changing it as a
+ * side effect of an unrelated edit is what this pins.
+ */
+const EXPECTED_PLUGINS = [
+  'claude-code-setup@claude-plugins-official',
+  'cloudflare@claude-plugins-official',
+  'code-simplifier@claude-plugins-official',
+  'codex-review@jasonm4130-claude-skills',
+  'gates@jasonm4130-claude-skills',
+  'pyright-lsp@claude-plugins-official',
+  'rust-analyzer-lsp@claude-plugins-official',
+  'ship-gate@jasonm4130-claude-skills',
+  'skill-creator@claude-plugins-official',
+  'typescript-lsp@claude-plugins-official',
+];
+
+test('enabledPlugins matches the pinned list', () => {
+  const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
+  const enabled = Object.entries(settings.enabledPlugins ?? {})
+    .filter(([, on]) => on === true)
+    .map(([name]) => name)
+    .sort();
+
+  assert.deepEqual(
+    enabled,
+    [...EXPECTED_PLUGINS].sort(),
+    'enabledPlugins changed. Claude Code gives no warning when a plugin disappears, so ' +
+    'if this was deliberate, update EXPECTED_PLUGINS in the same commit.',
+  );
+});
+
 test('every NOT_REPO_OWNED exemption is actually still referenced', () => {
   const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
   const referenced = new Set(
