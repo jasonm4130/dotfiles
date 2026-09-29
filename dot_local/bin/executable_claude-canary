@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Daily Claude Code harness canary, run headless by launchd. No model, no
+# network beyond what `claude plugin list` does. Each check guards a failure
+# that is silent in the harness itself:
+#
+#   plugins   an enabled plugin is missing or disabled (7c5394c dropped eight
+#             and nothing noticed for four days)
+#   capture   session-retro's hook no longer records a success or a failure
+#   coverage  sessions ran but produced no session-retro events
+#   doctor    `claude doctor` reports an installation issue
+#   stale     a running claude process predates the newest plugin or settings
+#             change, so it still runs the old hooks (PID 79208 kept firing a
+#             retired lsp-first guard for four days)
+#
+# Prints one line per check; notifies and exits 1 when any check fails.
+# The weekly failure review must ignore session ids starting "canary-".
+set -uo pipefail
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+SETTINGS="$HOME/.claude/settings.json"
+DATA="$HOME/.claude/plugins/data/session-retro-jasonm4130-claude-skills"
+PROJECTS="$HOME/.claude/projects"
+DAY=$(date -u +%F)
+YDAY=$(date -u -v-1d +%F)
+failures=()
+
+pass() { echo "ok    $1: $2"; }
+fail() { echo "FAIL  $1: $2"; failures+=("$1"); }
+
+plugins_json=$(claude plugin list --json </dev/null 2>/dev/null) || plugins_json='[]'
+
+# plugins: everything settings.json enables is installed and enabled.
+missing=$(jq -r --argjson live "$plugins_json" '
+  (.enabledPlugins // {}) | to_entries | map(select(.value == true) | .key)
+  | map(select(. as $id | ($live | map(select(.id == $id and .enabled)) | length) == 0))
+  | join(" ")' "$SETTINGS" 2>/dev/null)
+if [[ -z "$missing" ]]; then pass plugins "all enabled plugins installed and on"
+else fail plugins "enabled in settings but not live: $missing"; fi
+
+# capture: a heartbeat session start and a synthetic failure
+# both land as records, the failure with ok:false.
+root=$(jq -r '.[] | select(.id == "session-retro@jasonm4130-claude-skills" and .enabled) | .installPath' <<<"$plugins_json" | head -1)
+if [[ -z "$root" || ! -f "$root/scripts/capture.mjs" ]]; then
+  fail capture "session-retro not installed"
+else
+  sid="canary-$DAY"
+  hook() { CLAUDE_PLUGIN_ROOT="$root" CLAUDE_PLUGIN_DATA="$DATA" node "$root/scripts/capture.mjs"; }
+  echo "{\"hook_event_name\":\"SessionStart\",\"session_id\":\"$sid\",\"source\":\"canary\"}" | hook
+  echo "{\"hook_event_name\":\"PostToolUseFailure\",\"session_id\":\"$sid\",\"tool_name\":\"Bash\",\"tool_use_id\":\"canary-$(date +%s)\",\"tool_input\":{\"command\":\"false\"},\"error\":\"Exit code 1\"}" | hook
+  f="$DATA/v3/events/$DAY/$sid.jsonl"
+  if [[ -f "$f" ]] && jq -e -s 'any(.outcome == "session") and any(.ok == false)' "$f" >/dev/null 2>&1; then
+    pass capture "heartbeat and synthetic failure recorded"
+  else fail capture "no heartbeat/failure record in $f"; fi
+fi
+
+# coverage: top-level transcripts touched in the last day (subagent logs live
+# one level deeper) should mostly have an events file today or yesterday.
+total=0; unlogged=0
+while IFS= read -r t; do
+  s=$(basename "$t" .jsonl)
+  total=$((total + 1))
+  [[ -f "$DATA/v3/events/$DAY/$s.jsonl" || -f "$DATA/v3/events/$YDAY/$s.jsonl" ]] || unlogged=$((unlogged + 1))
+done < <(find "$PROJECTS" -mindepth 2 -maxdepth 2 -name '*.jsonl' -mtime -1 2>/dev/null)
+if (( total == 0 )); then pass coverage "no sessions in the last day"
+elif (( unlogged * 2 > total )); then fail coverage "$unlogged of $total recent sessions have no events"
+else pass coverage "$((total - unlogged)) of $total recent sessions logged"; fi
+
+# doctor
+if out=$(timeout 60 claude doctor </dev/null 2>&1) && grep -q "No installation issues found" <<<"$out"; then
+  pass doctor "no installation issues"
+else fail doctor "$(grep -m1 -iE 'issue|error|warn' <<<"$out" || echo 'did not report clean')"; fi
+
+# stale: newest of settings.json mtime and any enabled plugin's lastUpdated.
+newest=$(stat -f %m "$SETTINGS")
+while IFS= read -r iso; do
+  [[ -n "$iso" ]] || continue
+  t=$(date -j -u -f "%Y-%m-%dT%H:%M:%S" "${iso%%.*}" +%s 2>/dev/null) || continue
+  (( t > newest )) && newest=$t
+done < <(jq -r '.[] | select(.enabled) | .lastUpdated // empty' <<<"$plugins_json")
+stale=()
+while read -r pid rest; do
+  started=$(date -j -f "%a %b %d %T %Y" "$rest" +%s 2>/dev/null) || continue
+  (( started < newest )) && stale+=("$pid")
+done < <(LC_ALL=C ps -axo pid=,lstart=,comm= | awk '{ n = split($NF, p, "/") } p[n] == "claude" { $NF = ""; print }')
+if (( ${#stale[@]} == 0 )); then pass stale "no claude process predates the last config change"
+else fail stale "restart these claude sessions to load current hooks: PID ${stale[*]}"; fi
+
+if (( ${#failures[@]} )); then
+  /usr/bin/osascript -e "display notification \"failed: ${failures[*]} — see ~/Library/Logs/claude-canary.log\" with title \"Claude canary\"" 2>/dev/null
+  exit 1
+fi
