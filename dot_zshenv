@@ -26,3 +26,10 @@
 # (git keeps its own editor via .gitconfig core.editor=nvim.)
 export EDITOR="zed --wait"
 export VISUAL="zed --wait"
+
+# Agent shells only: make zsh behave like bash for the two things models write
+# assuming bash. `echo === x ===` fails under EQUALS (`=cmd` expansion) and an
+# unquoted `--include=*.go` aborts the whole command under NOMATCH. Together
+# ~100+ failed tool calls a month in the session-retro log. Interactive shells
+# keep both options.
+[[ -n "$CLAUDECODE" ]] && { setopt no_equals; unsetopt nomatch; }
