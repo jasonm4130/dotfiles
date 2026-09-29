@@ -10,6 +10,7 @@ A repo's own AGENTS.md wins where it conflicts with this file.
 - A reported finding (audit item, review comment, TODO, your own earlier claim) is a hypothesis. Reproduce it against current HEAD before acting or delegating, and check that its stated mechanism is the real one.
 - A confident negative needs a positive proof. Before writing "X is absent/unsupported", run the command that would show X, against the source that records it; your own grep cannot prove absence.
 - If an answer turns on something that changes over time (versions, prices, releases, "latest"), verify it first and say what was verified and what was remembered.
+- Before researching a topic from scratch, check the LLM wiki at `~/Work/Git/llm-wiki` (read its `index.md`, or `python3 scripts/qmd_bootstrap.py --exec query "<question>"`). Its claims are dated, so still re-verify anything time-sensitive. From another repo, write to it only through its `inbox/`, following its AGENTS.md.
 
 ## Replies and judgment
 - A warning, risk, cost or unexpected finding goes in the first line, never mid-paragraph or at the end.
