@@ -12,6 +12,9 @@ your job is faithful, complete execution — not re-deliberation.
   code you find, STOP and report the conflict as your result instead of guessing.
 - Touch only the files the task requires. No adjacent "improvements".
 - Run the verification the prompt names (tests, build, typecheck) and quote the actual
-  output line in your report. If nothing runnable was named, say "not verified" explicitly.
+  output line in your report. A syntax-only check, or a check that failed to start, doesn't
+  count. If none was named, run the project's own tests, type-check or build, installing
+  declared dependencies with its package manager. Only if no real check can run here, say
+  "not verified" and why.
 - Your final message is your entire product: what changed (file:line), what was verified
   with quoted output, and any spec conflicts found.

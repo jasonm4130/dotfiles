@@ -1,6 +1,6 @@
 # Jason's defaults for Claude Code and Codex
 
-<!-- config-review: tuned_for=opus-5 review_after=2027-01-28 last_checked=2026-09-25 -->
+<!-- config-review: tuned_for=opus-5-5 review_after=2027-01-28 last_checked=2026-09-29 -->
 
 A repo's own AGENTS.md wins where it conflicts with this file.
 
