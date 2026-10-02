@@ -74,6 +74,15 @@ ensure social --transport http https://social-mcp.jasonmatthew.dev/mcp
 # skills were 43% of the whole skill-description budget against one
 # wrangler.jsonc in the tree. The docs server is the part that works.
 ensure cloudflare-docs --transport http https://docs.mcp.cloudflare.com/mcp
+# llm-wiki search via its pinned QMD. The wrapper chdirs into the wiki before
+# exec'ing `qmd mcp`, which is what selects the wiki's own .qmd/index.sqlite
+# rather than QMD's global index; calling the runtime binary directly would
+# search the wrong index from any other directory. Skipped until the wiki is
+# cloned and bootstrapped (`python3 scripts/qmd_bootstrap.py` inside it).
+wiki="$HOME/Work/Git/llm-wiki/scripts/qmd_bootstrap.py"
+if [ -f "$wiki" ]; then
+  ensure wiki -- python3 "$wiki" --exec mcp
+fi
 
 # OAuth-backed servers need one interactive login per machine. Registration
 # above only records the URL; the token lives in the login keychain under
