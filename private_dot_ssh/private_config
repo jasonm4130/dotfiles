@@ -7,6 +7,16 @@
 Host *
   IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
 
+# Some networks block port 22; GitHub serves SSH on 443 too. Fall back to 443
+# only when port 22 is unreachable, so on normal networks `ssh -G github.com`
+# still resolves to github.com and tools that read it (gh host checks, the
+# no-mistakes PR step) keep working. HostKeyAlias keeps the existing
+# github.com known_hosts entry valid for the 443 endpoint.
+Match host github.com exec "! /usr/bin/nc -z -G 1 github.com 22 >/dev/null 2>&1"
+  HostName ssh.github.com
+  Port 443
+  HostKeyAlias github.com
+
 Host github.com
   User git
   # 1Password prompts for Touch ID on first use per session, then caches.
