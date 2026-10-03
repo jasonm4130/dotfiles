@@ -20,3 +20,17 @@ Match host github.com exec "! /usr/bin/nc -z -G 1 github.com 22 >/dev/null 2>&1"
 Host github.com
   User git
   # 1Password prompts for Touch ID on first use per session, then caches.
+
+# Firstmate's route to its remote second-mate home on dell-01 (the isolated fm
+# Incus container, brok-stacks nodes/README.md "fm instance"). A dedicated
+# on-disk key so supervision never waits on a 1Password prompt; its reach is
+# that sandbox only.
+Host fm-dell01
+  HostName 192.168.5.20
+  Port 2222
+  User fm
+  IdentityFile ~/.ssh/fm-dell01
+  IdentitiesOnly yes
+  IdentityAgent none
+  ForwardAgent no
+  StrictHostKeyChecking yes
