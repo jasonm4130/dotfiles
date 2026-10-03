@@ -109,7 +109,7 @@ trap 'rm -f "$primer"' EXIT
     fi
     # Surfaced, never acted on. Moving a file is the user's call, and a misfiled
     # doc is a filing question ("is this research?"), not something to guess at.
-    if [ -n "$misfiled" ]; then
+    if [ -n "$misfiled" ] && [ -z "${FM_TASK_ID:-}" ]; then
       [ "$misfiled_n" -gt 6 ] && misfiled="${misfiled}, +$((misfiled_n - 6)) more"
       printf "\n**Not plans, filed in \`%s\`:** %s. No \`# Task N\` headings, so these are not implementation plans. Offer once to move them somewhere truthful (e.g. \`docs/research/\`) — do NOT move, rename, or delete anything unprompted, and drop it if the user passes.\n" \
         "$rel" "$misfiled"
@@ -118,7 +118,8 @@ trap 'rm -f "$primer"' EXIT
 
   # Session-control commands the model cannot invoke itself — without this it
   # never offers them, and the moment to use them has passed by the next turn.
-  cat <<'EOF'
+  # Firstmate crewmates (FM_TASK_ID set by fm-spawn) have no user to offer them to.
+  [ -n "${FM_TASK_ID:-}" ] || cat <<'EOF'
 
 **Session control — offer these to the user at the right moment; you cannot invoke them yourself.**
 Offer at most one, as a single line alongside the work, then keep going. Never stall waiting for an answer, and never re-offer for a moment already passed on.
