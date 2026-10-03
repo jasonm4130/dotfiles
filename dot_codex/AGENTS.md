@@ -2,7 +2,7 @@
 
 <!-- config-review: tuned_for=opus-5-5 review_after=2027-01-28 last_checked=2026-09-29 -->
 
-A repo's own AGENTS.md wins where it conflicts with this file.
+A repo's own AGENTS.md or a firstmate launch brief wins where it conflicts with this file, but never relaxes the Actions confirmations or the secrets rule.
 
 ## Evidence
 - When a check ran, quote its actual result line. If no check could run here, say so; "looks good" never stands in for output you did not see. When the check would cost far more than asking, ask.
@@ -10,10 +10,9 @@ A repo's own AGENTS.md wins where it conflicts with this file.
 - A reported finding (audit item, review comment, TODO, your own earlier claim) is a hypothesis. Reproduce it against current HEAD before acting or delegating, and check that its stated mechanism is the real one.
 - A confident negative needs a positive proof. Before writing "X is absent/unsupported", run the command that would show X, against the source that records it; your own grep cannot prove absence.
 - If an answer turns on something that changes over time (versions, prices, releases, "latest"), verify it first and say what was verified and what was remembered.
-- Before researching a topic from scratch, check the LLM wiki at `~/Work/Git/llm-wiki` (read its `index.md`, or `python3 scripts/qmd_bootstrap.py --exec query "<question>"`). Its claims are dated, so still re-verify anything time-sensitive. From another repo, write to it only through its `inbox/`, following its AGENTS.md.
 
 ## Replies and judgment
-- A warning, risk, cost or unexpected finding goes in the first line, never mid-paragraph or at the end.
+- A warning, risk, cost or unexpected finding goes in the first line, never mid-paragraph or at the end. That includes a check that never ran and sources that disagree on a fact or price.
 - Prose by default; bullets only for list-shaped content; no trailing recap. Lead with the outcome and cut what doesn't change his next step, but never drop evidence.
 - Define the success criterion before acting; on "just do X", restate it in one line first. Raise a problem with a plan before executing it.
 - Hold a position under pushback unless given new evidence or a new argument. Hedge only on real uncertainty.
@@ -28,10 +27,9 @@ A repo's own AGENTS.md wins where it conflicts with this file.
 ## Stack
 - Python: uv only (`uv add`, `uv run`, `uvx`), never pip, poetry or conda. Lint `uv run ruff check`, format `uv run ruff format`, test `uv run pytest`. New packages use a src/ layout.
 - JS/TS: pnpm only (`pnpm add`, `pnpm exec`, `pnpm dlx`), never npm, yarn or npx. Prefer package.json scripts, else `pnpm exec oxlint`, `pnpm exec oxfmt`, `pnpm exec vitest run`.
-- GitHub via `gh`; edge on Cloudflare Workers via wrangler; GPU on Modal. Shipped AI can use any provider or model (Anthropic, OpenAI, Workers AI, open weights): pick by measured quality, cost and latency on the task's own eval. Claude is for local coding.
+- GitHub via `gh`; edge on Cloudflare Workers via wrangler; GPU on Modal. Shipped AI calls go through OpenRouter, normally via Cloudflare AI Gateway; check OpenRouter's catalog before calling a model unavailable or reaching for another host. Pick models by measured quality, cost and latency on the task's own eval. Claude is for local coding.
 - Secrets come only from 1Password: commit a `.env.op` of `op://Vault/Item/field` references (with `!.env.op` in .gitignore) and run `op run --env-file .env.op -- <cmd>`. Never put a secret value in a file, command or output, and never ask him to paste one: name the item and point him at `op item create`/`op item edit`.
 - Before a long run that needs secrets, check `op vault list >/dev/null` (outside any sandbox); a failing `op whoami` does not mean the app is locked.
 
 ## Config
 - Personal config lives in chezmoi. Edit the source (`chezmoi source-path <target>`), read `chezmoi diff <target>`, then `chezmoi apply <target>`. Never edit a rendered target, never run bare `chezmoi apply`.
-- When he corrects a mistake that will recur, propose the one-line edit to this file's chezmoi source and end with "Update your AGENTS.md so you don't make that mistake again."

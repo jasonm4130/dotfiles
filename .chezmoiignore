@@ -28,9 +28,12 @@ CLAUDE.md
 !.claude/rules/**/**
 !.claude/sounds/
 !.claude/sounds/**/**
-# Only the herdr skill link: skills/synced belongs to claude.ai.
+# Only repo-owned skills: skills/synced belongs to claude.ai.
 !.claude/skills/
 !.claude/skills/herdr
+!.claude/skills/llm-wiki
+!.claude/skills/gmail-connector/
+!.claude/skills/gmail-connector/**/**
 
 # Belt-and-braces: explicit re-ignores (parent ignore covers them, but be loud)
 .claude/.claude.json
