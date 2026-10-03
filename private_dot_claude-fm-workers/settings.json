@@ -1,0 +1,264 @@
+{
+  "env": {
+    "CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE": "1",
+    "BASH_DEFAULT_TIMEOUT_MS": "300000"
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude-fm-workers/hooks/homelab-guard.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/claude-hooks secrets-scan"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/disk-guard.sh pretool"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/kill-guard.py pretool"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/session-start.sh",
+            "timeout": 6
+          },
+          {
+            "type": "command",
+            "command": "~/.local/bin/claude-stay-awake.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/jasonmatthew/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/pre-compact.sh",
+            "timeout": 4
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt|idle_prompt|agent_needs_input",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/tab-title.mjs",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/tab-title.mjs",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.local/bin/claude-statusline"
+  },
+  "enabledPlugins": {
+    "typescript-lsp@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "gates@jasonm4130-claude-skills": true,
+    "ship-gate@jasonm4130-claude-skills": true,
+    "skill-creator@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "claude-code-setup@claude-plugins-official": true,
+    "cloudflare@claude-plugins-official": true,
+    "codex-review@jasonm4130-claude-skills": true,
+    "session-retro@jasonm4130-claude-skills": true
+  },
+  "extraKnownMarketplaces": {
+    "jasonm4130-claude-skills": {
+      "source": {
+        "source": "github",
+        "repo": "jasonm4130/claude-skills"
+      },
+      "autoUpdate": true
+    }
+  },
+  "outputStyle": "Concise",
+  "effortLevel": "medium",
+  "autoCompactWindow": 400000,
+  "tui": "fullscreen",
+  "skipWorkflowUsageWarning": true,
+  "theme": "dark",
+  "skipAutoPermissionPrompt": true,
+  "remoteControlAtStartup": false,
+  "agentPushNotifEnabled": false,
+  "permissions": {
+    "allow": [
+      "Read(~/Work/Git/**)",
+      "Read(~/.claude/**)",
+      "Read(~/.codex/**)",
+      "Read(~/.ai/**)",
+      "Read(~/.config/**)",
+      "Read(//private/tmp/claude-501/**)",
+      "WebFetch",
+      "WebSearch",
+      "Workflow",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git merge:*)",
+      "Bash(git rebase:*)",
+      "Bash(git switch:*)",
+      "Bash(git worktree:*)",
+      "Bash(git init:*)",
+      "Bash(git rm:*)",
+      "Bash(git mv:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr status:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh repo view:*)",
+      "Bash(chezmoi diff:*)",
+      "Bash(chezmoi status:*)",
+      "Bash(chezmoi source-path:*)",
+      "Bash(chezmoi managed:*)",
+      "Bash(launchctl list:*)",
+      "Bash(launchctl print:*)",
+      "Bash(mise current:*)",
+      "Bash(uniq:*)",
+      "Bash(awk:*)",
+      "Bash(mkdir:*)",
+      "Bash(touch:*)"
+    ],
+    "deny": [
+      "Read(//**/.env)",
+      "Read(//**/.env.local)",
+      "Read(//**/.env.*.local)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.config/op/**)",
+      "Read(~/.codex/auth.json)",
+      "Read(~/.netrc)",
+      "Bash(git commit -a*)",
+      "Bash(git commit --all*)",
+      "mcp__claude_ai_Gmail__update_draft",
+      "Read(~/Work/Git/**/secrets/**)",
+      "Read(~/.config/rpiv-web-tools/**)",
+      "Edit(//**/.env)",
+      "Edit(//**/.env.local)",
+      "Edit(//**/.env.*.local)",
+      "Edit(~/.ssh/**)",
+      "Bash(ssh:*)",
+      "Bash(scp:*)",
+      "Bash(sftp:*)",
+      "Bash(chezmoi apply*)",
+      "Bash(chezmoi update*)",
+      "Bash(gh pr merge*)",
+      "Edit(~/.local/share/chezmoi/**)",
+      "Edit(~/.claude/**)",
+      "Edit(~/.claude-fm-workers/**)",
+      "Bash(ansible:*)",
+      "Bash(ansible-playbook:*)"
+    ],
+    "ask": [
+      "Bash(gh pr merge *--admin*)",
+      "Bash(git push *--force*)",
+      "Bash(git push -f *)",
+      "Bash(git push * -f)",
+      "Bash(git push * -f *)",
+      "Bash(git push * +*)",
+      "Bash(*wrangler deploy*)",
+      "Bash(*wrangler pages deploy*)",
+      "Bash(*wrangler versions deploy*)",
+      "Bash(*wrangler delete*)",
+      "Bash(ssh *docker system prune*)",
+      "Bash(ssh *docker volume rm*)",
+      "Bash(ssh *docker volume prune*)",
+      "Bash(ssh *docker compose down -v*)",
+      "Bash(ssh *rm -rf*)",
+      "Bash(chezmoi apply)",
+      "Bash(chezmoi apply --force)",
+      "Bash(chezmoi apply -v)",
+      "Bash(chezmoi apply --verbose)",
+      "Bash(chezmoi apply --force -v)",
+      "Bash(chezmoi apply -v --force)",
+      "Bash(chezmoi update *)",
+      "Bash(chezmoi init *--apply*)"
+    ],
+    "defaultMode": "auto",
+    "disableBypassPermissionsMode": "disable"
+  },
+  "autoMode": {
+    "allow": [
+      "$defaults",
+      "Writing a script or file under /private/tmp/claude-501/ and running it is routine, including Python or Node scripts that read ~/.claude/projects transcripts, edit the chezmoi source, or scan the repo.",
+      "Compound shell commands that chain read-only commands (grep, sed, awk, jq, head, tail, wc, sort, ls, cat, git log/status/diff/show) with a write inside the repo or the scratchpad are routine; judge the writing segment, not the pipeline around it.",
+      "gh pr create and gh pr view on repositories under github.com/jasonm4130 are routine for this worker; merging, closing or changing the visibility of any PR or repository is not."
+    ],
+    "environment": [
+      "**Repository visibility**: private by default; the public repos are the ones under github.com/jasonm4130 with a published README (claude-skills is public), treat every other checkout as private",
+      "**Secrets management**: 1Password; secrets reach commands via `op run --env-file .env.op -- <command>`, never plaintext",
+      "**Default / protected branches**: `main` everywhere; claude-skills and ambient protect `main` (PRs only, required checks), so a direct push there is refused by GitHub, not by this classifier",
+      "**Source control**: GitHub via the `gh` CLI; every repo under ~/Work/Git has an origin under github.com/jasonm4130",
+      "**Primary use of Claude Code**: software development in the repos under ~/Work/Git (claude-skills, a Claude Code plugin marketplace; ambient, a macOS recording app; transcoder; brok-stacks, homelab infrastructure for the Unraid host brok; coach), plus dotfiles and system administration (chezmoi, Homebrew, 1Password CLI)",
+      "**This session is an unattended firstmate fleet worker**, launched by the firstmate supervisor into an isolated git worktree to do one task. It is not Jason's interactive session and must not act with his full administrative trust.",
+      "**Homelab is outside this worker's trust boundary**: Jason's LAN (192.168.5.0/24), brok.jasonmatthew.me and any *.jasonmatthew.me host, dell01 and dell02 are NOT trusted targets. Block any ssh, scp, rsync, http, docker or Ansible action against them.",
+      "**Trusted repo**: the git worktree this worker was launched in, whose origin is under github.com/jasonm4130 (or the firstmate repository for firstmate tasks). Writes outside that worktree are limited to the firstmate state/ status file, data/<task-id>/ report, and the session scratchpad. Editing ~/.claude, ~/.claude-fm-workers, the chezmoi source under ~/.local/share/chezmoi, or any other repository under ~/Work/Git is not routine and should be blocked.",
+      "**Sensitive remote targets**: the Cloudflare account (wrangler deploys, terraform or tofu apply), the UniFi controller, 1Password item changes, and GitHub merges or repository settings all need Jason's stated intent, which a fleet worker never has.",
+      "**Org-specific CLIs**: op (1Password; only `op run --env-file .env.op -- <cmd>` inside the worktree), gh, gh-axi, git, docker (local only), mise, uv, pnpm, cargo, wrangler (local dev only, never deploy), no-mistakes, and the firstmate bin/ scripts named in the worker's brief.",
+      "**Additional context**: Solo developer's private laptop. The session scratchpad under /private/tmp/claude-501/ is trusted for scratch scripts that stay inside the worktree's task."
+    ]
+  }
+}
