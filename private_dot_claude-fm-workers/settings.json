@@ -208,9 +208,7 @@
       "Bash(gh pr merge*)",
       "Edit(~/.local/share/chezmoi/**)",
       "Edit(~/.claude/**)",
-      "Edit(~/.claude-fm-workers/**)",
-      "Bash(ansible:*)",
-      "Bash(ansible-playbook:*)"
+      "Edit(~/.claude-fm-workers/**)"
     ],
     "ask": [
       "Bash(gh pr merge *--admin*)",
