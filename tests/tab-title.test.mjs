@@ -145,10 +145,12 @@ function runHookWithSound(stdinPayload, f, extraEnv = {}) {
     CLAUDE_FANFARE_DIR: f.dir,
     CLAUDE_FANFARE_PLAYER: f.player,
     CLAUDE_FANFARE_LOCK: f.lock,
+    CLAUDE_FANFARE_CWDS: '/tmp/proj',
+    FM_TASK_ID: undefined,
     ...extraEnv,
   };
   if (!('CLAUDE_TAB_TITLE_SILENT' in extraEnv)) delete env.CLAUDE_TAB_TITLE_SILENT;
-  for (const [k, v] of Object.entries(extraEnv)) if (v === undefined) delete env[k];
+  for (const [k, v] of Object.entries(env)) if (v === undefined) delete env[k];
   const input = typeof stdinPayload === 'string' ? stdinPayload : JSON.stringify(stdinPayload);
   return spawnSync(process.execPath, [HOOK_PATH], { input, encoding: 'utf8', env });
 }
@@ -224,5 +226,18 @@ test('CLAUDE_TAB_TITLE_SILENT=1 suppresses fanfare clips too', async () => {
   runHookWithSound({ hook_event_name: 'Stop', cwd: '/tmp/proj' }, f, {
     CLAUDE_TAB_TITLE_SILENT: '1',
   });
+  await assertNothingPlayed(f);
+});
+
+test('cwd outside CLAUDE_FANFARE_CWDS → silent, title still written', async () => {
+  const f = makeFanfare({ stop: 1 });
+  const res = runHookWithSound({ hook_event_name: 'Stop', cwd: '/tmp/other' }, f);
+  assert.equal(JSON.parse(res.stdout).terminalSequence, `${ESC}]0;✅ other${BEL}`);
+  await assertNothingPlayed(f);
+});
+
+test('firstmate worker (FM_TASK_ID set) → silent even in a voiced cwd', async () => {
+  const f = makeFanfare({ stop: 1 });
+  runHookWithSound({ hook_event_name: 'Stop', cwd: '/tmp/proj' }, f, { FM_TASK_ID: 'some-task' });
   await assertNothingPlayed(f);
 });

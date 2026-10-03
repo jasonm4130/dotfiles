@@ -17,7 +17,10 @@
  * fanfare-generate.mjs), since Ghostty's per-tab visual cues are limited
  * (ghostty-org/ghostty#10692). Fail-open: no clips → legacy behavior
  * (Glass.aiff chime for needs-input, silence for Stop). Set
- * CLAUDE_TAB_TITLE_SILENT=1 to disable all sound (tests do).
+ * CLAUDE_TAB_TITLE_SILENT=1 to disable all sound (tests do). Sound plays only
+ * for a session whose cwd is one of CLAUDE_FANFARE_CWDS (colon-separated;
+ * default the firstmate checkout) and which is not a firstmate worker
+ * (FM_TASK_ID unset), so only the first mate session speaks.
  *
  * Stdin is read async, not via readFileSync('/dev/stdin'): the sync read
  * intermittently throws EAGAIN when stdin is a non-blocking pipe, and this
@@ -107,7 +110,10 @@ function main(raw) {
   }
   if (!glyph) process.exit(0);
 
-  if (process.env.CLAUDE_TAB_TITLE_SILENT !== '1') {
+  const fanfareCwds = (process.env.CLAUDE_FANFARE_CWDS
+    ?? path.join(os.homedir(), 'Work/Git/firstmate')).split(':').filter(Boolean);
+  const voiced = fanfareCwds.includes(cwd) && !process.env.FM_TASK_ID;
+  if (voiced && process.env.CLAUDE_TAB_TITLE_SILENT !== '1') {
     const clip = clipKind === null ? null : pickClip(clipKind);
     if (clip !== null) {
       if (!fanfarePlayedRecently()) play(clip);
