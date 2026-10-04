@@ -27,7 +27,7 @@ tab_bar_right_separator = "  "
 
 [ui.sidebar.agents]
 # One line per agent so a full fleet fits on screen.
-rows = [["state_icon", "workspace", "tab"]]
+rows = [["state_icon", { token = "tab", bold = true }, { token = "workspace", dim = true }]]
 row_gap = 0
 rows_by_agent.codex = [["state_icon", { token = "agent", bold = true }, "workspace"]]
 
