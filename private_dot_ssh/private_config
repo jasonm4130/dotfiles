@@ -7,18 +7,24 @@
 Host *
   IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
 
-# Some networks block port 22; GitHub serves SSH on 443 too. Fall back to 443
-# only when port 22 is unreachable, so on normal networks `ssh -G github.com`
-# still resolves to github.com and tools that read it (gh host checks, the
-# no-mistakes PR step) keep working. HostKeyAlias keeps the existing
-# github.com known_hosts entry valid for the 443 endpoint.
-Match host github.com exec "! /usr/bin/nc -z -G 1 github.com 22 >/dev/null 2>&1"
+# Some networks block port 22; GitHub also serves SSH on 443. Use it by hand
+# with `git@github-443:owner/repo` when 22 is blocked. There is deliberately
+# no automatic `nc` probe: each probe is an extra SYN to github.com:22, and
+# the home UniFi IPS (ET sid 2003068) blocks a destination after 5 SYNs in
+# 120 s from one source, which is what made fleet git flaky.
+Host github-443
   HostName ssh.github.com
   Port 443
+  User git
   HostKeyAlias github.com
 
 Host github.com
   User git
+  # Share one connection across parallel git operations so a busy fleet
+  # sends one SYN per 10 minutes instead of one per fetch or push.
+  ControlMaster auto
+  ControlPath ~/.ssh/cm-%C
+  ControlPersist 10m
   # 1Password prompts for Touch ID on first use per session, then caches.
 
 # Firstmate's route to its remote second-mate home on dell-01 (the isolated fm
@@ -26,10 +32,35 @@ Host github.com
 # on-disk key so supervision never waits on a 1Password prompt; its reach is
 # that sandbox only.
 Host fm-dell01
-  HostName 192.168.5.20
+  # dell-01's tailnet name works at home and away; HostKeyAlias keeps the
+  # existing known_hosts entry. 192.168.5.20 on the same port is the fallback.
+  HostName dell-01
+  HostKeyAlias [192.168.5.20]:2222
   Port 2222
   User fm
   IdentityFile ~/.ssh/fm-dell01
+  IdentitiesOnly yes
+  IdentityAgent none
+  ForwardAgent no
+  StrictHostKeyChecking yes
+
+# Second-mate sandbox fm-abm on dell-01 (brok-stacks nodes/README.md).
+Host fm-abm-dell01
+  HostName dell-01
+  Port 2223
+  User fm
+  IdentityFile ~/.ssh/fm-abm-dell01
+  IdentitiesOnly yes
+  IdentityAgent none
+  ForwardAgent no
+  StrictHostKeyChecking yes
+
+# Second-mate sandbox fm-skopia on dell-01 (brok-stacks nodes/README.md).
+Host fm-skopia-dell01
+  HostName dell-01
+  Port 2224
+  User fm
+  IdentityFile ~/.ssh/fm-skopia-dell01
   IdentitiesOnly yes
   IdentityAgent none
   ForwardAgent no
