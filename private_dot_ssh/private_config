@@ -44,6 +44,19 @@ Host fm-dell01
   ForwardAgent no
   StrictHostKeyChecking yes
 
+Host fm-dell02
+  # endurebyte's second mate on dell-02 (brok-stacks #443). Same shape as
+  # fm-dell01; 192.168.5.21 on the same port is the fallback.
+  HostName dell-02
+  HostKeyAlias [192.168.5.21]:2222
+  Port 2222
+  User fm
+  IdentityFile ~/.ssh/fm-dell02
+  IdentitiesOnly yes
+  IdentityAgent none
+  ForwardAgent no
+  StrictHostKeyChecking yes
+
 # Second-mate sandbox fm-abm on dell-01 (brok-stacks nodes/README.md).
 Host fm-abm-dell01
   HostName dell-01
