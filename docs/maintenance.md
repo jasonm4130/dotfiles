@@ -18,6 +18,14 @@ That is the full set of chezmoi-managed agents — `find private_Library/private
 3. Run **`codex login`** — an interactive browser OAuth flow that writes `~/.codex/auth.json`. Machine-local, not restored by the bootstrap, and it fails the same way an unseeded MCP Keychain entry does: the CLI installs and runs fine, then 401s on first real use. Verify positively with `codex exec --skip-git-repo-check 'reply with the single word OK'` rather than checking for the file. Note the review chain log under `~/.claude` is machine-local too, so a fresh Mac starts the `codex-review` gate stats from zero
 4. Open a new terminal — secrets resolve via `op-fast inject` at shell start. If 1Password is locked you get one warning on stderr and the vars stay unset; unlock it and run **`op-env-reload`** to recover that shell without opening a new one. A login shell with no tty stays silent by design. **GUI apps launched from the Dock or Finder never source `.zprofile`** and so see none of these — give such an app its own `op run` wrapper rather than exporting globally with `launchctl setenv`, which would publish the secrets to every process on the machine
 
+## backpass monthly memory pass
+
+`~/.config/backpass/config.json` (chezmoi: `dot_config/backpass/config.json`) pins analysis and synthesis to the claude harness. User scope reads only the `user` block, so the pins and `cloneRoots` are duplicated there. The config can't express the worker transcript store; `CLAUDE_CONFIG_DIR` is read from backpass's own environment, so run it by hand with:
+
+`CLAUDE_CONFIG_DIR=~/.claude-fm-workers backpass`
+
+User-scope edits ship as a PR against `dot_codex/AGENTS.md`, never `backpass apply --scope user` (chezmoi would overwrite the target).
+
 ## Fanfare voice notifications
 
 `~/.claude/hooks/tab-title.mjs` plays a random ElevenLabs clip from
