@@ -34,6 +34,8 @@ CLAUDE.md
 !.claude/skills/llm-wiki
 !.claude/skills/gmail-connector/
 !.claude/skills/gmail-connector/**/**
+!.claude/skills/fleet-weather/
+!.claude/skills/fleet-weather/**/**
 
 # Belt-and-braces: explicit re-ignores (parent ignore covers them, but be loud)
 .claude/.claude.json

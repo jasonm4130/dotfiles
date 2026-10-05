@@ -15,6 +15,28 @@ allowlist admits only that link, because `~/.claude/skills/synced` belongs to cl
 **a new subdirectory is invisible to chezmoi until it is allowlisted there** — it applies
 clean and silently manages nothing.
 
+## Fleet weather mod
+
+`~/.claude/skills/fleet-weather` is a mod, not a skill: a plugin folder (`.claude-plugin/plugin.json`
+plus a hooks module) that Claude Code auto-loads from a skills folder and hot-reloads when its
+files change, so `chezmoi apply` of it takes effect in running sessions. It draws a half-block
+pixel galleon in the band above the prompt, sailing in the weather of the Firstmate fleet read
+from `$FM_HOME/state/home-summary.json` (default home `~/Work/Git/firstmate`): storm for a fresh
+`blocked` decision, a blocked crew, supervision cooling down, watcher downtime or a fleet view
+not republished for 10 min; rain for a failed or fixing validation, or a `blocked` decision first
+seen over 2 h ago; clouds for a decision waiting on the captain; night when no crew is active;
+calm otherwise. It is a no-op in Firstmate workers (`FM_TASK_ID` set; they load it too, through
+`~/.claude-fm-workers/skills`) and draws nothing while no home summary resolves.
+
+It replaces Firstmate Calm's working-row sailboat rather than joining it: run `/calm off` once in
+a captain session (the choice persists in `$FM_HOME/config/calm`), or both ships draw. That also
+turns off Calm's hiding of tool rows, operational rows and working notes; supervision notes keep
+showing either way. The band collapses like any other with `ctrl+x ctrl+a`.
+
+The forecast, scene and Raster packing in `lib/` are pure and covered by
+`tests/fleet-weather.test.mjs`; `claude plugin test` runs the engine-level tests in the mod's own
+`tests/` against a copy with `dot_claude-plugin` renamed to `.claude-plugin`.
+
 ## Rules
 
 `~/.claude/rules/*.md` is loaded into every session regardless of working directory, which
