@@ -19,8 +19,8 @@ clean and silently manages nothing.
 
 `~/.claude/skills/fleet-weather` is a mod, not a skill: a plugin folder (`.claude-plugin/plugin.json`
 plus a hooks module) that Claude Code auto-loads from a skills folder and hot-reloads when its
-files change, so `chezmoi apply` of it takes effect in running sessions. It draws a half-block
-pixel ship in a 6-row band above the prompt, sailing in the weather of the Firstmate fleet read
+files change, so `chezmoi apply` of it takes effect in running sessions. It draws a pixel-art
+ship in a 5-row band above the prompt, sailing in the weather of the Firstmate fleet read
 from `$FM_HOME/state/home-summary.json` (default home `~/Work/Git/firstmate`): storm for a fresh
 `blocked` decision, a blocked crew, supervision cooling down, watcher downtime or a fleet view
 not republished for 10 min; rain for a failed or fixing validation, or a `blocked` decision first
@@ -34,16 +34,26 @@ sail in a storm and furls at night with its stern windows lit. To pin one, set
 `FLEET_WEATHER_SHIP=galleon|schooner|sloop|junk` in the session's environment (any other value
 means pick for me). The sea is procedural from the same seed, so no two sessions share one:
 swell and drifting noise, with whitecaps and spray scaling with the weather's severity and sun
-or moon glints in calm and at night. `node ~/.claude/skills/fleet-weather/preview.mjs` prints
-every ship in every weather as ANSI truecolor (flags: `--weather`, `--variant`, `--frames`,
-`--step`, `--width`, `--theme`, `--seed`) to eyeball a change without the TUI.
+or moon glints in calm and at night.
+
+The scene is drawn at 2x4 pixels per cell (a ship is four rows tall, 16 pixels) and fitted
+to glyphs chafa-style: each cell takes the glyph, and the two colours, that best reproduce
+its pixels, with braille dots for thin lines (rigging, rain, spray, stars). Set
+`FLEET_WEATHER_GLYPHS=quadrant|half` to choose the glyphs. The default is `quadrant`
+(quadrant blocks plus `▂ ▆`, 2x4 vertical edges); `half` is the original renderer's look.
+`octant` and `sextant` are accepted but fall back to `quadrant` in the band, because Claude
+Code's Raster refuses any code point beyond the BMP (checked on 2.1.289: "beyond the Basic
+Multilingual Plane"). `node ~/.claude/skills/fleet-weather/preview.mjs` prints every ship in
+every weather as ANSI truecolor, the same frame in half, quadrant, sextant and octant side by
+side (flags: `--weather`, `--variant`, `--glyphs`, `--frames`, `--step`, `--width`, `--theme`,
+`--seed`), to eyeball a change without the TUI.
 
 It replaces Firstmate Calm's working-row sailboat rather than joining it: run `/calm off` once in
 a captain session (the choice persists in `$FM_HOME/config/calm`), or both ships draw. That also
 turns off Calm's hiding of tool rows, operational rows and working notes; supervision notes keep
 showing either way. The band collapses like any other with `ctrl+x ctrl+a`.
 
-The forecast, scene and Raster packing in `lib/` are pure and covered by
+The forecast, scene, cell fitter and Raster packing in `lib/` are pure and covered by
 `tests/fleet-weather.test.mjs`; `claude plugin test` runs the engine-level tests in the mod's own
 `tests/` against a copy with `dot_claude-plugin` renamed to `.claude-plugin`.
 

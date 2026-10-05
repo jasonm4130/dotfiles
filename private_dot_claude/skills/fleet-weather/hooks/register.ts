@@ -2,6 +2,9 @@
 // captain's Firstmate fleet. Each session sails one of four vessels (galleon, schooner,
 // sloop, junk), picked from a seed taken when the mod loads and kept for the session's
 // life; FLEET_WEATHER_SHIP pins one by name (anything else means pick for me).
+// FLEET_WEATHER_GLYPHS picks the glyphs the scene is fitted to: quadrant (the default)
+// or half. octant and sextant fold to quadrant here, because the Raster refuses any
+// code point beyond the BMP; preview.mjs draws them.
 //
 // This file is the only one that touches the engine interface `$`; the forecast
 // (../lib/weather.mjs), the scene (../lib/galleon.mjs) and the Raster packing
@@ -23,7 +26,7 @@
 // as Firstmate Calm does). No process is started.
 import type { EngineInterface, Register } from "claude-code";
 import { forecast, parseSummary, trackBlocked } from "../lib/weather.mjs";
-import { paletteFamily, resolveVariant, sceneFrame, SCENE_ROWS, TICK_MS } from "../lib/galleon.mjs";
+import { paletteFamily, resolveGlyphs, resolveVariant, sceneFrame, SCENE_ROWS, TICK_MS } from "../lib/galleon.mjs";
 import { packCells } from "../lib/pack.mjs";
 
 type Forecast = { weather: "storm" | "rain" | "clouds" | "night" | "calm"; reason: string };
@@ -41,7 +44,7 @@ let activation: Promise<boolean> | undefined;
 let loading: Promise<void> | undefined;
 let paths: { summary: string; health: string; watcher: string } | undefined;
 let family: "dark" | "light" = "light";
-let look: { seed: number; variant: string } = { seed: 0, variant: "galleon" };
+let look: { seed: number; variant: string; glyphs: string } = { seed: 0, variant: "galleon", glyphs: "quadrant" };
 let firstSeen: Record<string, number> = {};
 let current: Forecast | undefined;
 let summary: object | undefined;
@@ -149,7 +152,11 @@ async function load($: EngineInterface): Promise<void> {
   };
   family = paletteFamily(await readTheme($));
   const seed = Math.floor(await $.clock.now()) % 0x7fffffff;
-  look = { seed, variant: resolveVariant(await $.env.get("FLEET_WEATHER_SHIP"), seed) };
+  look = {
+    seed,
+    variant: resolveVariant(await $.env.get("FLEET_WEATHER_SHIP"), seed),
+    glyphs: resolveGlyphs(await $.env.get("FLEET_WEATHER_GLYPHS"), { bmpOnly: true }),
+  };
   try {
     const stored = await $.store.get(FIRST_SEEN_KEY);
     if (stored !== null && typeof stored === "object") firstSeen = stored as Record<string, number>;
