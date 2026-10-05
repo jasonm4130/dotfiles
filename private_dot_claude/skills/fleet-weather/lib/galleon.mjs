@@ -1,39 +1,47 @@
-// The fleet scene: a ship sailing a half-block pixel sea under the fleet's weather,
-// painted as Raster cells.
+// The fleet scene: a ship sailing a procedural sea under the fleet's weather, drawn as
+// an RGB pixel buffer at 2x4 pixels per terminal cell and fitted to Raster cells.
 //
-// Pure and deterministic per tick and seed, so tests seek animation time exactly. Every
-// cell is `▀` with the upper pixel as foreground and the lower as background (or a space
-// when both match), giving square 2-pixels-per-cell art 12 pixels (6 rows) tall. Colours
-// are RGB from small palettes and quantised blends, so a frame stays far under the
-// Raster palette's 1024 distinct colour pairs whatever the width. The ship (one of four
-// variants in ./ships.mjs) bounces along the row, flipping to face its heading; it
-// heaves and pitches with the sea under its bow and stern. The sea is procedural
+// Pure and deterministic per tick and seed, so tests seek animation time exactly.
+// `scenePixels` draws the scene: 20 pixel rows over SCENE_ROWS (5) terminal rows, two
+// square pixels to a column. `sceneFrame` fits that buffer to glyphs (./cells.mjs): each
+// cell becomes the glyph of its glyph set, and the two colours, that best reproduce its
+// 2x4 pixels. The ship (one of four variants in ./ships.mjs, four rows tall) bounces
+// along the band, flipping to face its heading; it heaves and pitches with the sea under
+// its bow and stern, throws foam at the bow and leaves a wake. The sea is procedural
 // (./sea.mjs): swell and drifting noise, with foam, spray and glints derived from the
 // height and slope of that surface. The board in Firstmate's data/ship-mod-design is the
 // original galleon scene's mockup.
+import { CELL_H, CELL_W, DEFAULT_GLYPHS, fitCells } from "./cells.mjs";
 import { hash, makeSea, vnoise } from "./sea.mjs";
 import { SHIP, SHIPS, WATERLINE, shipPixels } from "./ships.mjs";
 
+export { GLYPH_SETS, resolveGlyphs } from "./cells.mjs";
 export { VARIANTS, resolveVariant } from "./ships.mjs";
 
 /** `0x01000000` (bit 24 alone) asks the Raster for the terminal's default colour. */
 export const DEFAULT_COLOR = 0x01000000;
 
-/** Terminal rows the scene takes: 12 pixels as half-blocks. */
-export const SCENE_ROWS = 6;
-const H = SCENE_ROWS * 2;
+/** Terminal rows the scene takes. */
+export const SCENE_ROWS = 5;
+const H = SCENE_ROWS * CELL_H;
 
-/** The mean surface row: the ship's waterline sits here in a flat calm, leaving 3 pixels of sea beneath. */
-const BASE = 9;
+/**
+ * Scene pixels per unit of the sea's own field (./sea.mjs works in the half-block
+ * pixels the scene used to draw in), so the swell keeps its size on screen.
+ */
+const K = 2;
+
+/** The mean surface row: the ship's waterline sits here in a flat calm, leaving 5 pixels of sea beneath. */
+const BASE = 15;
 
 /** One scheduler tick; water, weather and pennants advance every tick. */
 export const TICK_MS = 150;
 
-/** The ship moves one pixel column every Nth tick (450 ms). */
-const TICKS_PER_MOVE = 3;
+/** The ship moves one pixel (half a column) every Nth tick (300 ms). */
+const TICKS_PER_MOVE = 2;
 
 /** The widest ship's local box in pixels (the galleon and schooner; the others are narrower). */
-export const SHIP_WIDTH = 26;
+export const SHIP_WIDTH = 40;
 
 const hex = (s) => parseInt(s.slice(1), 16);
 const mix = (a, b, t) => {
@@ -46,7 +54,7 @@ const smooth = (a, b, v) => { const t = clamp01((v - a) / (b - a)); return t * t
 const quant = (v, n) => Math.round(v * n) / n;
 
 /**
- * Per weather: the sea (`amp` pixels of swell, `speed`, share of drifting noise `chop`,
+ * Per weather: the sea (`amp` units of swell, `speed`, share of drifting noise `chop`,
  * crest `steep`ness, `swell` component weights), its whitecaps (`cap` the crest height
  * they start at, `foam` their strength, `spray` the storm's flung water) and the sky.
  */
@@ -83,7 +91,7 @@ const PALETTES = {
 const flashAt = (t) => { const p = t % 34; return p === 0 || p === 1 || p === 4; };
 const boltAt = (t) => { const p = t % 34; return p === 0 || p === 4; };
 
-/** Bounce track: the column and heading after `t` ticks on a track of `span` columns. */
+/** Bounce track: the pixel column and heading after `t` ticks on a track `span` pixels long. */
 export function track(t, span) {
   if (span <= 0) return { pos: 0, dir: 1 };
   const k = Math.floor(t / TICKS_PER_MOVE) % (span * 2);
@@ -101,70 +109,82 @@ export function galleonPixels(weather, t, variant = "galleon") {
 }
 
 /**
- * One frame of the scene, exactly `width` cells by SCENE_ROWS, as rows of
- * `{ ch, fg, bg }` with RGB numbers (DEFAULT_COLOR never appears: the scene is opaque).
+ * The scene's pixels: `width * 2` by SCENE_ROWS * 4 RGB numbers, row-major.
  * @param {number} t tick
  * @param {"storm" | "rain" | "clouds" | "night" | "calm"} weather
  * @param {"dark" | "light"} family
  * @param {number} width terminal columns
  * @param {{ seed?: number, variant?: string }} [opts] the sea's seed and the ship (default the galleon)
+ * @returns {{ width: number, height: number, px: Int32Array, thin: Uint8Array }} `thin` marks the
+ *   pixels of thin lines (rigging, pennants, rain, spray, stars, lightning) braille may draw
  */
-export function sceneFrame(t, weather, family, width, opts = {}) {
-  const W = Math.max(1, Math.floor(width));
+export function scenePixels(t, weather, family, width, opts = {}) {
+  const W = Math.max(1, Math.floor(width)) * CELL_W;
   const wx = WEATHER[weather] ?? WEATHER.calm;
   const p = (PALETTES[family] ?? PALETTES.light)[weather] ?? PALETTES.light.calm;
   const ship = SHIPS[opts.variant] ?? SHIPS.galleon;
-  const sea = makeSea(opts.seed ?? 0, wx, BASE);
-  const P = Array.from({ length: H }, () => new Array(W).fill(0));
+  const seed = opts.seed ?? 0;
+  const field = makeSea(seed, wx, 0);
+  const seaAt = (x, tt) => BASE + K * field.height(x / K, tt);
+  const px = new Int32Array(W * H);
+  const thin = new Uint8Array(W * H);
+  const get = (x, y) => px[y * W + x];
+  const set = (x, y, c, line = 0) => { px[y * W + x] = c; thin[y * W + x] = line; };
+  const inside = (x, y) => x >= 0 && x < W && y >= 0 && y < H;
+  const blend = (x, y, c, a, line = 0) => { if (inside(x, y) && a > 0) set(x, y, a >= 1 ? c : mix(get(x, y), c, a), line); };
   const flash = wx.bolt && flashAt(t);
   const top = hex(p.top), bot = hex(p.bot);
 
   for (let y = 0; y < H; y++) {
     let c = mix(top, bot, y / (H - 1));
     if (flash) c = mix(c, hex(p.flash), 0.65);
-    P[y].fill(c);
+    px.fill(c, y * W, (y + 1) * W);
   }
-  const sx = Math.floor(W * 0.82);
-  const inside = (x, y) => x >= 0 && x < W && y >= 0 && y < H;
+  const sx = Math.floor(W * 0.82), sy = 5;
   if (weather === "calm") {
-    for (let y = 0; y < 6; y++) for (let x = sx - 3; x <= sx + 3; x++) {
-      if (!inside(x, y)) continue;
-      const d = Math.hypot(x - sx, y - 2.5);
-      if (d < 1.6) P[y][x] = hex(p.sun);
-      else if (d < 2.6) P[y][x] = mix(P[y][x], hex(p.halo), 0.5);
+    for (let y = 0; y < 11; y++) for (let x = sx - 6; x <= sx + 6; x++) {
+      const d = Math.hypot(x + 0.5 - sx, y + 0.5 - sy);
+      blend(x, y, hex(p.halo), 0.5 * smooth(5.4, 3.6, d));
+      blend(x, y, hex(p.sun), smooth(3.6, 2.8, d));
     }
   }
   if (wx.night) {
-    for (let i = 0; i < Math.floor(W / 3.5); i++) {
-      const x = Math.floor(hash(i, 3) * W), y = Math.floor(hash(i, 9) * 7);
-      if (hash(i, Math.floor(t / 5)) > 0.3) P[y][x] = mix(P[y][x], hex(p.star), 0.35 + 0.65 * hash(i, 77));
+    for (let i = 0; i < Math.floor(W / 7); i++) {
+      const x = Math.floor(hash(i, 3) * W), y = Math.floor(hash(i, 9) * 13);
+      if (hash(i, Math.floor(t / 5)) > 0.3) blend(x, y, hex(p.star), 0.35 + 0.65 * hash(i, 77), 1);
     }
-    for (let y = 0; y < 6; y++) for (let x = sx - 3; x <= sx + 3; x++) {
-      if (inside(x, y) && Math.hypot(x - sx, y - 2.5) < 1.9 && Math.hypot(x - sx - 1.1, y - 2.0) > 1.5) P[y][x] = hex(p.moon);
+    for (let y = 0; y < 11; y++) for (let x = sx - 5; x <= sx + 5; x++) {
+      const lit = smooth(4.1, 3.3, Math.hypot(x + 0.5 - sx, y + 0.5 - sy)) * smooth(2.6, 3.4, Math.hypot(x + 0.5 - sx - 2.2, y + 0.5 - sy + 1));
+      blend(x, y, hex(p.moon), lit);
     }
   }
   if (wx.cloud > 0) {
-    const n = Math.round(2 + wx.cloud * 4), span = W + 24;
+    const n = Math.round(2 + wx.cloud * 4), span = W + 48;
     for (let k = 0; k < n; k++) {
-      const cx = ((k * 23 + hash(k, 5) * span + t * 0.12 * wx.speed) % span) - 12;
-      const cy = 1.2 + (k % 3) * 0.9, rx = 4 + hash(k, 1) * 5, ry = 1.4 + hash(k, 2) * 0.9;
-      for (let y = 0; y < 8; y++) for (let x = Math.max(0, Math.floor(cx - rx)); x < Math.min(W, cx + rx + 1); x++) {
-        if (((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 < 1) P[y][x] = flash ? mix(hex(p.cl), hex(p.flash), 0.6) : y < cy ? hex(p.cl) : hex(p.cd);
+      const cx = ((k * 46 + hash(k, 5) * span + t * 0.24 * wx.speed) % span) - 24;
+      const cy = 2.4 + (k % 3) * 1.8, rx = 8 + hash(k, 1) * 10, ry = 2.8 + hash(k, 2) * 1.8;
+      for (let y = 0; y < 14; y++) for (let x = Math.max(0, Math.floor(cx - rx - 2)); x < Math.min(W, cx + rx + 2); x++) {
+        // puffed edges: the ellipse's rim pushed in and out by noise that drifts with the cloud
+        const puff = 0.3 * (vnoise((x - cx) * 0.3 + k * 17, y * 0.45, seed) - 0.5);
+        const r = ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2;
+        if (r >= 1 + puff) continue;
+        const c = flash ? mix(hex(p.cl), hex(p.flash), 0.6) : mix(hex(p.cl), hex(p.cd), smooth(cy - ry * 0.6, cy + ry * 0.7, y + 0.5));
+        set(x, y, c);
       }
     }
   }
 
-  // the surface, sampled one column beyond each edge so every column has a slope
+  // the surface, sampled one pixel beyond each edge so every column has a slope
   const S = new Float64Array(W + 2);
-  for (let i = 0; i < W + 2; i++) S[i] = sea.height(i - 1, t);
+  for (let i = 0; i < W + 2; i++) S[i] = seaAt(i - 1, t);
   const surf = (x) => S[x + 1];
   const slope = (x) => (S[x + 2] - S[x]) / 2; // > 0 where the surface falls away to the right
 
   // the ship rides the sea under its stern and bow: heave with their mean, pitch with their difference
   const tr = track(t, W - ship.width);
   const xOf = (lx) => (tr.dir > 0 ? tr.pos + lx : tr.pos + ship.width - 1 - lx);
-  const lxS = Math.round(ship.width * 0.12), lxB = Math.round(ship.width * 0.82);
-  const hS = sea.height(xOf(lxS), t), hB = sea.height(xOf(lxB), t);
+  const lxS = Math.round(ship.width * 0.15), lxB = Math.round(ship.width * 0.75);
+  const hS = seaAt(xOf(lxS), t), hB = seaAt(xOf(lxB), t);
   const heave = BASE + 0.6 * ((hS + hB) / 2 - BASE) - WATERLINE;
   const pitch = (hB - hS) * 0.5;
   const tint = (c) => {
@@ -173,10 +193,11 @@ export function sceneFrame(t, weather, family, width, opts = {}) {
     if (flash) c = mix(c, 0xffffff, 0.3);
     return c;
   };
+  const rowOf = (lx, ly) => Math.max(-2, Math.round(heave + (pitch * (lx - (lxS + lxB) / 2)) / (lxB - lxS))) + ly;
   for (const [lx, ly, key] of shipPixels(weather, t, opts.variant)) {
-    const x = xOf(lx), y = Math.max(-1, Math.round(heave + (pitch * (lx - (lxS + lxB) / 2)) / (lxB - lxS))) + ly;
+    const x = xOf(lx), y = rowOf(lx, ly);
     if (!inside(x, y)) continue;
-    P[y][x] = key === "w" && wx.night ? (t % 9 < 7 ? hex(SHIP.L) : mix(hex(SHIP.L), 0, 0.3)) : tint(hex(SHIP[key]));
+    set(x, y, key === "w" && wx.night ? (t % 9 < 7 ? hex(SHIP.L) : mix(hex(SHIP.L), 0, 0.3)) : tint(hex(SHIP[key])), key === "r" || key === "f" ? 1 : 0);
   }
 
   // the sea, drawn over the ship's waterline: lightness falls with depth and in the
@@ -190,63 +211,74 @@ export function sceneFrame(t, weather, family, width, opts = {}) {
     for (let i = 1; i < stops.length; i++) if (L <= stops[i]) return mix(ramp[i - 1], ramp[i], (L - stops[i - 1]) / (stops[i] - stops[i - 1]));
     return ramp[4];
   };
+  const foamC = hex(p.foam);
   const glintColour = hex(weather === "calm" ? p.sun : p.glint ?? p.foam);
   const glints = weather === "calm" || wx.night;
-  const aim = (x) => (sx - x) * 0.045; // the slope that turns a facet toward the sun or moon
+  const aim = (x) => ((sx - x) * 0.045) / K; // the slope that turns a facet toward the sun or moon
+  // the ship's bow and stern on the surface: foam where the bow cuts it, a wake astern
+  const bowX = xOf(ship.bow), sternX = xOf(ship.stern), dir = tr.dir;
   for (let x = 0; x < W; x++) {
     const s = surf(x), sl = slope(x);
-    const u = (BASE - s) / wx.amp; // height in swell units: +1 a crest, -1 a trough
+    const u = (BASE - s) / (K * wx.amp); // height in swell units: +1 a crest, -1 a trough
     const foam = quant(smooth(wx.cap, wx.cap + 0.35, u) * (0.75 + 0.25 * clamp01(sl / 0.6 + 0.5)) * wx.foam, 4);
     const trough = smooth(-0.25, -1, u) * 0.3;
-    const lit = glints ? Math.exp(-(((x - sx) / 3) ** 2)) * clamp01(1 - Math.abs(sl - aim(x)) / 0.3) ** 2 : 0;
+    const lit = glints ? Math.exp(-(((x - sx) / (3 * K)) ** 2)) * clamp01(1 - Math.abs(sl - aim(x)) / 0.3) ** 2 : 0;
+    const ahead = (x - bowX) * dir, astern = (sternX - x) * dir;
+    const wash = ahead >= -1 && ahead <= 2 ? 0.8 - 0.2 * Math.max(0, ahead) : astern > 0 && astern < 18 ? 0.55 * (1 - astern / 18) * (0.5 + 0.5 * vnoise(x * 0.5 + t * 0.15 * dir, t * 0.05, seed + 3)) : 0;
     for (let y = Math.max(0, Math.floor(s)); y < H; y++) {
       const cov = quant(clamp01(y + 1 - s), 4);
       if (cov === 0) continue;
       const d = Math.max(0, y + 0.5 - s);
-      const rim = 0.3 * smooth(-0.2, 1, u) * Math.max(0, 1 - d / 1.2);
-      let c = shade(quant(1 - d / 2.2 - trough + rim + 0.8 * foam * Math.max(0, 1 - d / 1.6), 8));
-      if (lit > 0 && d < 2) c = mix(c, glintColour, quant(0.7 * lit * (1 - d / 2), 4));
+      const rim = 0.3 * smooth(-0.2, 1, u) * Math.max(0, 1 - d / (1.2 * K));
+      let c = shade(quant(1 - d / (2.2 * K) - trough + rim + 0.8 * foam * Math.max(0, 1 - d / (1.6 * K)), 8));
+      if (lit > 0 && d < 2 * K) c = mix(c, glintColour, quant(0.7 * lit * (1 - d / (2 * K)), 4));
+      if (wash > 0 && d < 2) c = mix(c, foamC, quant(wash * (1 - d / 2), 4));
       if (flash) c = mix(c, hex(p.flash), 0.35);
-      P[y][x] = cov < 1 ? mix(P[y][x], c, cov) : c;
+      set(x, y, cov < 1 ? mix(get(x, y), c, cov) : c);
     }
-    // storm and rain fling spray off the whitecaps: streaks of foam in the air above a crest
+    // storm and rain fling spray off the whitecaps: flecks of foam in the air above a crest
     if (wx.spray > 0 && foam > 0.25) {
-      for (let k = 1; k <= 2; k++) {
+      for (let k = 1; k <= 2 * K; k++) {
         const y = Math.floor(s) - k;
         if (y < 0 || y >= H) continue;
-        const a = quant(clamp01((vnoise(x * 0.6 - t * 0.3, y * 1.7 + t * 0.12, opts.seed ?? 0) - 0.5) * 2) * wx.spray * foam * (k === 1 ? 1 : 0.5), 4);
-        if (a > 0) P[y][x] = mix(P[y][x], hex(p.foam), a);
+        const a = quant(clamp01((vnoise((x * 0.6) / K - t * 0.3, (y * 1.7) / K + t * 0.12, seed) - 0.5) * 2) * wx.spray * foam * (k <= K ? 1 : 0.5), 4);
+        if (a > 0) blend(x, y, foamC, a, 1);
       }
     }
   }
   if (wx.rain > 0) {
-    for (let i = 0; i < Math.floor(W * wx.rain); i++) {
-      const y = Math.floor((hash(i, 11) * (H + 4) + t * 1.7) % (H + 4)) - 2;
-      const x = Math.floor((hash(i, 12) * W + t * 0.9 + y * 0.6) % W);
-      for (let k = 0; k < 2; k++) {
-        const yy = y - k, xx = x - k;
-        if (inside(xx, yy) && yy < surf(xx)) P[yy][xx] = mix(P[yy][xx], hex(p.rain), 0.7);
+    for (let i = 0; i < Math.floor((W / K) * wx.rain); i++) {
+      const y = Math.floor((hash(i, 11) * (H + 8) + t * 1.7 * K) % (H + 8)) - 4;
+      const x = Math.floor((hash(i, 12) * W + t * 0.9 * K + y * 0.6) % W);
+      for (let k = 0; k < 3; k++) {
+        const yy = y - k, xx = x - Math.floor(k / 2);
+        if (inside(xx, yy) && yy < surf(xx)) blend(xx, yy, hex(p.rain), 0.75 - 0.15 * k, 1);
       }
     }
   }
   if (wx.bolt && boltAt(t)) {
     let bx = Math.floor(W * (0.15 + 0.7 * hash(Math.floor(t / 34), 4)));
     for (let y = 0; y < H && y < surf(bx); y++) {
-      P[y][bx] = hex(p.bolt);
+      set(bx, y, hex(p.bolt), 1);
       bx = Math.max(0, Math.min(W - 1, bx + (hash(y, Math.floor(t / 34)) > 0.5 ? 1 : -1)));
     }
   }
+  return { width: W, height: H, px, thin };
+}
 
-  const rows = [];
-  for (let r = 0; r < SCENE_ROWS; r++) {
-    const row = [];
-    for (let x = 0; x < W; x++) {
-      const a = P[2 * r][x], b = P[2 * r + 1][x];
-      row.push(a === b ? { ch: " ", fg: a, bg: a } : { ch: "▀", fg: a, bg: b });
-    }
-    rows.push(row);
-  }
-  return rows;
+/**
+ * One frame of the scene, exactly `width` cells by SCENE_ROWS, as rows of
+ * `{ ch, fg, bg }` with RGB numbers (DEFAULT_COLOR never appears: the scene is opaque).
+ * @param {number} t tick
+ * @param {"storm" | "rain" | "clouds" | "night" | "calm"} weather
+ * @param {"dark" | "light"} family
+ * @param {number} width terminal columns
+ * @param {{ seed?: number, variant?: string, glyphs?: string }} [opts] the sea's seed, the ship (default the galleon) and the glyph set (default quadrant)
+ */
+export function sceneFrame(t, weather, family, width, opts = {}) {
+  const columns = Math.max(1, Math.floor(width));
+  const { px, thin } = scenePixels(t, weather, family, columns, opts);
+  return fitCells(px, columns, SCENE_ROWS, opts.glyphs ?? DEFAULT_GLYPHS, thin);
 }
 
 /** The theme family for a `theme` setting: `dark*` is dark, everything else light, as Calm does. */

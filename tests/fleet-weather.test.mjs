@@ -8,10 +8,13 @@ import {
   BLOCKED_STORM_MS, SUMMARY_STALE_MS, forecast, parseSummary, supervisionCooling, trackBlocked, watcherDown,
 } from '../private_dot_claude/skills/fleet-weather/lib/weather.mjs';
 import {
-  DEFAULT_COLOR, SCENE_ROWS, SHIP_WIDTH, VARIANTS, WEATHER, galleonPixels, paletteFamily, resolveVariant, sceneFrame, track,
+  DEFAULT_COLOR, SCENE_ROWS, SHIP_WIDTH, VARIANTS, WEATHER, galleonPixels, paletteFamily, resolveVariant, sceneFrame, scenePixels, track,
 } from '../private_dot_claude/skills/fleet-weather/lib/galleon.mjs';
-import { makeSea } from '../private_dot_claude/skills/fleet-weather/lib/sea.mjs';
-import { SAIL_KEYS } from '../private_dot_claude/skills/fleet-weather/lib/ships.mjs';
+import {
+  BMP_GLYPH_SETS, CELL_H, CELL_W, DEFAULT_GLYPHS, GLYPH_SETS, fitCells, glyphsOf, inkOf, resolveGlyphs,
+} from '../private_dot_claude/skills/fleet-weather/lib/cells.mjs';
+import { hash, makeSea } from '../private_dot_claude/skills/fleet-weather/lib/sea.mjs';
+import { SAIL_KEYS, SHIP_HEIGHT } from '../private_dot_claude/skills/fleet-weather/lib/ships.mjs';
 import { encodeBase64, packCells } from '../private_dot_claude/skills/fleet-weather/lib/pack.mjs';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -143,57 +146,206 @@ test('sidecar parsers', () => {
 // ---- scene ----
 
 const WEATHERS = ['calm', 'clouds', 'rain', 'storm', 'night'];
+const rgbOf = (c) => [c >> 16, (c >> 8) & 255, c & 255];
+const dist2 = (a, b) => rgbOf(a).reduce((n, v, i) => n + (v - rgbOf(b)[i]) ** 2, 0);
 
-test('every frame is exactly width x 6 half-block cells under the 1024-pair palette', () => {
+/** A frame drawn back to its 2x4 pixels, as a terminal would show its blocks (braille dots as solid). */
+function redraw(frame) {
+  const columns = frame[0].length;
+  const px = new Int32Array(columns * CELL_W * frame.length * CELL_H);
+  frame.forEach((row, r) => row.forEach((cell, c) => {
+    const ink = inkOf(cell.ch);
+    assert.ok(ink, `a glyph the fitter knows: U+${cell.ch.codePointAt(0).toString(16)}`);
+    for (let i = 0; i < 8; i++) {
+      const sx = i & 1, sy = i >> 1;
+      const gy = Math.min(ink.gh - 1, Math.floor((sy * ink.gh) / CELL_H));
+      const on = (ink.mask >> (gy * ink.gw + sx)) & 1;
+      px[(r * CELL_H + sy) * columns * CELL_W + c * CELL_W + sx] = on ? cell.fg : cell.bg;
+    }
+  }));
+  return px;
+}
+const meanError = (a, b) => a.reduce((n, c, i) => n + dist2(c, b[i]), 0) / a.length;
+
+test('every frame is exactly width x 5 cells of its glyph set, width-1, under the 1024-pair palette', () => {
   let widest = 0;
-  for (const variant of VARIANTS) {
-    for (const weather of WEATHERS) {
-      for (const family of ['dark', 'light']) {
-        for (const width of [1, 10, 25, 26, 37, 80, 158, 512]) {
-          for (let t = 0; t < 70; t += 7) {
-            const frame = sceneFrame(t, weather, family, width, { seed: t * 31, variant });
-            assert.equal(frame.length, SCENE_ROWS);
-            const pairs = new Set();
-            for (const row of frame) {
-              assert.equal(row.length, width);
-              for (const cell of row) {
-                assert.ok(cell.ch === ' ' || cell.ch === '▀', `glyph ${cell.ch}`);
-                for (const c of [cell.fg, cell.bg]) assert.ok(Number.isInteger(c) && c >= 0 && c <= 0xffffff, `colour ${c}`);
-                pairs.add(`${cell.fg}:${cell.bg}`);
+  for (const glyphs of GLYPH_SETS) {
+    const allowed = glyphsOf(glyphs);
+    for (const variant of VARIANTS) {
+      for (const weather of WEATHERS) {
+        for (const family of ['dark', 'light']) {
+          for (const width of [1, 10, 25, 37, 80, 158, 512]) {
+            for (let t = 0; t < 70; t += 14) {
+              const frame = sceneFrame(t, weather, family, width, { seed: t * 31, variant, glyphs });
+              assert.equal(frame.length, SCENE_ROWS);
+              const pairs = new Set();
+              for (const row of frame) {
+                assert.equal(row.length, width);
+                for (const cell of row) {
+                  assert.ok(allowed.has(cell.ch), `${glyphs}: glyph U+${cell.ch.codePointAt(0).toString(16)}`);
+                  for (const c of [cell.fg, cell.bg]) assert.ok(Number.isInteger(c) && c >= 0 && c <= 0xffffff, `colour ${c}`);
+                  pairs.add(`${cell.fg}:${cell.bg}`);
+                }
               }
+              widest = Math.max(widest, pairs.size);
+              assert.ok(pairs.size <= 1024, `${glyphs}/${variant}/${weather}/${family}/${width}@${t}: ${pairs.size} pairs`);
             }
-            widest = Math.max(widest, pairs.size);
-            assert.ok(pairs.size <= 1024, `${variant}/${weather}/${family}/${width}@${t}: ${pairs.size} pairs`);
           }
         }
       }
     }
   }
-  assert.ok(widest <= 512, `comfortably under the cap: ${widest} pairs`);
+  assert.ok(widest <= 768, `comfortably under the cap: ${widest} pairs`);
 });
 
-test('the scene is 6 rows, down from the original 7, and no ship is wider than its box', () => {
-  assert.equal(SCENE_ROWS, 6);
-  assert.equal(SHIP_WIDTH, 26);
+test('each glyph set holds the glyphs it names, one code point each, BMP where the Raster needs it', () => {
+  const sizes = Object.fromEntries(GLYPH_SETS.map((g) => [g, glyphsOf(g)]));
+  const braille = (s) => [...s].filter((ch) => ch.codePointAt(0) >= 0x2800 && ch.codePointAt(0) <= 0x28ff).length;
+  assert.deepEqual([...sizes.half], [' ', '▀'], 'half is the original renderer: a space or an upper half block');
+  // seven quadrant partitions (a pattern and its inverse are one glyph, colours swapped) and two quarter-height ones
+  assert.equal([...sizes.quadrant].filter((ch) => ch.codePointAt(0) >= 0x2580 && ch.codePointAt(0) <= 0x259f).length, 9);
+  for (const ch of '▀▌▂▆') assert.ok(sizes.quadrant.has(ch), `quadrant has ${ch}`);
+  for (const g of GLYPH_SETS) {
+    for (const ch of sizes[g]) assert.equal([...ch].length, 1, `${g}: one code point`);
+    if (g !== 'half') assert.ok(braille(sizes[g]) > 0, `${g} is overlaid with braille`);
+  }
+  for (const g of BMP_GLYPH_SETS) for (const ch of sizes[g]) assert.ok(ch.codePointAt(0) <= 0xffff, `${g}: ${ch} in the BMP`);
+  // every Unicode 16 octant and every sextant is a distinct pattern on its grid
+  for (const [first, last, gh] of [[0x1cd00, 0x1cde5, 4], [0x1fb00, 0x1fb3b, 3]]) {
+    const masks = new Set();
+    for (let cp = first; cp <= last; cp++) {
+      const ink = inkOf(String.fromCodePoint(cp));
+      assert.equal(ink?.gh, gh, `U+${cp.toString(16)}`);
+      masks.add(ink.mask);
+    }
+    assert.equal(masks.size, last - first + 1);
+  }
+  // every 2x4 pattern has its octant glyph, each a different one
+  const seen = new Map();
+  for (const ch of sizes.octant) {
+    const ink = inkOf(ch);
+    if (ink.braille || ch === ' ') continue;
+    assert.equal(ink.gh, 4);
+    const key = Math.min(ink.mask, 255 ^ ink.mask);
+    assert.ok(!seen.has(key) || seen.get(key) === ch, `one octant per pattern (${key})`);
+    seen.set(key, ch);
+  }
+  assert.equal(seen.size, 127, 'all 254 two-colour patterns, as 127 glyph-and-colours pairs');
+});
+
+test('resolveGlyphs takes a set by name, defaults to quadrant and folds non-BMP sets for the Raster', () => {
+  assert.equal(DEFAULT_GLYPHS, 'quadrant');
+  assert.equal(resolveGlyphs('octant'), 'octant');
+  assert.equal(resolveGlyphs(' Sextants '), 'sextant');
+  assert.equal(resolveGlyphs('HALF'), 'half');
+  for (const bad of [undefined, '', 'braille', 7]) assert.equal(resolveGlyphs(bad), 'quadrant');
+  assert.equal(resolveGlyphs('octant', { bmpOnly: true }), 'quadrant');
+  assert.equal(resolveGlyphs('sextant', { bmpOnly: true }), 'quadrant');
+  assert.equal(resolveGlyphs('half', { bmpOnly: true }), 'half');
+});
+
+test('the fitter reproduces any two-colour cell its set can draw, exactly', () => {
+  const A = 0x204060, B = 0xe0c090;
+  const cell = (mask) => Int32Array.from({ length: 8 }, (_, i) => ((mask >> i) & 1 ? A : B));
+  for (let mask = 0; mask < 256; mask++) {
+    const px = cell(mask);
+    assert.deepEqual(redraw(fitCells(px, 1, 1, 'octant')), px, `octant ${mask}`);
+  }
+  const quadrants = [0x05, 0x0a, 0x50, 0xa0];
+  for (let q = 0; q < 16; q++) {
+    const mask = quadrants.reduce((m, bits, i) => ((q >> i) & 1 ? m | bits : m), 0);
+    const px = cell(mask);
+    assert.deepEqual(redraw(fitCells(px, 1, 1, 'quadrant')), px, `quadrant ${q}`);
+  }
+  for (const mask of [0xc0, 0xfc, 0x03, 0x3f]) assert.deepEqual(redraw(fitCells(cell(mask), 1, 1, 'quadrant')), cell(mask), 'quarter-height edges');
+  assert.deepEqual(redraw(fitCells(cell(0x0f), 1, 1, 'half')), cell(0x0f));
+  // the sextant set reproduces its own 2x3 grid: a top third over the rest
+  const third = fitCells(Int32Array.from({ length: 8 }, (_, i) => (i < 2 ? A : B)), 1, 1, 'sextant')[0][0];
+  assert.equal(inkOf(third.ch).gh, 3);
+});
+
+test('finer glyph sets draw the scene closer to its pixels', () => {
+  const errors = Object.fromEntries(['half', 'quadrant', 'octant'].map((g) => [g, 0]));
   for (const variant of VARIANTS) {
     for (const weather of WEATHERS) {
-      const px = galleonPixels(weather, 0, variant);
-      assert.ok(px.length > 0);
-      for (const [x, y] of px) assert.ok(x >= 0 && x < SHIP_WIDTH && y >= 0 && y < 10, `${variant}/${weather}: (${x}, ${y}) outside the box`);
+      const { px } = scenePixels(30, weather, 'dark', 60, { seed: 5, variant });
+      for (const g of Object.keys(errors)) errors[g] += meanError(redraw(sceneFrame(30, weather, 'dark', 60, { seed: 5, variant, glyphs: g })), px);
+    }
+  }
+  assert.ok(errors.octant < errors.quadrant * 0.75, `octant ${errors.octant.toFixed(0)} < quadrant ${errors.quadrant.toFixed(0)}`);
+  assert.ok(errors.quadrant < errors.half * 0.75, `quadrant ${errors.quadrant.toFixed(0)} < half ${errors.half.toFixed(0)}`);
+});
+
+test('braille draws only the thin lines the scene marks, and draws them', () => {
+  const sky = 0x5fa8e8, rope = 0x3b2c22;
+  // a diagonal rope across a flat sky: the blocks cannot follow it, the dots can
+  const px = Int32Array.from({ length: 8 }, (_, i) => (i === 0 || i === 3 || i === 5 ? rope : sky));
+  const marked = Uint8Array.from({ length: 8 }, (_, i) => (i === 0 || i === 3 || i === 5 ? 1 : 0));
+  assert.ok(inkOf(fitCells(px, 1, 1, 'quadrant', marked)[0][0].ch).braille, 'a marked rope is braille');
+  assert.ok(!inkOf(fitCells(px, 1, 1, 'quadrant')[0][0].ch).braille, 'unmarked, the same pixels are blocks');
+  assert.ok(!inkOf(fitCells(px, 1, 1, 'half', marked)[0][0].ch).braille, 'half never uses braille');
+  // in the scene: storm rain and rigging bring braille to quadrant (octant's blocks draw
+  // them exactly), and never where nothing thin was drawn
+  for (const glyphs of ['quadrant', 'octant']) {
+    let dots = 0;
+    for (let t = 0; t < 60; t += 6) {
+      const { px: scene, thin } = scenePixels(t, 'storm', 'dark', 80, { seed: 3, variant: 'schooner' });
+      const frame = fitCells(scene, 80, SCENE_ROWS, glyphs, thin);
+      frame.forEach((row, r) => row.forEach((cell, c) => {
+        const ink = inkOf(cell.ch);
+        if (!ink.braille) return;
+        dots++;
+        for (let i = 0; i < 8; i++) if ((ink.mask >> i) & 1) assert.ok(thin[(r * CELL_H + (i >> 1)) * 160 + c * CELL_W + (i & 1)], `${glyphs}@${t}: a dot on a thin pixel`);
+      }));
+    }
+    if (glyphs === 'quadrant') assert.ok(dots > 0, `${glyphs}: the storm's rain shows as braille`);
+  }
+});
+
+test('near-equal fits do not flip: noise of a level or two never changes a cell\'s glyph', () => {
+  for (const glyphs of GLYPH_SETS) {
+    for (let k = 0; k < 40; k++) {
+      // a smooth cell (a gentle gradient) and a sharp one (an edge), each jittered by +-2 levels
+      const base = Array.from({ length: 8 }, (_, i) => (k % 2 === 0 ? 0x406080 + (i >> 1) * 0x020202 : (i >> 1) < 2 ? 0x204060 : 0xd0c0a0));
+      const jitter = (seed) => Int32Array.from(base, (c, i) => c + (Math.floor(hash(seed, i) * 5) - 2) * 0x010101);
+      const glyph = fitCells(jitter(k * 2), 1, 1, glyphs)[0][0].ch;
+      assert.equal(fitCells(jitter(k * 2 + 1), 1, 1, glyphs)[0][0].ch, glyph, `${glyphs} #${k}`);
     }
   }
 });
 
-test('frames are deterministic per tick and seed', () => {
+test('the scene is 5 rows and every ship 4 rows tall within its box', () => {
+  assert.equal(SCENE_ROWS, 5);
+  assert.equal(SHIP_HEIGHT, 4 * CELL_H);
+  assert.equal(SHIP_WIDTH, 40);
+  for (const variant of VARIANTS) {
+    for (const weather of WEATHERS) {
+      const px = galleonPixels(weather, 0, variant);
+      assert.ok(px.length > 0);
+      const ys = px.map(([, y]) => y);
+      assert.ok(Math.max(...ys) - Math.min(...ys) >= 3 * CELL_H - 1, `${variant}/${weather}: at least three rows tall`);
+      for (const [x, y] of px) assert.ok(x >= 0 && x < SHIP_WIDTH && y >= 0 && y < SHIP_HEIGHT, `${variant}/${weather}: (${x}, ${y}) outside the box`);
+    }
+  }
+});
+
+test('frames are deterministic per tick, seed and glyph set', () => {
   assert.deepEqual(sceneFrame(42, 'storm', 'dark', 80), sceneFrame(42, 'storm', 'dark', 80));
-  assert.deepEqual(sceneFrame(42, 'storm', 'dark', 80, { seed: 7, variant: 'junk' }), sceneFrame(42, 'storm', 'dark', 80, { seed: 7, variant: 'junk' }));
+  const opts = { seed: 7, variant: 'junk', glyphs: 'octant' };
+  assert.deepEqual(sceneFrame(42, 'storm', 'dark', 80, opts), sceneFrame(42, 'storm', 'dark', 80, { ...opts }));
+  assert.deepEqual(sceneFrame(42, 'storm', 'dark', 80), sceneFrame(42, 'storm', 'dark', 80, { glyphs: 'quadrant' }), 'quadrant is the default');
   assert.notDeepEqual(sceneFrame(1, 'calm', 'dark', 80), sceneFrame(2, 'calm', 'dark', 80));
   assert.notDeepEqual(sceneFrame(40, 'storm', 'dark', 80, { seed: 1 }), sceneFrame(40, 'storm', 'dark', 80, { seed: 2 }), 'a different seed is a different sea');
+  assert.notDeepEqual(sceneFrame(40, 'calm', 'dark', 80, { glyphs: 'half' }), sceneFrame(40, 'calm', 'dark', 80, { glyphs: 'quadrant' }));
 });
 
 test('the ship is in the scene and the palettes differ by family', () => {
   const hull = 0x7a4a2a;
-  assert.ok(sceneFrame(0, 'calm', 'dark', 80).flat().some((c) => c.fg === hull || c.bg === hull));
+  const { px, width, height } = scenePixels(0, 'calm', 'dark', 80);
+  assert.equal(width, 160);
+  assert.equal(height, 20);
+  assert.ok(px.includes(hull));
+  assert.ok(sceneFrame(0, 'calm', 'dark', 80).flat().some((c) => dist2(c.fg, hull) < 40 ** 2 || dist2(c.bg, hull) < 40 ** 2), 'and survives the fit');
   assert.notDeepEqual(sceneFrame(0, 'calm', 'dark', 80), sceneFrame(0, 'calm', 'light', 80));
 });
 
@@ -203,14 +355,16 @@ test('every variant draws its own ship in the scene', () => {
   const keysOf = (variant) => new Set(galleonPixels('calm', 0, variant).map(([, , k]) => k));
   assert.ok(keysOf('junk').has('J') && !keysOf('galleon').has('J'));
   assert.ok(keysOf('schooner').has('n') && keysOf('sloop').has('E') && !keysOf('galleon').has('E'));
+  for (const variant of VARIANTS) assert.ok(keysOf(variant).has('r'), `${variant} is rigged`);
+  assert.ok(keysOf('galleon').has('o') && keysOf('galleon').has('G'), 'the galleon has gunports and a gilded wale');
 });
 
 test('the ship bounces and turns at both ends of its track', () => {
-  const span = 80 - SHIP_WIDTH;
+  const span = 160 - SHIP_WIDTH;
   assert.deepEqual(track(0, span), { pos: 0, dir: 1 });
-  assert.deepEqual(track(span * 3, span), { pos: span, dir: -1 }, 'turned at the far end');
-  assert.deepEqual(track(span * 3 - 1, span), { pos: span - 1, dir: 1 });
-  assert.deepEqual(track(span * 6, span), { pos: 0, dir: 1 }, 'back home after a full lap');
+  assert.deepEqual(track(span * 2, span), { pos: span, dir: -1 }, 'turned at the far end');
+  assert.deepEqual(track(span * 2 - 1, span), { pos: span - 1, dir: 1 });
+  assert.deepEqual(track(span * 4, span), { pos: 0, dir: 1 }, 'back home after a full lap');
   assert.deepEqual(track(99, 0), { pos: 0, dir: 1 }, 'no track when the row is narrower than the ship');
 });
 
@@ -229,9 +383,11 @@ test('every ship has stern windows that light at night', () => {
   const lamp = 0xffb347;
   for (const variant of VARIANTS) {
     assert.ok(galleonPixels('night', 0, variant).some(([, , k]) => k === 'w'), `${variant} has windows`);
-    // the ship rides one of the first columns of its track, so its stern lamp is in the frame
-    const lit = sceneFrame(0, 'night', 'dark', 60, { seed: 1, variant }).flat().some((c) => c.fg === lamp || c.bg === lamp);
-    assert.ok(lit, `${variant}: lamp lit at night`);
+    // the ship rides the first columns of its track, so its stern lamp is in the frame
+    assert.ok(scenePixels(0, 'night', 'dark', 60, { seed: 1, variant }).px.includes(lamp), `${variant}: lamp lit at night`);
+    // a lamp a pixel or two across shows whole when the ship's pixel grid meets the cells' and blurs between
+    const lit = [0, 2, 4, 6].some((t) => sceneFrame(t, 'night', 'dark', 60, { seed: 1, variant }).flat().some((c) => dist2(c.fg, lamp) < 60 ** 2 || dist2(c.bg, lamp) < 60 ** 2));
+    assert.ok(lit, `${variant}: and the band shows it`);
   }
 });
 
@@ -288,25 +444,29 @@ test('the sea is calmer in calm and taller and steeper in a storm', () => {
 });
 
 test('whitecaps come with the weather and the sea does not flicker', () => {
-  const foamCells = (weather, foam) => {
+  const foamPixels = (weather, foam) => {
     let n = 0;
-    for (let t = 0; t < 280; t += 4) for (const row of sceneFrame(t, weather, 'dark', 120, { seed: 4 })) for (const c of row) if (c.fg === foam || c.bg === foam) n++;
+    for (let t = 0; t < 280; t += 4) for (const c of scenePixels(t, weather, 'dark', 120, { seed: 4 }).px) if (c === foam) n++;
     return n;
   };
-  assert.ok(foamCells('storm', 0xb3bdd6) > 0, 'a storm breaks white');
-  assert.ok(foamCells('storm', 0xb3bdd6) > foamCells('calm', 0xe3f2fd), 'more whitecaps in a storm than in a calm');
-  // a cell that changes and changes straight back is flicker; the wave field does not do it
-  for (const weather of ['calm', 'clouds', 'night']) {
-    let back = 0, total = 0;
-    for (let t = 1; t < 200; t++) {
-      const [a, b, c] = [t - 1, t, t + 1].map((k) => sceneFrame(k, weather, 'dark', 100, { seed: 2, variant: 'sloop' })[4]);
-      for (let x = 0; x < 100; x++) {
-        const key = (row) => `${row[x].fg}:${row[x].bg}`;
-        total++;
-        if (key(a) === key(c) && key(a) !== key(b)) back++;
+  assert.ok(foamPixels('storm', 0xb3bdd6) > 0, 'a storm breaks white');
+  assert.ok(foamPixels('storm', 0xb3bdd6) > foamPixels('calm', 0xe3f2fd), 'more whitecaps in a storm than in a calm');
+  // a cell that changes and changes straight back is flicker; neither the wave field nor the fit does it
+  for (const glyphs of ['quadrant', 'octant']) {
+    for (const weather of ['calm', 'clouds', 'night']) {
+      let back = 0, total = 0;
+      const frames = Array.from({ length: 201 }, (_, t) => sceneFrame(t, weather, 'dark', 100, { seed: 2, variant: 'sloop', glyphs }));
+      for (let t = 1; t < 200; t++) {
+        for (const row of [3, 4]) {
+          for (let x = 0; x < 100; x++) {
+            const key = (k) => `${frames[k][row][x].ch}:${frames[k][row][x].fg}:${frames[k][row][x].bg}`;
+            total++;
+            if (key(t - 1) === key(t + 1) && key(t - 1) !== key(t)) back++;
+          }
+        }
       }
+      assert.ok(back / total < 0.02, `${glyphs}/${weather}: ${((back / total) * 100).toFixed(2)}% of sea cells flicker`);
     }
-    assert.ok(back / total < 0.02, `${weather}: ${((back / total) * 100).toFixed(2)}% of sea cells flicker`);
   }
 });
 

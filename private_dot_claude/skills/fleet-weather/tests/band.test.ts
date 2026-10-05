@@ -55,7 +55,7 @@ test("the band draws the galleon at the band's width with the weather's reason",
   const ui = await $.ui.mount(BAND);
   const raster = await ui.find({ type: "Raster" });
   expect(raster?.props.columns).toBe(80);
-  expect(raster?.props.rows).toBe(6);
+  expect(raster?.props.rows).toBe(5);
   expect(typeof raster?.props.cells).toBe("string");
   expect((await ui.find({ type: "Text", text: /storm · endurebyte \(eb-gh-token-checks\) blocked/ })) !== undefined).toBe(true);
   await ui.unmount();
@@ -99,7 +99,7 @@ test("the sea animates through blits at the drawn size", async ($, on) => {
   const ui = await $.ui.mount(BAND);
   await clock.advance(1000);
   expect(blits.length > 0).toBe(true);
-  expect(blits[0]).toEqual({ columns: 80, rows: 6, key: "fleet-weather-galleon" });
+  expect(blits[0]).toEqual({ columns: 80, rows: 5, key: "fleet-weather-galleon" });
   await ui.unmount();
 });
 
@@ -115,7 +115,7 @@ async function bandCells($: Parameters<Parameters<typeof test>[1]>[0], on: On, e
   return cells;
 }
 const SEED = NOW % 0x7fffffff;
-const expected = (variant: string) => packCells(sceneFrame(0, "calm", "light", 80, { seed: SEED, variant }), 80).cells;
+const expected = (variant: string, glyphs = "quadrant") => packCells(sceneFrame(0, "calm", "light", 80, { seed: SEED, variant, glyphs }), 80).cells;
 
 test("FLEET_WEATHER_SHIP pins the vessel, whatever its case", async ($, on) => {
   expect(await bandCells($, on, { FLEET_WEATHER_SHIP: " Junk " })).toBe(expected("junk"));
@@ -123,6 +123,20 @@ test("FLEET_WEATHER_SHIP pins the vessel, whatever its case", async ($, on) => {
 
 test("without a pin the session's seed picks the vessel", async ($, on) => {
   expect(await bandCells($, on, { FLEET_WEATHER_SHIP: "dinghy" })).toBe(expected(resolveVariant(undefined, SEED)));
+});
+
+test("the band fits quadrant glyphs by default and half blocks on request", async ($, on) => {
+  const variant = resolveVariant(undefined, SEED);
+  expect(await bandCells($, on, {})).toBe(expected(variant));
+  expect(expected(variant) !== expected(variant, "half")).toBe(true);
+});
+
+test("FLEET_WEATHER_GLYPHS=half draws the original half blocks", async ($, on) => {
+  expect(await bandCells($, on, { FLEET_WEATHER_GLYPHS: "half" })).toBe(expected(resolveVariant(undefined, SEED), "half"));
+});
+
+test("octant and sextant fold to quadrant: the Raster takes no code point beyond the BMP", async ($, on) => {
+  expect(await bandCells($, on, { FLEET_WEATHER_GLYPHS: "octant" })).toBe(expected(resolveVariant(undefined, SEED)));
 });
 
 test("a blocked decision storms for two hours from first sight, then rains", async ($, on) => {
