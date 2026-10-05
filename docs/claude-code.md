@@ -174,6 +174,14 @@ OTLP receiver at `192.168.5.10:4319`, as cumulative counters tagged `host=mac` a
 the same receiver, and logs only when the outcome changes, to
 `~/Library/Logs/agents-quota-push.log`.
 
+Transcripts take a separate path, the ships-log shipper (setup in
+[maintenance.md](maintenance.md#ships-log-transcript-shipper)). Both profiles run
+`hooks/ships-log-session-tag.py` at SessionStart: it writes `{v, session_id, fm_task_id, cwd,
+host, ts}` to `~/.local/state/ships-log/sessions/<session_id>.json`, which the shipper uses to
+join a session to its Firstmate task (`fm_task_id` is `FM_TASK_ID`, null outside a crewmate). It
+prints nothing and never fails the session. `~/.claude-fresh` is not chezmoi-managed, so its
+sessions ship untagged.
+
 The tab-title hook plays ElevenLabs voice clips on finish/needs-input (fanfare), falling
 back to the Glass chime when no clips are generated.
 

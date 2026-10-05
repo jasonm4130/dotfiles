@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Installs the ships-log `mac` client certificate and key from 1Password into
+# ~/.config/ships-log/client.{crt,key} (0600) for the shipper's mTLS ingest.
+#
+#   ships-log-install-cert <vault>
+#
+# chezmoi runs this from run_onchange_after_19 when the vault setting changes.
+# Run it by hand after the 1Password item is first created and after every
+# yearly renewal: run_onchange only re-runs on a source change, and the item
+# changing in 1Password is not one.
+#
+# Files, never a Keychain identity: browsers never offer a file to a server
+# that asks for a client certificate (plan §3.4a). Values travel only through
+# `op read` into files created under umask 077; nothing is echoed.
+#
+# Missing prerequisites (no vault, no op, no item yet, 1Password locked) are a
+# clean skip with a message, never a failed apply: until the certificate exists
+# the shipper is simply not loaded (run_onchange_after_20).
+set -euo pipefail
+
+VAULT="${1:-}"
+ITEM="${SHIPS_LOG_CERT_ITEM:-ships-log-client-mac}"
+DEST="${SHIPS_LOG_CONFIG_DIR:-$HOME/.config/ships-log}"
+OP="${SHIPS_LOG_OP_BIN:-op}"
+
+skip() { echo "⏭  ships-log client cert: $*" >&2; exit 0; }
+
+[ -n "$VAULT" ] || skip "no 1Password vault set — fill in shipsLog.opVault (.chezmoidata/ships-log.yaml or [data.shipsLog] in chezmoi.toml), then run: ships-log-install-cert <vault>"
+command -v "$OP" >/dev/null 2>&1 || skip "1Password CLI ($OP) not found; install it and re-run: ships-log-install-cert $VAULT"
+
+umask 077
+mkdir -p "$DEST"
+chmod 700 "$DEST"
+tmp=$(mktemp -d "$DEST/.install.XXXXXX")
+trap 'rm -rf "$tmp"' EXIT
+
+# One read per field, so a missing item, a missing field and a locked
+# 1Password all land here. op's own message names which; pass it through.
+for pair in "certificate:client.crt" "private-key:client.key"; do
+  field="${pair%%:*}" file="${pair#*:}"
+  if ! "$OP" read "op://$VAULT/$ITEM/$field" > "$tmp/$file"; then
+    skip "could not read op://$VAULT/$ITEM/$field (item not created yet, or 1Password locked). Issue it with the ships-log CA tool (ships-log repo, docs/ca-runbook.md), then run: ships-log-install-cert $VAULT"
+  fi
+done
+
+grep -q 'BEGIN CERTIFICATE' "$tmp/client.crt" || { echo "❌ op://$VAULT/$ITEM/certificate is not a PEM certificate; nothing installed" >&2; exit 1; }
+grep -q 'PRIVATE KEY' "$tmp/client.key" || { echo "❌ op://$VAULT/$ITEM/private-key is not a PEM private key; nothing installed" >&2; exit 1; }
+
+chmod 600 "$tmp/client.crt" "$tmp/client.key"
+# Two renames, so a POST landing between them sees a mismatched pair; that is
+# a TLS failure, which the shipper retries without advancing its checkpoint.
+mv -f "$tmp/client.key" "$DEST/client.key"
+mv -f "$tmp/client.crt" "$DEST/client.crt"
+echo "✅ ships-log client cert installed → ${DEST/#$HOME/\~}/client.{crt,key} (0600)"

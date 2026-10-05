@@ -64,3 +64,13 @@ CLAUDE.md
 # Archive — kept in repo for reference but never deploy to $HOME
 archive
 archive/**
+
+# ships-log shipper: deploy the LaunchAgent only once it can start, so login
+# never loads a job whose binary or client certificate is missing
+# (run_onchange_after_20 explains how to install both).
+{{- $slBin := joinPath .chezmoi.homeDir ".local/bin/ships-log-shipper" }}
+{{- $slCrt := joinPath .chezmoi.homeDir ".config/ships-log/client.crt" }}
+{{- $slKey := joinPath .chezmoi.homeDir ".config/ships-log/client.key" }}
+{{- if not (and (stat $slBin) (stat $slCrt) (stat $slKey)) }}
+Library/LaunchAgents/dev.jasonmatthew.ships-log-shipper.plist
+{{- end }}

@@ -1,0 +1,14 @@
+# ships-log transcript shipper (Mac). See docs/maintenance.md#ships-log-shipper.
+# No secret values here: only where they live.
+
+shipsLog:
+  # 1Password vault holding the `ships-log-client-mac` item (fields `certificate`
+  # and `private-key`, created by the ships-log CA tool). Empty until the operator
+  # picks one: fill it in here, or per machine in ~/.config/chezmoi/chezmoi.toml
+  # under [data.shipsLog]. While it is empty the certificate installer skips.
+  opVault: ""
+  # CA bundle (PEM path) the shipper trusts for the ingest server. Empty means
+  # the system trust store, which already carries the ingest listener's
+  # Let's Encrypt chain (plan §3.4a). Set it to pin a narrower anchor.
+  caFile: ""
+  ingestUrl: "https://ships-log-ingest.jasonmatthew.me:4443/api/ingest/v1"
