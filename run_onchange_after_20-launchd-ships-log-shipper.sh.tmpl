@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Reloads when the plist or the rendered shipper config changes: {{ include "private_Library/private_LaunchAgents/dev.jasonmatthew.ships-log-shipper.plist.tmpl" | sha256sum }} {{ includeTemplate "dot_config/private_ships-log/shipper.json.tmpl" . | sha256sum }}
+{{- $bin := joinPath .chezmoi.homeDir ".local/bin/ships-log-shipper" }}
+{{- $crt := joinPath .chezmoi.homeDir ".config/ships-log/client.crt" }}
+{{- $key := joinPath .chezmoi.homeDir ".config/ships-log/client.key" }}
+# …and when its prerequisites appear: binary={{ if stat $bin }}present{{ else }}absent{{ end }} cert={{ if and (stat $crt) (stat $key) }}present{{ else }}absent{{ end }}
+#
+# The binary is not chezmoi-managed. Build it from jasonm4130-labs/ships-log
+# (no GitHub release publishes it yet) and install it, then re-apply:
+#   pnpm --filter @ships-log/shipper build
+#   install -m 0755 apps/shipper/dist/ships-log-shipper-darwin-arm64 ~/.local/bin/ships-log-shipper
+# Until it and the client certificate exist, .chezmoiignore keeps the plist out
+# of ~/Library/LaunchAgents (so login does not load a job that cannot start)
+# and this script only says so.
+set -euo pipefail
+
+BIN="$HOME/.local/bin/ships-log-shipper"
+PLIST="$HOME/Library/LaunchAgents/dev.jasonmatthew.ships-log-shipper.plist"
+
+if [ ! -x "$BIN" ]; then
+  echo "⏭  ships-log shipper not loaded: $BIN is missing. Build it from jasonm4130-labs/ships-log (pnpm --filter @ships-log/shipper build), install it there, then chezmoi apply."
+  exit 0
+fi
+if [ ! -s "$HOME/.config/ships-log/client.crt" ] || [ ! -s "$HOME/.config/ships-log/client.key" ]; then
+  echo "⏭  ships-log shipper not loaded: no client certificate yet. Run ships-log-install-cert <vault>, then chezmoi apply."
+  exit 0
+fi
+if [ ! -f "$PLIST" ]; then
+  echo "⏭  ships-log shipper not loaded: $PLIST not deployed yet; chezmoi apply again to deploy it."
+  exit 0
+fi
+
+echo "🔁 (Re)loading ships-log-shipper launchd agent"
+launchctl unload "$PLIST" 2>/dev/null || true
+launchctl load -w "$PLIST"
+echo "✅ ships-log-shipper agent loaded"

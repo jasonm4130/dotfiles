@@ -144,6 +144,11 @@
           {
             "type": "command",
             "command": "~/.local/bin/claude-stay-awake.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/ships-log-session-tag.py",
+            "timeout": 5
           }
         ]
       },

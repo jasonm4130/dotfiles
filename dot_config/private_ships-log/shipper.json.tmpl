@@ -1,0 +1,20 @@
+{{- /* ships-log shipper config; keys per jasonm4130-labs/ships-log apps/shipper/README.md. */ -}}
+{{- /* Paths only, never certificate or key contents. Status lands in <state_dir>/status.json. */ -}}
+{{- $tls := dict "cert" "~/.config/ships-log/client.crt" "key" "~/.config/ships-log/client.key" -}}
+{{- if .shipsLog.caFile -}}{{- $_ := set $tls "ca" .shipsLog.caFile -}}{{- end -}}
+{{- /* Firstmate homes on this Mac, resolved at apply time; a new home needs a re-apply. */ -}}
+{{- /* Appended one by one: glob returns nil on no match, which would render null, not []. */ -}}
+{{- $homes := list -}}
+{{- range glob (joinPath .chezmoi.homeDir ".treehouse/firstmate-*/*/firstmate") -}}{{- $homes = append $homes . -}}{{- end -}}
+{{- $config := dict
+      "ingest_url" .shipsLog.ingestUrl
+      "tls" $tls
+      "state_dir" "~/.local/state/ships-log/shipper"
+      "sources" (list
+        (dict "id" "mac/personal" "root" "~/.claude")
+        (dict "id" "mac/fm-workers" "root" "~/.claude-fm-workers")
+        (dict "id" "mac/fresh" "root" "~/.claude-fresh")
+        (dict "id" "mac/codex" "root" "~/.codex/sessions"))
+      "session_tags_dir" "~/.local/state/ships-log/sessions"
+      "firstmate_homes" $homes -}}
+{{ toPrettyJson $config }}

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Installs the ships-log `mac` client certificate from 1Password (op read only,
+# into ~/.config/ships-log/client.{crt,key}, 0600). Re-runs when the vault
+# setting or the installer changes: {{ include "dot_local/bin/executable_ships-log-install-cert" | sha256sum }}
+# Renewal and first install after the item exists: run ships-log-install-cert by
+# hand, since a 1Password change does not re-trigger this script.
+set -euo pipefail
+
+exec "$HOME/.local/bin/ships-log-install-cert" {{ .shipsLog.opVault | squote }}
