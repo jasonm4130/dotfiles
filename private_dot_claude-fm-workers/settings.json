@@ -259,7 +259,8 @@
       "$defaults",
       "Writing a script or file under /private/tmp/claude-501/ and running it is routine, including Python or Node scripts that read ~/.claude/projects transcripts, edit the chezmoi source, or scan the repo.",
       "Compound shell commands that chain read-only commands (grep, sed, awk, jq, head, tail, wc, sort, ls, cat, git log/status/diff/show) with a write inside the repo or the scratchpad are routine; judge the writing segment, not the pipeline around it.",
-      "gh pr create and gh pr view on repositories under github.com/jasonm4130 are routine for this worker; merging, closing or changing the visibility of any PR or repository is not."
+      "gh pr create and gh pr view on repositories under github.com/jasonm4130 are routine for this worker; merging, closing or changing the visibility of any PR or repository is not.",
+      "Starting or reattaching `no-mistakes axi run` (and answering it with `no-mistakes axi respond`) in the worker's own worktree is routine: it reviews, tests, pushes and opens a PR, and never runs terraform/tofu apply or any deploy, even in infrastructure repos."
     ],
     "environment": [
       "**Repository visibility**: private by default; the public repos are the ones under github.com/jasonm4130 with a published README (claude-skills is public), treat every other checkout as private",
