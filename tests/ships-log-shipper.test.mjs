@@ -201,7 +201,7 @@ test('shipper config pins a CA and lists Firstmate homes when present', (t) => {
 
 test('cert script passes the vault, single-quoted, to the installer', (t) => {
   const home = sandbox(t);
-  const empty = render(home, 'run_onchange_after_19-ships-log-client-cert.sh.tmpl');
+  const empty = render(home, 'run_onchange_after_19-ships-log-client-cert.sh.tmpl', { shipsLog: { opVault: '' } });
   assert.match(empty, /ships-log-install-cert" ''$/m);
   const set = render(home, 'run_onchange_after_19-ships-log-client-cert.sh.tmpl', { shipsLog: { opVault: 'Infra' } });
   assert.match(set, /ships-log-install-cert" 'Infra'$/m);
