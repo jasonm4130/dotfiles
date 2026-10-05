@@ -1,6 +1,6 @@
 {
   "name": "fleet-weather",
   "version": "0.1.0",
-  "description": "A pixel-art ship (galleon, schooner, sloop or junk, per session), fitted to quadrant blocks and braille, sailing the band above the prompt, in the weather of the captain's Firstmate fleet: storm, rain, clouds, night or calm from state/home-summary.json. A no-op in Firstmate workers (FM_TASK_ID set) and where no home summary resolves.",
+  "description": "A pixel-art ship (galleon, schooner, sloop or junk, per session), fitted to eighth blocks, quadrants, corner triangles and braille, sailing the band above the prompt, in the weather of the captain's Firstmate fleet: storm, rain, clouds, night or calm from state/home-summary.json. A no-op in Firstmate workers (FM_TASK_ID set) and where no home summary resolves.",
   "author": { "name": "Jason Matthew" }
 }

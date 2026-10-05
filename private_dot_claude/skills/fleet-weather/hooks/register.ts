@@ -2,9 +2,11 @@
 // captain's Firstmate fleet. Each session sails one of four vessels (galleon, schooner,
 // sloop, junk), picked from a seed taken when the mod loads and kept for the session's
 // life; FLEET_WEATHER_SHIP pins one by name (anything else means pick for me).
-// FLEET_WEATHER_GLYPHS picks the glyphs the scene is fitted to: quadrant (the default)
-// or half. octant and sextant fold to quadrant here, because the Raster refuses any
-// code point beyond the BMP; preview.mjs draws them.
+// FLEET_WEATHER_GLYPHS picks the glyphs the scene is fitted to: extended (the default:
+// quadrants, eighth blocks and corner triangles), quadrant or half. octant and sextant
+// fold to extended here, because the Raster refuses any code point beyond the BMP;
+// preview.mjs draws them. Each frame is fitted against the one before it at the same
+// width, so a cell redraws only when the scene under it really changed.
 //
 // This file is the only one that touches the engine interface `$`; the forecast
 // (../lib/weather.mjs), the scene (../lib/galleon.mjs) and the Raster packing
@@ -44,7 +46,7 @@ let activation: Promise<boolean> | undefined;
 let loading: Promise<void> | undefined;
 let paths: { summary: string; health: string; watcher: string } | undefined;
 let family: "dark" | "light" = "light";
-let look: { seed: number; variant: string; glyphs: string } = { seed: 0, variant: "galleon", glyphs: "quadrant" };
+let look: { seed: number; variant: string; glyphs: string } = { seed: 0, variant: "galleon", glyphs: "extended" };
 let firstSeen: Record<string, number> = {};
 let current: Forecast | undefined;
 let summary: object | undefined;
@@ -54,6 +56,17 @@ let polling = false;
 let tick = 0;
 let frameTick = 0;
 let site: { requestId: string; columns: number; working: boolean } | undefined;
+type Frame = ReturnType<typeof sceneFrame>;
+/** The last frame drawn, which the next one at the same width holds its unchanged cells from. */
+let last: { columns: number; frame: Frame } | undefined;
+
+/** The scene at `columns` for the frame tick, fitted against the last frame drawn at that width. */
+function frameAt(weather: Forecast["weather"], columns: number): Frame {
+  const prev = last?.columns === columns ? last.frame : undefined;
+  const frame = sceneFrame(frameTick, weather, family, columns, { ...look, prev });
+  last = { columns, frame };
+  return frame;
+}
 
 function isActive($: EngineInterface): Promise<boolean> {
   if (activation === undefined) {
@@ -129,7 +142,7 @@ async function repaint($: EngineInterface): Promise<void> {
   if (mounted === undefined || current === undefined) return;
   if (!mounted.working && tick % IDLE_TICKS_PER_FRAME !== 0) return;
   frameTick += 1;
-  const packed = packCells(sceneFrame(frameTick, current.weather, family, mounted.columns, look), mounted.columns);
+  const packed = packCells(frameAt(current.weather, mounted.columns), mounted.columns);
   let shown: boolean;
   try {
     const result = await $.ui.blit({ requestId: mounted.requestId, key: RASTER_KEY, cells: packed.cells, columns: mounted.columns, rows: packed.rows });
@@ -206,7 +219,7 @@ export const register: Register = (on) => {
     }
     const columns = Math.max(1, Math.min(MAX_COLUMNS, e.props.bodyColumns));
     site = { requestId: e.requestId, columns, working: e.props.isWorking };
-    const packed = packCells(sceneFrame(frameTick, forecastNow.weather, family, columns, look), columns);
+    const packed = packCells(frameAt(forecastNow.weather, columns), columns);
     const { Box, Raster, Text } = $.ui.resolve(e);
     const scene = Raster({ key: RASTER_KEY, columns, rows: packed.rows, cells: packed.cells });
     if (e.props.maxRows < SCENE_ROWS + 1) return Box({ flexDirection: "column", children: scene });

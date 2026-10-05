@@ -38,15 +38,21 @@ or moon glints in calm and at night.
 
 The scene is drawn at 2x4 pixels per cell (a ship is four rows tall, 16 pixels) and fitted
 to glyphs chafa-style: each cell takes the glyph, and the two colours, that best reproduce
-its pixels, with braille dots for thin lines (rigging, rain, spray, stars). Set
-`FLEET_WEATHER_GLYPHS=quadrant|half` to choose the glyphs. The default is `quadrant`
-(quadrant blocks plus `▂ ▆`, 2x4 vertical edges); `half` is the original renderer's look.
-`octant` and `sextant` are accepted but fall back to `quadrant` in the band, because Claude
-Code's Raster refuses any code point beyond the BMP (checked on 2.1.289: "beyond the Basic
-Multilingual Plane"). `node ~/.claude/skills/fleet-weather/preview.mjs` prints every ship in
-every weather as ANSI truecolor, the same frame in half, quadrant, sextant and octant side by
-side (flags: `--weather`, `--variant`, `--glyphs`, `--frames`, `--step`, `--width`, `--theme`,
-`--seed`), to eyeball a change without the TUI.
+its pixels, with braille dots for thin lines (rigging, rain, spray, stars). The ship glides
+half a pixel a tick with an anti-aliased outline, and a cell keeps its glyph and colours
+until the new fit beats them by a visible margin, so motion is smooth and still water holds
+still. Set `FLEET_WEATHER_GLYPHS=extended|quadrant|half` to choose the glyphs. The default
+is `extended`: quadrant blocks plus the lower and left eighth blocks and the corner
+triangles `◢ ◣ ◤ ◥`, all of which Ghostty draws itself, so an edge lands on any eighth of
+the cell. `quadrant` (quadrant blocks plus `▂ ▆`) was the previous default; `half` is the
+original renderer's look. `octant` and `sextant` are accepted but fall back to `extended` in
+the band, because Claude Code's Raster refuses any code point beyond the BMP (checked on
+2.1.289: "beyond the Basic Multilingual Plane"). `node ~/.claude/skills/fleet-weather/preview.mjs`
+prints every ship in every weather as ANSI truecolor, the same frame in quadrant and
+extended side by side with each fit's reconstruction error (flags: `--weather`, `--variant`,
+`--glyphs` to add half, sextant or octant, `--frames`, `--step`, `--width`, `--theme`,
+`--seed`), to eyeball a change without the TUI; `--bench` times a frame at 80, 200 and 512
+columns.
 
 It replaces Firstmate Calm's working-row sailboat rather than joining it: run `/calm off` once in
 a captain session (the choice persists in `$FM_HOME/config/calm`), or both ships draw. That also
