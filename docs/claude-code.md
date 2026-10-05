@@ -20,13 +20,23 @@ clean and silently manages nothing.
 `~/.claude/skills/fleet-weather` is a mod, not a skill: a plugin folder (`.claude-plugin/plugin.json`
 plus a hooks module) that Claude Code auto-loads from a skills folder and hot-reloads when its
 files change, so `chezmoi apply` of it takes effect in running sessions. It draws a half-block
-pixel galleon in the band above the prompt, sailing in the weather of the Firstmate fleet read
+pixel ship in a 6-row band above the prompt, sailing in the weather of the Firstmate fleet read
 from `$FM_HOME/state/home-summary.json` (default home `~/Work/Git/firstmate`): storm for a fresh
 `blocked` decision, a blocked crew, supervision cooling down, watcher downtime or a fleet view
 not republished for 10 min; rain for a failed or fixing validation, or a `blocked` decision first
 seen over 2 h ago; clouds for a decision waiting on the captain; night when no crew is active;
 calm otherwise. It is a no-op in Firstmate workers (`FM_TASK_ID` set; they load it too, through
 `~/.claude-fm-workers/skills`) and draws nothing while no home summary resolves.
+
+Each session sails one of four vessels, a galleon, a schooner, a sloop or a junk, chosen from a
+seed taken when the mod loads and kept until it reloads; each reefs in rain, strikes to a storm
+sail in a storm and furls at night with its stern windows lit. To pin one, set
+`FLEET_WEATHER_SHIP=galleon|schooner|sloop|junk` in the session's environment (any other value
+means pick for me). The sea is procedural from the same seed, so no two sessions share one:
+swell and drifting noise, with whitecaps and spray scaling with the weather's severity and sun
+or moon glints in calm and at night. `node ~/.claude/skills/fleet-weather/preview.mjs` prints
+every ship in every weather as ANSI truecolor (flags: `--weather`, `--variant`, `--frames`,
+`--step`, `--width`, `--theme`, `--seed`) to eyeball a change without the TUI.
 
 It replaces Firstmate Calm's working-row sailboat rather than joining it: run `/calm off` once in
 a captain session (the choice persists in `$FM_HOME/config/calm`), or both ships draw. That also
