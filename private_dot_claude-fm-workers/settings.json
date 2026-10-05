@@ -186,7 +186,11 @@
       "Bash(uniq:*)",
       "Bash(awk:*)",
       "Bash(mkdir:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(bin/fm-pr-merge.sh *)",
+      "Bash(*/bin/fm-pr-merge.sh *)",
+      "Bash(FM_HOME=* bin/fm-pr-merge.sh *)",
+      "Bash(FM_HOME=* */bin/fm-pr-merge.sh *)"
     ],
     "deny": [
       "Read(//**/.env)",
