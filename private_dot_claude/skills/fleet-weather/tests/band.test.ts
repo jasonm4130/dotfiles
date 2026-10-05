@@ -100,6 +100,7 @@ test("the sea animates through blits at the drawn size", async ($, on) => {
   await clock.advance(1000);
   expect(blits.length > 0).toBe(true);
   expect(blits[0]).toEqual({ columns: 80, rows: 5, key: "fleet-weather-galleon" });
+  expect(blits.every((b) => b.columns === 80 && b.rows === 5)).toBe(true);
   await ui.unmount();
 });
 
@@ -115,7 +116,7 @@ async function bandCells($: Parameters<Parameters<typeof test>[1]>[0], on: On, e
   return cells;
 }
 const SEED = NOW % 0x7fffffff;
-const expected = (variant: string, glyphs = "quadrant") => packCells(sceneFrame(0, "calm", "light", 80, { seed: SEED, variant, glyphs }), 80).cells;
+const expected = (variant: string, glyphs = "extended") => packCells(sceneFrame(0, "calm", "light", 80, { seed: SEED, variant, glyphs }), 80).cells;
 
 test("FLEET_WEATHER_SHIP pins the vessel, whatever its case", async ($, on) => {
   expect(await bandCells($, on, { FLEET_WEATHER_SHIP: " Junk " })).toBe(expected("junk"));
@@ -125,17 +126,22 @@ test("without a pin the session's seed picks the vessel", async ($, on) => {
   expect(await bandCells($, on, { FLEET_WEATHER_SHIP: "dinghy" })).toBe(expected(resolveVariant(undefined, SEED)));
 });
 
-test("the band fits quadrant glyphs by default and half blocks on request", async ($, on) => {
+test("the band fits extended glyphs by default, quadrant and half blocks on request", async ($, on) => {
   const variant = resolveVariant(undefined, SEED);
   expect(await bandCells($, on, {})).toBe(expected(variant));
+  expect(expected(variant) !== expected(variant, "quadrant")).toBe(true);
   expect(expected(variant) !== expected(variant, "half")).toBe(true);
+});
+
+test("FLEET_WEATHER_GLYPHS=quadrant draws the previous default", async ($, on) => {
+  expect(await bandCells($, on, { FLEET_WEATHER_GLYPHS: "Quadrants" })).toBe(expected(resolveVariant(undefined, SEED), "quadrant"));
 });
 
 test("FLEET_WEATHER_GLYPHS=half draws the original half blocks", async ($, on) => {
   expect(await bandCells($, on, { FLEET_WEATHER_GLYPHS: "half" })).toBe(expected(resolveVariant(undefined, SEED), "half"));
 });
 
-test("octant and sextant fold to quadrant: the Raster takes no code point beyond the BMP", async ($, on) => {
+test("octant and sextant fold to extended: the Raster takes no code point beyond the BMP", async ($, on) => {
   expect(await bandCells($, on, { FLEET_WEATHER_GLYPHS: "octant" })).toBe(expected(resolveVariant(undefined, SEED)));
 });
 

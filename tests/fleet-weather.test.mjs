@@ -8,10 +8,10 @@ import {
   BLOCKED_STORM_MS, SUMMARY_STALE_MS, forecast, parseSummary, supervisionCooling, trackBlocked, watcherDown,
 } from '../private_dot_claude/skills/fleet-weather/lib/weather.mjs';
 import {
-  DEFAULT_COLOR, SCENE_ROWS, SHIP_WIDTH, VARIANTS, WEATHER, galleonPixels, paletteFamily, resolveVariant, sceneFrame, scenePixels, track,
+  DEFAULT_COLOR, SCENE_ROWS, SHIP_WIDTH, VARIANTS, WEATHER, galleonPixels, layShip, paletteFamily, resolveVariant, sceneFrame, scenePixels, track,
 } from '../private_dot_claude/skills/fleet-weather/lib/galleon.mjs';
 import {
-  BMP_GLYPH_SETS, CELL_H, CELL_W, DEFAULT_GLYPHS, GLYPH_SETS, fitCells, glyphsOf, inkOf, resolveGlyphs,
+  BMP_GLYPH_SETS, CELL_H, CELL_W, DEFAULT_GLYPHS, GLYPH_SETS, HOLD, fitCells, glyphsOf, inkOf, resolveGlyphs,
 } from '../private_dot_claude/skills/fleet-weather/lib/cells.mjs';
 import { hash, makeSea } from '../private_dot_claude/skills/fleet-weather/lib/sea.mjs';
 import { SAIL_KEYS, SHIP_HEIGHT } from '../private_dot_claude/skills/fleet-weather/lib/ships.mjs';
@@ -149,7 +149,13 @@ const WEATHERS = ['calm', 'clouds', 'rain', 'storm', 'night'];
 const rgbOf = (c) => [c >> 16, (c >> 8) & 255, c & 255];
 const dist2 = (a, b) => rgbOf(a).reduce((n, v, i) => n + (v - rgbOf(b)[i]) ** 2, 0);
 
-/** A frame drawn back to its 2x4 pixels, as a terminal would show its blocks (braille dots as solid). */
+/** Two colours mixed by coverage `a` of the first, rounded per channel. */
+const over = (f, b, a) => rgbOf(f).reduce((n, v, i) => (n << 8) | Math.round(a * v + (1 - a) * rgbOf(b)[i]), 0);
+
+/**
+ * A frame drawn back to its 2x4 pixels, as a terminal would show its glyphs averaged
+ * over each sub-pixel (braille dots as solid).
+ */
 function redraw(frame) {
   const columns = frame[0].length;
   const px = new Int32Array(columns * CELL_W * frame.length * CELL_H);
@@ -159,8 +165,7 @@ function redraw(frame) {
     for (let i = 0; i < 8; i++) {
       const sx = i & 1, sy = i >> 1;
       const gy = Math.min(ink.gh - 1, Math.floor((sy * ink.gh) / CELL_H));
-      const on = (ink.mask >> (gy * ink.gw + sx)) & 1;
-      px[(r * CELL_H + sy) * columns * CELL_W + c * CELL_W + sx] = on ? cell.fg : cell.bg;
+      px[(r * CELL_H + sy) * columns * CELL_W + c * CELL_W + sx] = over(cell.fg, cell.bg, ink.alpha[gy * ink.gw + sx]);
     }
   }));
   return px;
@@ -210,6 +215,12 @@ test('each glyph set holds the glyphs it names, one code point each, BMP where t
     if (g !== 'half') assert.ok(braille(sizes[g]) > 0, `${g} is overlaid with braille`);
   }
   for (const g of BMP_GLYPH_SETS) for (const ch of sizes[g]) assert.ok(ch.codePointAt(0) <= 0xffff, `${g}: ${ch} in the BMP`);
+  // extended is quadrant plus the eighth blocks and corner triangles Ghostty draws itself;
+  // a shape and its complement are one glyph, so ▄ ▐ ◤ ◥ ▔ ▕ come out as their partners
+  for (const ch of sizes.quadrant) assert.ok(sizes.extended.has(ch), `extended keeps quadrant's ${ch}`);
+  for (const ch of '▁▂▃▅▆▇▏▎▍▌▋▊▉◢◣') assert.ok(sizes.extended.has(ch), `extended has ${ch}`);
+  for (const ch of '▄▐◤◥▔▕░▒▓╱╲╳◀▶▲▼') assert.ok(!sizes.extended.has(ch), `extended leaves out ${ch}`);
+  assert.equal(sizes.extended.size - braille(sizes.extended), sizes.quadrant.size - braille(sizes.quadrant) + 12);
   // every Unicode 16 octant and every sextant is a distinct pattern on its grid
   for (const [first, last, gh] of [[0x1cd00, 0x1cde5, 4], [0x1fb00, 0x1fb3b, 3]]) {
     const masks = new Set();
@@ -233,15 +244,33 @@ test('each glyph set holds the glyphs it names, one code point each, BMP where t
   assert.equal(seen.size, 127, 'all 254 two-colour patterns, as 127 glyph-and-colours pairs');
 });
 
-test('resolveGlyphs takes a set by name, defaults to quadrant and folds non-BMP sets for the Raster', () => {
-  assert.equal(DEFAULT_GLYPHS, 'quadrant');
+test('resolveGlyphs takes a set by name, defaults to extended and folds non-BMP sets for the Raster', () => {
+  assert.equal(DEFAULT_GLYPHS, 'extended');
   assert.equal(resolveGlyphs('octant'), 'octant');
   assert.equal(resolveGlyphs(' Sextants '), 'sextant');
   assert.equal(resolveGlyphs('HALF'), 'half');
-  for (const bad of [undefined, '', 'braille', 7]) assert.equal(resolveGlyphs(bad), 'quadrant');
-  assert.equal(resolveGlyphs('octant', { bmpOnly: true }), 'quadrant');
-  assert.equal(resolveGlyphs('sextant', { bmpOnly: true }), 'quadrant');
-  assert.equal(resolveGlyphs('half', { bmpOnly: true }), 'half');
+  assert.equal(resolveGlyphs('Quadrants'), 'quadrant');
+  for (const bad of [undefined, '', 'braille', 7]) assert.equal(resolveGlyphs(bad), 'extended');
+  assert.equal(resolveGlyphs('octant', { bmpOnly: true }), 'extended');
+  assert.equal(resolveGlyphs('sextant', { bmpOnly: true }), 'extended');
+  for (const kept of ['extended', 'quadrant', 'half']) assert.equal(resolveGlyphs(kept, { bmpOnly: true }), kept);
+});
+
+test('extended coverage is Ghostty\'s geometry by area on the 2x4 grid', () => {
+  const alpha = (ch) => Array.from(inkOf(ch).alpha);
+  // rows top to bottom, two sub-pixels each: an eighth block's edge halves a row or quarters a column
+  assert.deepEqual(alpha('▁'), [0, 0, 0, 0, 0, 0, 0.5, 0.5]);
+  assert.deepEqual(alpha('▃'), [0, 0, 0, 0, 0.5, 0.5, 1, 1]);
+  assert.deepEqual(alpha('▇'), [0.5, 0.5, 1, 1, 1, 1, 1, 1]);
+  assert.deepEqual(alpha('▏'), [0.25, 0, 0.25, 0, 0.25, 0, 0.25, 0]);
+  assert.deepEqual(alpha('▋'), [1, 0.25, 1, 0.25, 1, 0.25, 1, 0.25]);
+  assert.deepEqual(alpha('▔'), alpha('▇').map((a) => 1 - a), '▔ is ▇ with the colours swapped');
+  // a corner triangle is half the cell, darker towards its corner, and ◤ is its complement
+  const br = alpha('◢');
+  assert.ok(Math.abs(br.reduce((n, a) => n + a, 0) - 4) < 1e-9);
+  assert.ok(br[7] === 1 && br[0] === 0 && br[1] > 0 && br[1] < 0.5);
+  assert.deepEqual(alpha('◤'), br.map((a) => 1 - a));
+  for (const ch of '▁▂▃▅▆▇▏▎▍▋▊▉◢◣') assert.equal(inkOf(ch).mask, ch === '▂' || ch === '▆' ? inkOf(ch).mask : undefined, `${ch}: fractional unless it ends on a sub-pixel`);
 });
 
 test('the fitter reproduces any two-colour cell its set can draw, exactly', () => {
@@ -258,6 +287,17 @@ test('the fitter reproduces any two-colour cell its set can draw, exactly', () =
     assert.deepEqual(redraw(fitCells(px, 1, 1, 'quadrant')), px, `quadrant ${q}`);
   }
   for (const mask of [0xc0, 0xfc, 0x03, 0x3f]) assert.deepEqual(redraw(fitCells(cell(mask), 1, 1, 'quadrant')), cell(mask), 'quarter-height edges');
+  for (let q = 0; q < 16; q++) {
+    const mask = quadrants.reduce((m, bits, i) => ((q >> i) & 1 ? m | bits : m), 0);
+    assert.deepEqual(redraw(fitCells(cell(mask), 1, 1, 'extended')), cell(mask), `extended keeps quadrant ${q}`);
+  }
+  // an edge at any eighth of the cell, or along its diagonal, as the pixels see it once
+  // anti-aliased: every extended glyph's own coverage comes back to within a level
+  for (const ch of '▁▃▅▇▏▎▍▋▊▉◢◣◤◥▔▕') {
+    const px = Int32Array.from(inkOf(ch).alpha, (a) => over(A, B, a));
+    const back = redraw(fitCells(px, 1, 1, 'extended'));
+    px.forEach((c, i) => assert.ok(dist2(c, back[i]) <= 3, `${ch}: sub-pixel ${i}`));
+  }
   assert.deepEqual(redraw(fitCells(cell(0x0f), 1, 1, 'half')), cell(0x0f));
   // the sextant set reproduces its own 2x3 grid: a top third over the rest
   const third = fitCells(Int32Array.from({ length: 8 }, (_, i) => (i < 2 ? A : B)), 1, 1, 'sextant')[0][0];
@@ -265,7 +305,7 @@ test('the fitter reproduces any two-colour cell its set can draw, exactly', () =
 });
 
 test('finer glyph sets draw the scene closer to its pixels', () => {
-  const errors = Object.fromEntries(['half', 'quadrant', 'octant'].map((g) => [g, 0]));
+  const errors = Object.fromEntries(['half', 'quadrant', 'extended', 'octant'].map((g) => [g, 0]));
   for (const variant of VARIANTS) {
     for (const weather of WEATHERS) {
       const { px } = scenePixels(30, weather, 'dark', 60, { seed: 5, variant });
@@ -274,6 +314,56 @@ test('finer glyph sets draw the scene closer to its pixels', () => {
   }
   assert.ok(errors.octant < errors.quadrant * 0.75, `octant ${errors.octant.toFixed(0)} < quadrant ${errors.quadrant.toFixed(0)}`);
   assert.ok(errors.quadrant < errors.half * 0.75, `quadrant ${errors.quadrant.toFixed(0)} < half ${errors.half.toFixed(0)}`);
+  // the band's default earns its place: eighths and wedges follow the anti-aliased edges quadrant cannot
+  assert.ok(errors.extended < errors.quadrant * 0.95, `extended ${errors.extended.toFixed(0)} < quadrant ${errors.quadrant.toFixed(0)}`);
+  assert.ok(errors.octant < errors.extended, `octant ${errors.octant.toFixed(0)} < extended ${errors.extended.toFixed(0)}`);
+});
+
+/** The share of cells whose glyph or colours differ between two frames. */
+const churn = (a, b) => {
+  let changed = 0, cells = 0;
+  a.forEach((row, r) => row.forEach((c, x) => { cells++; if (c.ch !== b[r][x].ch || c.fg !== b[r][x].fg || c.bg !== b[r][x].bg) changed++; }));
+  return changed / cells;
+};
+
+test('hysteresis: a static calm scene under pixel noise holds still', () => {
+  // the same calm scene every frame, each pixel jittered by up to 3 levels a channel
+  const { px, thin } = scenePixels(40, 'calm', 'dark', 100, { seed: 2 });
+  const noisy = (k) => Int32Array.from(px, (c, i) => rgbOf(c).reduce((n, v, s) => (n << 8) | Math.max(0, Math.min(255, v + Math.floor(hash(k, i * 3 + s) * 7) - 3)), 0));
+  for (const glyphs of ['quadrant', 'extended']) {
+    let held, free, heldMax = 0, heldRate = 0, freeRate = 0;
+    for (let k = 0; k < 30; k++) {
+      const frame = noisy(k);
+      const h = fitCells(frame, 100, SCENE_ROWS, glyphs, thin, held), f = fitCells(frame, 100, SCENE_ROWS, glyphs, thin);
+      if (k > 0) { heldMax = Math.max(heldMax, churn(held, h)); heldRate += churn(held, h) / 29; freeRate += churn(free, f) / 29; }
+      held = h; free = f;
+    }
+    assert.ok(heldMax < 0.02, `${glyphs}: at most ${(heldMax * 100).toFixed(2)}% of cells change in any frame with hysteresis`);
+    assert.ok(heldRate < 0.005, `${glyphs}: ${(heldRate * 100).toFixed(2)}% of cells change per frame on average`);
+    assert.ok(freeRate > 0.5, `${glyphs}: the noise alone would redraw ${(freeRate * 100).toFixed(0)}% a frame without it`);
+  }
+});
+
+test('hysteresis: the animated calm redraws half as many cells, and a real change still redraws', () => {
+  for (const glyphs of ['quadrant', 'extended']) {
+    let held, free, heldRate = 0, freeRate = 0;
+    for (let t = 0; t < 100; t++) {
+      const h = sceneFrame(t, 'calm', 'dark', 100, { seed: 2, variant: 'sloop', glyphs, prev: held });
+      const f = sceneFrame(t, 'calm', 'dark', 100, { seed: 2, variant: 'sloop', glyphs });
+      if (t > 0) { heldRate += churn(held, h) / 99; freeRate += churn(free, f) / 99; }
+      held = h; free = f;
+    }
+    assert.ok(heldRate < 0.25, `${glyphs}: ${(heldRate * 100).toFixed(1)}% of cells change per frame`);
+    assert.ok(heldRate < freeRate * 0.7, `${glyphs}: ${(heldRate * 100).toFixed(1)}% held vs ${(freeRate * 100).toFixed(1)}% free`);
+  }
+  // a cell the new pixels have moved past HOLD from redraws to the new fit
+  const A = 0x204060, B = 0xe0c090;
+  const before = fitCells(Int32Array.from({ length: 8 }, (_, i) => (i < 4 ? A : B)), 1, 1, 'extended');
+  const after = Int32Array.from({ length: 8 }, (_, i) => (i < 6 ? A : B));
+  assert.deepEqual(fitCells(after, 1, 1, 'extended', undefined, before), fitCells(after, 1, 1, 'extended'));
+  assert.ok(HOLD > 0);
+  // and a previous frame of another size is ignored
+  assert.deepEqual(fitCells(after, 1, 1, 'extended', undefined, [[...before[0], ...before[0]]]), fitCells(after, 1, 1, 'extended'));
 });
 
 test('braille draws only the thin lines the scene marks, and draws them', () => {
@@ -333,10 +423,13 @@ test('frames are deterministic per tick, seed and glyph set', () => {
   assert.deepEqual(sceneFrame(42, 'storm', 'dark', 80), sceneFrame(42, 'storm', 'dark', 80));
   const opts = { seed: 7, variant: 'junk', glyphs: 'octant' };
   assert.deepEqual(sceneFrame(42, 'storm', 'dark', 80, opts), sceneFrame(42, 'storm', 'dark', 80, { ...opts }));
-  assert.deepEqual(sceneFrame(42, 'storm', 'dark', 80), sceneFrame(42, 'storm', 'dark', 80, { glyphs: 'quadrant' }), 'quadrant is the default');
+  assert.deepEqual(sceneFrame(42, 'storm', 'dark', 80), sceneFrame(42, 'storm', 'dark', 80, { glyphs: 'extended' }), 'extended is the default');
+  const prev = sceneFrame(41, 'storm', 'dark', 80, opts);
+  assert.deepEqual(sceneFrame(42, 'storm', 'dark', 80, { ...opts, prev }), sceneFrame(42, 'storm', 'dark', 80, { ...opts, prev }), 'and per previous frame');
   assert.notDeepEqual(sceneFrame(1, 'calm', 'dark', 80), sceneFrame(2, 'calm', 'dark', 80));
   assert.notDeepEqual(sceneFrame(40, 'storm', 'dark', 80, { seed: 1 }), sceneFrame(40, 'storm', 'dark', 80, { seed: 2 }), 'a different seed is a different sea');
   assert.notDeepEqual(sceneFrame(40, 'calm', 'dark', 80, { glyphs: 'half' }), sceneFrame(40, 'calm', 'dark', 80, { glyphs: 'quadrant' }));
+  assert.notDeepEqual(sceneFrame(40, 'calm', 'dark', 80, { glyphs: 'quadrant' }), sceneFrame(40, 'calm', 'dark', 80, { glyphs: 'extended' }));
 });
 
 test('the ship is in the scene and the palettes differ by family', () => {
@@ -359,13 +452,38 @@ test('every variant draws its own ship in the scene', () => {
   assert.ok(keysOf('galleon').has('o') && keysOf('galleon').has('G'), 'the galleon has gunports and a gilded wale');
 });
 
-test('the ship bounces and turns at both ends of its track', () => {
+test('the ship bounces and turns at both ends of its track, half a pixel a tick', () => {
   const span = 160 - SHIP_WIDTH;
   assert.deepEqual(track(0, span), { pos: 0, dir: 1 });
+  assert.deepEqual(track(1, span), { pos: 0.5, dir: 1 }, 'between pixels, not stepped');
   assert.deepEqual(track(span * 2, span), { pos: span, dir: -1 }, 'turned at the far end');
-  assert.deepEqual(track(span * 2 - 1, span), { pos: span - 1, dir: 1 });
+  assert.deepEqual(track(span * 2 - 1, span), { pos: span - 0.5, dir: 1 });
+  assert.deepEqual(track(span * 2 + 1, span), { pos: span - 0.5, dir: -1 });
   assert.deepEqual(track(span * 4, span), { pos: 0, dir: 1 }, 'back home after a full lap');
   assert.deepEqual(track(99, 0), { pos: 0, dir: 1 }, 'no track when the row is narrower than the ship');
+});
+
+test('the ship is laid off the pixel grid with anti-aliased edges and a crisp interior', () => {
+  const near = (a, b) => Math.abs(a - b) < 1e-6;
+  // one pixel at (3.5, 2.25) shares itself among four buffer pixels by area
+  const one = layShip([[3.5, 2.25, 0xff0000, false]], 8, 8);
+  assert.deepEqual(one.touched.sort((a, b) => a - b), [19, 20, 27, 28]);
+  for (const [i, a] of [[19, 0.375], [20, 0.375], [27, 0.125], [28, 0.125]]) assert.ok(near(one.cover[i], a), `pixel ${i}: ${one.cover[i]}`);
+  // a 3x3 block half a pixel off: its middle is wholly covered in its dominant colour, its rim partly
+  const block = [];
+  for (let y = 0; y < 3; y++) for (let x = 0; x < 3; x++) block.push([1.5 + x, 1 + y, x === 1 && y === 1 ? 0x00ff00 : 0x0000ff, false]);
+  const laid = layShip(block, 8, 8);
+  assert.ok(near(laid.cover[1 * 8 + 3], 1) && near(laid.cover[1 * 8 + 1], 0.5) && near(laid.cover[1 * 8 + 4], 0.5));
+  assert.equal(laid.colour[2 * 8 + 3], 0x00ff00, 'half green, half blue: a tie keeps the first square laid there');
+  assert.equal(laid.colour[1 * 8 + 3], 0x0000ff);
+  const total = Array.from(laid.cover).reduce((n, a) => n + a, 0);
+  assert.ok(near(total, 9), 'no area lost or doubled');
+  // in the scene, a tick moves the ship half a pixel: frame t=1 is neither t=0 nor t=2
+  for (const variant of VARIANTS) {
+    const at = (t) => scenePixels(t, 'night', 'dark', 60, { seed: 1, variant }).px;
+    assert.notDeepEqual(at(1), at(0));
+    assert.notDeepEqual(at(1), at(2));
+  }
 });
 
 test('every rig answers the weather', () => {

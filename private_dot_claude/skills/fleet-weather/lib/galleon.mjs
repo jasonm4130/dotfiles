@@ -7,9 +7,11 @@
 // cell becomes the glyph of its glyph set, and the two colours, that best reproduce its
 // 2x4 pixels. The ship (one of four variants in ./ships.mjs, four rows tall) bounces
 // along the band, flipping to face its heading; it heaves and pitches with the sea under
-// its bow and stern, throws foam at the bow and leaves a wake. The sea is procedural
-// (./sea.mjs): swell and drifting noise, with foam, spray and glints derived from the
-// height and slope of that surface. The board in Firstmate's data/ship-mod-design is the
+// its bow and stern, throws foam at the bow and leaves a wake. Its position, heave and
+// pitch are fractional: it glides half a pixel a tick, its outline anti-aliased, so the
+// eighth blocks can show it between pixel columns rather than in column steps. The sea
+// is procedural (./sea.mjs): swell and drifting noise, with foam, spray and glints
+// derived from the height and slope of that surface, its edge covering eighths of a pixel. The board in Firstmate's data/ship-mod-design is the
 // original galleon scene's mockup.
 import { CELL_H, CELL_W, DEFAULT_GLYPHS, fitCells } from "./cells.mjs";
 import { hash, makeSea, vnoise } from "./sea.mjs";
@@ -37,7 +39,7 @@ const BASE = 15;
 /** One scheduler tick; water, weather and pennants advance every tick. */
 export const TICK_MS = 150;
 
-/** The ship moves one pixel (half a column) every Nth tick (300 ms). */
+/** The ship moves one pixel (half a column) every Nth tick (300 ms), half a pixel each tick. */
 const TICKS_PER_MOVE = 2;
 
 /** The widest ship's local box in pixels (the galleon and schooner; the others are narrower). */
@@ -91,11 +93,38 @@ const PALETTES = {
 const flashAt = (t) => { const p = t % 34; return p === 0 || p === 1 || p === 4; };
 const boltAt = (t) => { const p = t % 34; return p === 0 || p === 4; };
 
-/** Bounce track: the pixel column and heading after `t` ticks on a track `span` pixels long. */
+/**
+ * Bounce track: the ship's left edge in pixels, fractional, and its heading after `t`
+ * ticks on a track `span` pixels long.
+ */
 export function track(t, span) {
   if (span <= 0) return { pos: 0, dir: 1 };
-  const k = Math.floor(t / TICKS_PER_MOVE) % (span * 2);
+  const k = (t / TICKS_PER_MOVE) % (span * 2);
   return k < span ? { pos: k, dir: 1 } : { pos: span * 2 - k, dir: -1 };
+}
+
+/**
+ * Lays unit-square pixels at fractional positions on a W x H buffer: each buffer pixel
+ * gets the area the squares cover of it (`cover`), the colour of the square covering
+ * most of it (`colour`) and the area covered by rope (`rope`); `touched` lists the
+ * pixels any square reached.
+ * @param {[number, number, number, boolean][]} items [x, y, colour, rope] each, x and y the square's top left
+ */
+export function layShip(items, W, H) {
+  const cover = new Float32Array(W * H), most = new Float32Array(W * H), colour = new Int32Array(W * H), rope = new Float32Array(W * H);
+  const touched = [];
+  for (const [x0, y0, c, isRope] of items) {
+    const ix = Math.floor(x0), iy = Math.floor(y0), fx = x0 - ix, fy = y0 - iy;
+    for (const [x, y, a] of [[ix, iy, (1 - fx) * (1 - fy)], [ix + 1, iy, fx * (1 - fy)], [ix, iy + 1, (1 - fx) * fy], [ix + 1, iy + 1, fx * fy]]) {
+      if (a <= 0 || x < 0 || x >= W || y < 0 || y >= H) continue;
+      const i = y * W + x;
+      if (cover[i] === 0) touched.push(i);
+      cover[i] += a;
+      if (isRope) rope[i] += a;
+      if (a > most[i]) { most[i] = a; colour[i] = c; }
+    }
+  }
+  return { cover, colour, rope, touched };
 }
 
 /**
@@ -193,11 +222,19 @@ export function scenePixels(t, weather, family, width, opts = {}) {
     if (flash) c = mix(c, 0xffffff, 0.3);
     return c;
   };
-  const rowOf = (lx, ly) => Math.max(-2, Math.round(heave + (pitch * (lx - (lxS + lxB) / 2)) / (lxB - lxS))) + ly;
-  for (const [lx, ly, key] of shipPixels(weather, t, opts.variant)) {
-    const x = xOf(lx), y = rowOf(lx, ly);
-    if (!inside(x, y)) continue;
-    set(x, y, key === "w" && wx.night ? (t % 9 < 7 ? hex(SHIP.L) : mix(hex(SHIP.L), 0, 0.3)) : tint(hex(SHIP[key])), key === "r" || key === "f" ? 1 : 0);
+  // The ship sits at a fractional position, heave and pitch: each of its pixels is a
+  // unit square laid on the buffer off the pixel grid. A buffer pixel takes the colour
+  // of the ship pixel that covers most of it (so the art's texture stays crisp) blended
+  // over what is behind by how much of it the ship covers (so its outline moves by
+  // fractions of a pixel, and the fitter's eighth blocks can follow it).
+  const rowOf = (lx, ly) => Math.max(-2, heave + (pitch * (lx - (lxS + lxB) / 2)) / (lxB - lxS)) + ly;
+  const laid = layShip(shipPixels(weather, t, opts.variant).map(([lx, ly, key]) => [
+    xOf(lx), rowOf(lx, ly), key === "w" && wx.night ? (t % 9 < 7 ? hex(SHIP.L) : mix(hex(SHIP.L), 0, 0.3)) : tint(hex(SHIP[key])), key === "r" || key === "f",
+  ]), W, H);
+  for (const i of laid.touched) {
+    const a = Math.min(1, laid.cover[i]);
+    px[i] = a >= 0.999 ? laid.colour[i] : mix(px[i], laid.colour[i], a);
+    thin[i] = laid.rope[i] >= 0.25 ? 1 : 0;
   }
 
   // the sea, drawn over the ship's waterline: lightness falls with depth and in the
@@ -226,7 +263,7 @@ export function scenePixels(t, weather, family, width, opts = {}) {
     const ahead = (x - bowX) * dir, astern = (sternX - x) * dir;
     const wash = ahead >= -1 && ahead <= 2 ? 0.8 - 0.2 * Math.max(0, ahead) : astern > 0 && astern < 18 ? 0.55 * (1 - astern / 18) * (0.5 + 0.5 * vnoise(x * 0.5 + t * 0.15 * dir, t * 0.05, seed + 3)) : 0;
     for (let y = Math.max(0, Math.floor(s)); y < H; y++) {
-      const cov = quant(clamp01(y + 1 - s), 4);
+      const cov = quant(clamp01(y + 1 - s), 8);
       if (cov === 0) continue;
       const d = Math.max(0, y + 0.5 - s);
       const rim = 0.3 * smooth(-0.2, 1, u) * Math.max(0, 1 - d / (1.2 * K));
@@ -273,12 +310,14 @@ export function scenePixels(t, weather, family, width, opts = {}) {
  * @param {"storm" | "rain" | "clouds" | "night" | "calm"} weather
  * @param {"dark" | "light"} family
  * @param {number} width terminal columns
- * @param {{ seed?: number, variant?: string, glyphs?: string }} [opts] the sea's seed, the ship (default the galleon) and the glyph set (default quadrant)
+ * @param {{ seed?: number, variant?: string, glyphs?: string, prev?: { ch: string, fg: number, bg: number }[][] }} [opts]
+ *   the sea's seed, the ship (default the galleon), the glyph set (default extended) and the
+ *   frame shown before this one, whose cells stand where the new fit barely differs (hysteresis)
  */
 export function sceneFrame(t, weather, family, width, opts = {}) {
   const columns = Math.max(1, Math.floor(width));
   const { px, thin } = scenePixels(t, weather, family, columns, opts);
-  return fitCells(px, columns, SCENE_ROWS, opts.glyphs ?? DEFAULT_GLYPHS, thin);
+  return fitCells(px, columns, SCENE_ROWS, opts.glyphs ?? DEFAULT_GLYPHS, thin, opts.prev);
 }
 
 /** The theme family for a `theme` setting: `dark*` is dark, everything else light, as Calm does. */
