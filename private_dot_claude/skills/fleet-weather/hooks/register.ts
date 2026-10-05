@@ -1,5 +1,7 @@
-// fleet-weather: a galleon sailing the band above the prompt, in the weather of the
-// captain's Firstmate fleet.
+// fleet-weather: a ship sailing the band above the prompt, in the weather of the
+// captain's Firstmate fleet. Each session sails one of four vessels (galleon, schooner,
+// sloop, junk), picked from a seed taken when the mod loads and kept for the session's
+// life; FLEET_WEATHER_SHIP pins one by name (anything else means pick for me).
 //
 // This file is the only one that touches the engine interface `$`; the forecast
 // (../lib/weather.mjs), the scene (../lib/galleon.mjs) and the Raster packing
@@ -21,7 +23,7 @@
 // as Firstmate Calm does). No process is started.
 import type { EngineInterface, Register } from "claude-code";
 import { forecast, parseSummary, trackBlocked } from "../lib/weather.mjs";
-import { paletteFamily, sceneFrame, SCENE_ROWS, TICK_MS } from "../lib/galleon.mjs";
+import { paletteFamily, resolveVariant, sceneFrame, SCENE_ROWS, TICK_MS } from "../lib/galleon.mjs";
 import { packCells } from "../lib/pack.mjs";
 
 type Forecast = { weather: "storm" | "rain" | "clouds" | "night" | "calm"; reason: string };
@@ -39,6 +41,7 @@ let activation: Promise<boolean> | undefined;
 let loading: Promise<void> | undefined;
 let paths: { summary: string; health: string; watcher: string } | undefined;
 let family: "dark" | "light" = "light";
+let look: { seed: number; variant: string } = { seed: 0, variant: "galleon" };
 let firstSeen: Record<string, number> = {};
 let current: Forecast | undefined;
 let summary: object | undefined;
@@ -123,7 +126,7 @@ async function repaint($: EngineInterface): Promise<void> {
   if (mounted === undefined || current === undefined) return;
   if (!mounted.working && tick % IDLE_TICKS_PER_FRAME !== 0) return;
   frameTick += 1;
-  const packed = packCells(sceneFrame(frameTick, current.weather, family, mounted.columns), mounted.columns);
+  const packed = packCells(sceneFrame(frameTick, current.weather, family, mounted.columns, look), mounted.columns);
   let shown: boolean;
   try {
     const result = await $.ui.blit({ requestId: mounted.requestId, key: RASTER_KEY, cells: packed.cells, columns: mounted.columns, rows: packed.rows });
@@ -145,6 +148,8 @@ async function load($: EngineInterface): Promise<void> {
     watcher: `${state}/.watcher-down`,
   };
   family = paletteFamily(await readTheme($));
+  const seed = Math.floor(await $.clock.now()) % 0x7fffffff;
+  look = { seed, variant: resolveVariant(await $.env.get("FLEET_WEATHER_SHIP"), seed) };
   try {
     const stored = await $.store.get(FIRST_SEEN_KEY);
     if (stored !== null && typeof stored === "object") firstSeen = stored as Record<string, number>;
@@ -194,7 +199,7 @@ export const register: Register = (on) => {
     }
     const columns = Math.max(1, Math.min(MAX_COLUMNS, e.props.bodyColumns));
     site = { requestId: e.requestId, columns, working: e.props.isWorking };
-    const packed = packCells(sceneFrame(frameTick, forecastNow.weather, family, columns), columns);
+    const packed = packCells(sceneFrame(frameTick, forecastNow.weather, family, columns, look), columns);
     const { Box, Raster, Text } = $.ui.resolve(e);
     const scene = Raster({ key: RASTER_KEY, columns, rows: packed.rows, cells: packed.cells });
     if (e.props.maxRows < SCENE_ROWS + 1) return Box({ flexDirection: "column", children: scene });

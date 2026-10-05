@@ -8,8 +8,10 @@ import {
   BLOCKED_STORM_MS, SUMMARY_STALE_MS, forecast, parseSummary, supervisionCooling, trackBlocked, watcherDown,
 } from '../private_dot_claude/skills/fleet-weather/lib/weather.mjs';
 import {
-  DEFAULT_COLOR, SCENE_ROWS, SHIP_WIDTH, galleonPixels, paletteFamily, sceneFrame, track,
+  DEFAULT_COLOR, SCENE_ROWS, SHIP_WIDTH, VARIANTS, WEATHER, galleonPixels, paletteFamily, resolveVariant, sceneFrame, track,
 } from '../private_dot_claude/skills/fleet-weather/lib/galleon.mjs';
+import { makeSea } from '../private_dot_claude/skills/fleet-weather/lib/sea.mjs';
+import { SAIL_KEYS } from '../private_dot_claude/skills/fleet-weather/lib/ships.mjs';
 import { encodeBase64, packCells } from '../private_dot_claude/skills/fleet-weather/lib/pack.mjs';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -142,38 +144,65 @@ test('sidecar parsers', () => {
 
 const WEATHERS = ['calm', 'clouds', 'rain', 'storm', 'night'];
 
-test('every frame is exactly width x 7 half-block cells under the 1024-pair palette', () => {
-  for (const weather of WEATHERS) {
-    for (const family of ['dark', 'light']) {
-      for (const width of [1, 10, 35, 36, 37, 80, 158, 512]) {
-        for (let t = 0; t < 70; t += 3) {
-          const frame = sceneFrame(t, weather, family, width);
-          assert.equal(frame.length, SCENE_ROWS);
-          const pairs = new Set();
-          for (const row of frame) {
-            assert.equal(row.length, width);
-            for (const cell of row) {
-              assert.ok(cell.ch === ' ' || cell.ch === '▀', `glyph ${cell.ch}`);
-              for (const c of [cell.fg, cell.bg]) assert.ok(Number.isInteger(c) && c >= 0 && c <= 0xffffff, `colour ${c}`);
-              pairs.add(`${cell.fg}:${cell.bg}`);
+test('every frame is exactly width x 6 half-block cells under the 1024-pair palette', () => {
+  let widest = 0;
+  for (const variant of VARIANTS) {
+    for (const weather of WEATHERS) {
+      for (const family of ['dark', 'light']) {
+        for (const width of [1, 10, 25, 26, 37, 80, 158, 512]) {
+          for (let t = 0; t < 70; t += 7) {
+            const frame = sceneFrame(t, weather, family, width, { seed: t * 31, variant });
+            assert.equal(frame.length, SCENE_ROWS);
+            const pairs = new Set();
+            for (const row of frame) {
+              assert.equal(row.length, width);
+              for (const cell of row) {
+                assert.ok(cell.ch === ' ' || cell.ch === '▀', `glyph ${cell.ch}`);
+                for (const c of [cell.fg, cell.bg]) assert.ok(Number.isInteger(c) && c >= 0 && c <= 0xffffff, `colour ${c}`);
+                pairs.add(`${cell.fg}:${cell.bg}`);
+              }
             }
+            widest = Math.max(widest, pairs.size);
+            assert.ok(pairs.size <= 1024, `${variant}/${weather}/${family}/${width}@${t}: ${pairs.size} pairs`);
           }
-          assert.ok(pairs.size <= 1024, `${weather}/${family}/${width}@${t}: ${pairs.size} pairs`);
         }
       }
     }
   }
+  assert.ok(widest <= 512, `comfortably under the cap: ${widest} pairs`);
 });
 
-test('frames are deterministic per tick', () => {
+test('the scene is 6 rows, down from the original 7, and no ship is wider than its box', () => {
+  assert.equal(SCENE_ROWS, 6);
+  assert.equal(SHIP_WIDTH, 26);
+  for (const variant of VARIANTS) {
+    for (const weather of WEATHERS) {
+      const px = galleonPixels(weather, 0, variant);
+      assert.ok(px.length > 0);
+      for (const [x, y] of px) assert.ok(x >= 0 && x < SHIP_WIDTH && y >= 0 && y < 10, `${variant}/${weather}: (${x}, ${y}) outside the box`);
+    }
+  }
+});
+
+test('frames are deterministic per tick and seed', () => {
   assert.deepEqual(sceneFrame(42, 'storm', 'dark', 80), sceneFrame(42, 'storm', 'dark', 80));
+  assert.deepEqual(sceneFrame(42, 'storm', 'dark', 80, { seed: 7, variant: 'junk' }), sceneFrame(42, 'storm', 'dark', 80, { seed: 7, variant: 'junk' }));
   assert.notDeepEqual(sceneFrame(1, 'calm', 'dark', 80), sceneFrame(2, 'calm', 'dark', 80));
+  assert.notDeepEqual(sceneFrame(40, 'storm', 'dark', 80, { seed: 1 }), sceneFrame(40, 'storm', 'dark', 80, { seed: 2 }), 'a different seed is a different sea');
 });
 
 test('the ship is in the scene and the palettes differ by family', () => {
   const hull = 0x7a4a2a;
   assert.ok(sceneFrame(0, 'calm', 'dark', 80).flat().some((c) => c.fg === hull || c.bg === hull));
   assert.notDeepEqual(sceneFrame(0, 'calm', 'dark', 80), sceneFrame(0, 'calm', 'light', 80));
+});
+
+test('every variant draws its own ship in the scene', () => {
+  const frames = VARIANTS.map((variant) => JSON.stringify(sceneFrame(30, 'calm', 'light', 60, { seed: 3, variant })));
+  assert.equal(new Set(frames).size, VARIANTS.length);
+  const keysOf = (variant) => new Set(galleonPixels('calm', 0, variant).map(([, , k]) => k));
+  assert.ok(keysOf('junk').has('J') && !keysOf('galleon').has('J'));
+  assert.ok(keysOf('schooner').has('n') && keysOf('sloop').has('E') && !keysOf('galleon').has('E'));
 });
 
 test('the ship bounces and turns at both ends of its track', () => {
@@ -185,11 +214,100 @@ test('the ship bounces and turns at both ends of its track', () => {
   assert.deepEqual(track(99, 0), { pos: 0, dir: 1 }, 'no track when the row is narrower than the ship');
 });
 
-test('the rig answers the weather', () => {
-  const sail = (w) => galleonPixels(w, 0).filter(([, , k]) => k === 'S' || k === 's' || k === 'W').length;
-  assert.ok(sail('rain') < sail('calm'), 'topsails reefed in rain');
-  assert.equal(sail('night'), 0, 'everything furled at night');
-  assert.ok(sail('storm') < sail('rain'), 'jib struck in a storm, on top of the reefed topsails');
+test('every rig answers the weather', () => {
+  const sail = (variant, w) => galleonPixels(w, 0, variant).filter(([, , k]) => SAIL_KEYS.includes(k)).length;
+  for (const variant of VARIANTS) {
+    assert.ok(sail(variant, 'rain') < sail(variant, 'calm'), `${variant}: reefed in rain`);
+    assert.equal(sail(variant, 'clouds'), sail(variant, 'calm'), `${variant}: full sail in cloud`);
+    assert.ok(sail(variant, 'storm') < sail(variant, 'rain'), `${variant}: a storm sail at most in a storm`);
+    assert.ok(sail(variant, 'storm') > 0, `${variant}: never bare of cloth in a storm`);
+    assert.equal(sail(variant, 'night'), 0, `${variant}: everything furled at night`);
+  }
+});
+
+test('every ship has stern windows that light at night', () => {
+  const lamp = 0xffb347;
+  for (const variant of VARIANTS) {
+    assert.ok(galleonPixels('night', 0, variant).some(([, , k]) => k === 'w'), `${variant} has windows`);
+    // the ship rides one of the first columns of its track, so its stern lamp is in the frame
+    const lit = sceneFrame(0, 'night', 'dark', 60, { seed: 1, variant }).flat().some((c) => c.fg === lamp || c.bg === lamp);
+    assert.ok(lit, `${variant}: lamp lit at night`);
+  }
+});
+
+test('resolveVariant honours a pin, else picks per seed and keeps it', () => {
+  assert.equal(resolveVariant('junk', 5), 'junk');
+  assert.equal(resolveVariant(' Sloop ', 5), 'sloop');
+  for (const bad of [undefined, '', 'auto', 'dinghy', 7]) assert.ok(VARIANTS.includes(resolveVariant(bad, 9)));
+  assert.equal(resolveVariant(undefined, 123456), resolveVariant('auto', 123456), 'the same seed keeps its ship');
+  const seen = new Set(Array.from({ length: 200 }, (_, i) => resolveVariant(undefined, 1790000000000 + i * 977)));
+  assert.equal(seen.size, VARIANTS.length, 'every ship turns up across sessions');
+});
+
+test('the sea never repeats on a visible period and is smooth in space and time', () => {
+  const wx = { amp: 1.3, speed: 1.4, chop: 0.42, steep: 0.25, swell: [1, 0.7, 0.4] };
+  const sea = makeSea(11, wx, 9);
+  const profile = (t) => Array.from({ length: 96 }, (_, x) => sea.height(x, t));
+  const base = profile(0);
+  let nearest = Infinity;
+  for (let t = 20; t <= 1500; t += 5) {
+    const p = profile(t);
+    nearest = Math.min(nearest, p.reduce((n, y, x) => n + Math.abs(y - base[x]), 0) / p.length);
+  }
+  assert.ok(nearest > 0.15, `the sea comes back no closer than ${nearest.toFixed(3)} px`);
+  for (let t = 0; t < 300; t += 3) {
+    const a = profile(t), b = profile(t + 1);
+    for (let x = 1; x < 96; x++) {
+      assert.ok(Math.abs(b[x] - a[x]) < 0.7, 'a column never leaps between ticks');
+      assert.ok(Math.abs(a[x] - a[x - 1]) < 2.2, 'neighbouring columns stay close');
+    }
+  }
+  const other = makeSea(12, wx, 9);
+  assert.notDeepEqual(profile(10), Array.from({ length: 96 }, (_, x) => other.height(x, 10)), 'seeds differ');
+});
+
+test('the sea is calmer in calm and taller and steeper in a storm', () => {
+  const stats = (weather) => {
+    const sea = makeSea(5, WEATHER[weather], 9);
+    let lo = Infinity, hi = -Infinity, steepest = 0;
+    for (let t = 0; t < 400; t += 3) {
+      for (let x = 0; x < 100; x++) {
+        const y = sea.height(x, t);
+        lo = Math.min(lo, y); hi = Math.max(hi, y);
+        steepest = Math.max(steepest, Math.abs(sea.height(x + 1, t) - y));
+      }
+    }
+    return { range: hi - lo, steepest };
+  };
+  const order = ['calm', 'clouds', 'rain', 'storm'].map(stats);
+  for (let i = 1; i < order.length; i++) {
+    assert.ok(order[i].range > order[i - 1].range, `swell grows with the weather (${i})`);
+    assert.ok(order[i].steepest > order[i - 1].steepest, `and steepens (${i})`);
+  }
+  assert.ok(stats('night').range < stats('calm').range, 'night is the stillest sea');
+});
+
+test('whitecaps come with the weather and the sea does not flicker', () => {
+  const foamCells = (weather, foam) => {
+    let n = 0;
+    for (let t = 0; t < 280; t += 4) for (const row of sceneFrame(t, weather, 'dark', 120, { seed: 4 })) for (const c of row) if (c.fg === foam || c.bg === foam) n++;
+    return n;
+  };
+  assert.ok(foamCells('storm', 0xb3bdd6) > 0, 'a storm breaks white');
+  assert.ok(foamCells('storm', 0xb3bdd6) > foamCells('calm', 0xe3f2fd), 'more whitecaps in a storm than in a calm');
+  // a cell that changes and changes straight back is flicker; the wave field does not do it
+  for (const weather of ['calm', 'clouds', 'night']) {
+    let back = 0, total = 0;
+    for (let t = 1; t < 200; t++) {
+      const [a, b, c] = [t - 1, t, t + 1].map((k) => sceneFrame(k, weather, 'dark', 100, { seed: 2, variant: 'sloop' })[4]);
+      for (let x = 0; x < 100; x++) {
+        const key = (row) => `${row[x].fg}:${row[x].bg}`;
+        total++;
+        if (key(a) === key(c) && key(a) !== key(b)) back++;
+      }
+    }
+    assert.ok(back / total < 0.02, `${weather}: ${((back / total) * 100).toFixed(2)}% of sea cells flicker`);
+  }
 });
 
 test('paletteFamily follows the theme prefix like Calm', () => {

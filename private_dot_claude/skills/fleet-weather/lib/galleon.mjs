@@ -1,21 +1,30 @@
-// The galleon scene: a three-masted ship sailing a half-block pixel sea under the
-// fleet's weather, painted as Raster cells.
+// The fleet scene: a ship sailing a half-block pixel sea under the fleet's weather,
+// painted as Raster cells.
 //
-// Pure and deterministic per tick, so tests seek animation time exactly. Every cell is
-// `▀` with the upper pixel as foreground and the lower as background (or a space when
-// both match), giving square 2-pixels-per-cell art 14 pixels (7 rows) tall. Colours are
-// RGB from small quantised palettes, so a frame stays far under the Raster palette's
-// 1024 distinct colour pairs whatever the width. The ship bounces along the row,
-// flipping to face its heading; it rides the actual wave surface, reefs its topsails in
-// rain, strikes the jib in a storm, and furls everything at night with its stern
-// windows lit. The board in Firstmate's data/ship-mod-design is this scene's mockup.
+// Pure and deterministic per tick and seed, so tests seek animation time exactly. Every
+// cell is `▀` with the upper pixel as foreground and the lower as background (or a space
+// when both match), giving square 2-pixels-per-cell art 12 pixels (6 rows) tall. Colours
+// are RGB from small palettes and quantised blends, so a frame stays far under the
+// Raster palette's 1024 distinct colour pairs whatever the width. The ship (one of four
+// variants in ./ships.mjs) bounces along the row, flipping to face its heading; it
+// heaves and pitches with the sea under its bow and stern. The sea is procedural
+// (./sea.mjs): swell and drifting noise, with foam, spray and glints derived from the
+// height and slope of that surface. The board in Firstmate's data/ship-mod-design is the
+// original galleon scene's mockup.
+import { hash, makeSea, vnoise } from "./sea.mjs";
+import { SHIP, SHIPS, WATERLINE, shipPixels } from "./ships.mjs";
+
+export { VARIANTS, resolveVariant } from "./ships.mjs";
 
 /** `0x01000000` (bit 24 alone) asks the Raster for the terminal's default colour. */
 export const DEFAULT_COLOR = 0x01000000;
 
-/** Terminal rows the scene takes: 14 pixels as half-blocks. */
-export const SCENE_ROWS = 7;
+/** Terminal rows the scene takes: 12 pixels as half-blocks. */
+export const SCENE_ROWS = 6;
 const H = SCENE_ROWS * 2;
+
+/** The mean surface row: the ship's waterline sits here in a flat calm, leaving 3 pixels of sea beneath. */
+const BASE = 9;
 
 /** One scheduler tick; water, weather and pennants advance every tick. */
 export const TICK_MS = 150;
@@ -23,8 +32,8 @@ export const TICK_MS = 150;
 /** The ship moves one pixel column every Nth tick (450 ms). */
 const TICKS_PER_MOVE = 3;
 
-/** The ship's local box: 36 pixels wide, waterline at local row 11. */
-export const SHIP_WIDTH = 36;
+/** The widest ship's local box in pixels (the galleon and schooner; the others are narrower). */
+export const SHIP_WIDTH = 26;
 
 const hex = (s) => parseInt(s.slice(1), 16);
 const mix = (a, b, t) => {
@@ -32,19 +41,21 @@ const mix = (a, b, t) => {
   const br = b >> 16, bg = (b >> 8) & 255, bb = b & 255;
   return (Math.round(ar + (br - ar) * t) << 16) | (Math.round(ag + (bg - ag) * t) << 8) | Math.round(ab + (bb - ab) * t);
 };
-const hash = (a, b = 0) => {
-  let h = (Math.imul(a | 0, 374761393) + Math.imul(b | 0, 668265263)) | 0;
-  h = Math.imul(h ^ (h >>> 13), 1274126177);
-  h ^= h >>> 16;
-  return (h >>> 0) / 4294967296;
-};
+const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+const smooth = (a, b, v) => { const t = clamp01((v - a) / (b - a)); return t * t * (3 - 2 * t); };
+const quant = (v, n) => Math.round(v * n) / n;
 
-const WEATHER = {
-  calm: { amp: 0.7, chop: 0.15, speed: 1.0, cloud: 0, rain: 0, bolt: false, night: false },
-  clouds: { amp: 0.9, chop: 0.3, speed: 1.0, cloud: 0.8, rain: 0, bolt: false, night: false },
-  rain: { amp: 1.4, chop: 0.7, speed: 1.5, cloud: 1, rain: 0.35, bolt: false, night: false },
-  storm: { amp: 2.1, chop: 1.0, speed: 2.0, cloud: 1, rain: 0.6, bolt: true, night: false },
-  night: { amp: 0.5, chop: 0.1, speed: 0.6, cloud: 0, rain: 0, bolt: false, night: true },
+/**
+ * Per weather: the sea (`amp` pixels of swell, `speed`, share of drifting noise `chop`,
+ * crest `steep`ness, `swell` component weights), its whitecaps (`cap` the crest height
+ * they start at, `foam` their strength, `spray` the storm's flung water) and the sky.
+ */
+export const WEATHER = {
+  calm: { amp: 0.8, speed: 1.0, chop: 0.22, steep: 0.1, swell: [1, 0.4, 0.12], cap: 0.6, foam: 0.4, spray: 0, cloud: 0, rain: 0, bolt: false, night: false },
+  clouds: { amp: 0.95, speed: 1.0, chop: 0.28, steep: 0.15, swell: [1, 0.5, 0.2], cap: 0.5, foam: 0.5, spray: 0, cloud: 0.8, rain: 0, bolt: false, night: false },
+  rain: { amp: 1.3, speed: 1.4, chop: 0.42, steep: 0.25, swell: [1, 0.7, 0.4], cap: 0.35, foam: 0.65, spray: 0.15, cloud: 1, rain: 0.35, bolt: false, night: false },
+  storm: { amp: 1.9, speed: 1.9, chop: 0.55, steep: 0.45, swell: [1, 0.8, 0.55], cap: 0.15, foam: 1.0, spray: 0.55, cloud: 1, rain: 0.6, bolt: true, night: false },
+  night: { amp: 0.55, speed: 0.6, chop: 0.2, steep: 0.08, swell: [1, 0.35, 0.1], cap: 0.65, foam: 0.3, spray: 0, cloud: 0, rain: 0, bolt: false, night: true },
 };
 
 /**
@@ -68,11 +79,6 @@ const PALETTES = {
   },
 };
 
-const SHIP = {
-  f: "#d77757", M: "#4a2e1c", S: "#f4ecd8", s: "#d2c39f", W: "#fffaf0", R: "#5a3420", H: "#7a4a2a",
-  h: "#4f2f1a", G: "#d9a441", o: "#2a1a10", w: "#ffcf70", b: "#bfa77a", F: "#cdbf98", L: "#ffb347",
-};
-
 /** Lightning flashes on three ticks of every 34; the bolt shows on two of them. */
 const flashAt = (t) => { const p = t % 34; return p === 0 || p === 1 || p === 4; };
 const boltAt = (t) => { const p = t % 34; return p === 0 || p === 4; };
@@ -85,60 +91,13 @@ export function track(t, span) {
 }
 
 /**
- * The galleon facing right in its 36 x 13 local box, as [x, y, colour key] pixels.
+ * A ship facing right in its local box, as [x, y, colour key] pixels.
  * @param {string} weather
  * @param {number} t
+ * @param {string} [variant] one of VARIANTS
  */
-export function galleonPixels(weather, t) {
-  const px = [];
-  const put = (x, y, k) => px.push([x, y, k]);
-  const reef = weather === "rain" || weather === "storm";
-  const furl = weather === "night";
-  const square = (mx, yard, c0, c1, hw, furled) => {
-    for (let x = mx - hw - 1; x <= mx + hw + 1; x++) put(x, yard, "M");
-    if (furled) {
-      for (let x = mx - hw; x <= mx + hw; x++) put(x, yard + 1, "F");
-      return;
-    }
-    for (let y = c0; y <= c1; y++) {
-      for (let x = mx - hw; x <= mx + hw; x++) put(x, y, x >= mx + hw ? "W" : x <= mx - hw || y === c1 ? "s" : "S");
-    }
-  };
-  for (let lx = 2; lx <= 31; lx++) {
-    // hull: raised stern castle and forecastle, a gold strake with gunports, raked ends
-    const deck = lx <= 7 ? 6 : lx >= 27 ? 7 : 8;
-    const bottom = lx <= 2 ? 10 : lx <= 4 ? 11 : lx >= 31 ? 9 : lx === 30 ? 10 : lx === 29 ? 11 : 12;
-    for (let y = deck; y <= bottom; y++) {
-      let k = y === deck ? "R" : y >= bottom - 1 ? "h" : "H";
-      if (y === deck + 1 && lx > 3) k = lx >= 8 && lx <= 26 && lx % 3 === 0 ? "o" : "G";
-      if (y === deck + 1 && lx >= 3 && lx <= 5) k = "w";
-      put(lx, y, k);
-    }
-  }
-  for (let i = 0; i <= 4; i++) put(31 + i, 7 - Math.round(i * 0.75), "b"); // bowsprit
-  for (let y = 2; y <= 7; y++) put(8, y, "M");
-  for (let y = 0; y <= 7; y++) put(17, y, "M");
-  for (let y = 1; y <= 7; y++) put(25, y, "M");
-  square(17, 1, 2, 3, 3, reef || furl);
-  square(17, 4, 5, 7, 5, furl);
-  square(25, 2, 3, 4, 3, reef || furl);
-  square(25, 5, 6, 7, 4, furl);
-  if (!furl) {
-    for (let y = 3; y <= 7; y++) for (let x = 8 - (y - 2); x < 8; x++) put(x, y, x === 8 - (y - 2) ? "s" : "S"); // mizzen gaff
-  } else {
-    put(5, 3, "F"); put(6, 3, "F"); put(7, 3, "F");
-  }
-  if (!furl && weather !== "storm") {
-    for (let y = 3; y <= 7; y++) {
-      const x1 = Math.round(26 + (y - 2) * 1.6);
-      for (let x = 26; x <= Math.min(x1, 34 - (y - 3)); x++) put(x, y, x === 26 ? "s" : "S"); // jib
-    }
-  }
-  const w = Math.round(Math.sin(t * 0.8) * 0.6 + 0.5); // pennants, waving
-  put(18, 0, "f"); put(19, 0, "f"); put(20, w, "f");
-  put(26, 1, "f"); put(27, 1 + w, "f");
-  put(9, 2, "f");
-  return px;
+export function galleonPixels(weather, t, variant = "galleon") {
+  return shipPixels(weather, t, variant);
 }
 
 /**
@@ -148,11 +107,14 @@ export function galleonPixels(weather, t) {
  * @param {"storm" | "rain" | "clouds" | "night" | "calm"} weather
  * @param {"dark" | "light"} family
  * @param {number} width terminal columns
+ * @param {{ seed?: number, variant?: string }} [opts] the sea's seed and the ship (default the galleon)
  */
-export function sceneFrame(t, weather, family, width) {
+export function sceneFrame(t, weather, family, width, opts = {}) {
   const W = Math.max(1, Math.floor(width));
   const wx = WEATHER[weather] ?? WEATHER.calm;
   const p = (PALETTES[family] ?? PALETTES.light)[weather] ?? PALETTES.light.calm;
+  const ship = SHIPS[opts.variant] ?? SHIPS.galleon;
+  const sea = makeSea(opts.seed ?? 0, wx, BASE);
   const P = Array.from({ length: H }, () => new Array(W).fill(0));
   const flash = wx.bolt && flashAt(t);
   const top = hex(p.top), bot = hex(p.bot);
@@ -192,36 +154,69 @@ export function sceneFrame(t, weather, family, width) {
     }
   }
 
-  const ph = t * 0.42 * wx.speed;
-  const surf = (x) => 11.0 + wx.amp * Math.sin(x * 0.33 - ph) * 0.9 + wx.chop * Math.sin(x * 1.17 + ph * 1.9) * 0.7;
+  // the surface, sampled one column beyond each edge so every column has a slope
+  const S = new Float64Array(W + 2);
+  for (let i = 0; i < W + 2; i++) S[i] = sea.height(i - 1, t);
+  const surf = (x) => S[x + 1];
+  const slope = (x) => (S[x + 2] - S[x]) / 2; // > 0 where the surface falls away to the right
 
-  // the ship rides the wave under its centre: local waterline row 11 on the surface
-  const tr = track(t, W - SHIP_WIDTH);
-  const shipTop = Math.round(surf(tr.pos + SHIP_WIDTH / 2) - 11);
+  // the ship rides the sea under its stern and bow: heave with their mean, pitch with their difference
+  const tr = track(t, W - ship.width);
+  const xOf = (lx) => (tr.dir > 0 ? tr.pos + lx : tr.pos + ship.width - 1 - lx);
+  const lxS = Math.round(ship.width * 0.12), lxB = Math.round(ship.width * 0.82);
+  const hS = sea.height(xOf(lxS), t), hB = sea.height(xOf(lxB), t);
+  const heave = BASE + 0.6 * ((hS + hB) / 2 - BASE) - WATERLINE;
+  const pitch = (hB - hS) * 0.5;
   const tint = (c) => {
     if (weather === "storm" || weather === "rain") c = mix(c, bot, 0.22);
     if (wx.night) c = mix(c, top, 0.45);
     if (flash) c = mix(c, 0xffffff, 0.3);
     return c;
   };
-  for (const [lx, ly, key] of galleonPixels(weather, t)) {
-    const x = tr.dir > 0 ? tr.pos + lx : tr.pos + SHIP_WIDTH - 1 - lx, y = shipTop + ly;
+  for (const [lx, ly, key] of shipPixels(weather, t, opts.variant)) {
+    const x = xOf(lx), y = Math.max(-1, Math.round(heave + (pitch * (lx - (lxS + lxB) / 2)) / (lxB - lxS))) + ly;
     if (!inside(x, y)) continue;
     P[y][x] = key === "w" && wx.night ? (t % 9 < 7 ? hex(SHIP.L) : mix(hex(SHIP.L), 0, 0.3)) : tint(hex(SHIP[key]));
   }
 
-  // the sea, drawn over the ship's waterline
+  // the sea, drawn over the ship's waterline: lightness falls with depth and in the
+  // troughs, rises into foam on tall, front-facing crests; the top pixel of each column
+  // is blended with what is behind it by how much of it the surface covers
+  const ramp = [hex(p.sea[2]), hex(p.sea[2]), hex(p.sea[1]), hex(p.sea[0]), hex(p.foam)];
+  ramp[0] = mix(ramp[1], 0, 0.3);
+  const stops = [-0.35, 0, 0.5, 1, 1.5];
+  const shade = (L) => {
+    if (L <= stops[0]) return ramp[0];
+    for (let i = 1; i < stops.length; i++) if (L <= stops[i]) return mix(ramp[i - 1], ramp[i], (L - stops[i - 1]) / (stops[i] - stops[i - 1]));
+    return ramp[4];
+  };
+  const glintColour = hex(weather === "calm" ? p.sun : p.glint ?? p.foam);
+  const glints = weather === "calm" || wx.night;
+  const aim = (x) => (sx - x) * 0.045; // the slope that turns a facet toward the sun or moon
   for (let x = 0; x < W; x++) {
-    const s = surf(x);
-    const crest = Math.cos(x * 0.33 - ph) > 0.7 && wx.chop + wx.amp > 0.9;
-    for (let y = Math.max(0, Math.ceil(s)); y < H; y++) {
-      const d = y - s;
-      let c = d < 1.2 ? hex(p.sea[0]) : d < 2.4 ? hex(p.sea[1]) : hex(p.sea[2]);
-      if (d < 1 && (crest || hash(x, Math.floor(t / 3)) > 0.93)) c = hex(p.foam);
-      if (weather === "calm" && d < 2 && Math.abs(x - sx) < 3 && hash(x, t) > 0.6) c = mix(c, hex(p.sun), 0.6);
-      if (wx.night && d < 2.5 && Math.abs(x - sx) < 2 && hash(x * 7, Math.floor(t / 2) + y) > 0.45) c = hex(p.glint);
+    const s = surf(x), sl = slope(x);
+    const u = (BASE - s) / wx.amp; // height in swell units: +1 a crest, -1 a trough
+    const foam = quant(smooth(wx.cap, wx.cap + 0.35, u) * (0.75 + 0.25 * clamp01(sl / 0.6 + 0.5)) * wx.foam, 4);
+    const trough = smooth(-0.25, -1, u) * 0.3;
+    const lit = glints ? Math.exp(-(((x - sx) / 3) ** 2)) * clamp01(1 - Math.abs(sl - aim(x)) / 0.3) ** 2 : 0;
+    for (let y = Math.max(0, Math.floor(s)); y < H; y++) {
+      const cov = quant(clamp01(y + 1 - s), 4);
+      if (cov === 0) continue;
+      const d = Math.max(0, y + 0.5 - s);
+      const rim = 0.3 * smooth(-0.2, 1, u) * Math.max(0, 1 - d / 1.2);
+      let c = shade(quant(1 - d / 2.2 - trough + rim + 0.8 * foam * Math.max(0, 1 - d / 1.6), 8));
+      if (lit > 0 && d < 2) c = mix(c, glintColour, quant(0.7 * lit * (1 - d / 2), 4));
       if (flash) c = mix(c, hex(p.flash), 0.35);
-      P[y][x] = c;
+      P[y][x] = cov < 1 ? mix(P[y][x], c, cov) : c;
+    }
+    // storm and rain fling spray off the whitecaps: streaks of foam in the air above a crest
+    if (wx.spray > 0 && foam > 0.25) {
+      for (let k = 1; k <= 2; k++) {
+        const y = Math.floor(s) - k;
+        if (y < 0 || y >= H) continue;
+        const a = quant(clamp01((vnoise(x * 0.6 - t * 0.3, y * 1.7 + t * 0.12, opts.seed ?? 0) - 0.5) * 2) * wx.spray * foam * (k === 1 ? 1 : 0.5), 4);
+        if (a > 0) P[y][x] = mix(P[y][x], hex(p.foam), a);
+      }
     }
   }
   if (wx.rain > 0) {

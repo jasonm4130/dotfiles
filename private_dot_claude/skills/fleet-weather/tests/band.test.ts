@@ -4,6 +4,8 @@
 // dotfiles repo under `node --test`.
 import { expect, mock, test } from "claude-code/testing";
 import type { On } from "claude-code";
+import { resolveVariant, sceneFrame } from "../lib/galleon.mjs";
+import { packCells } from "../lib/pack.mjs";
 
 const HOME = "/fm";
 const NOW = 1791159267 * 1000;
@@ -53,7 +55,7 @@ test("the band draws the galleon at the band's width with the weather's reason",
   const ui = await $.ui.mount(BAND);
   const raster = await ui.find({ type: "Raster" });
   expect(raster?.props.columns).toBe(80);
-  expect(raster?.props.rows).toBe(7);
+  expect(raster?.props.rows).toBe(6);
   expect(typeof raster?.props.cells).toBe("string");
   expect((await ui.find({ type: "Text", text: /storm · endurebyte \(eb-gh-token-checks\) blocked/ })) !== undefined).toBe(true);
   await ui.unmount();
@@ -97,8 +99,30 @@ test("the sea animates through blits at the drawn size", async ($, on) => {
   const ui = await $.ui.mount(BAND);
   await clock.advance(1000);
   expect(blits.length > 0).toBe(true);
-  expect(blits[0]).toEqual({ columns: 80, rows: 7, key: "fleet-weather-galleon" });
+  expect(blits[0]).toEqual({ columns: 80, rows: 6, key: "fleet-weather-galleon" });
   await ui.unmount();
+});
+
+/** The Raster cells the band mounts for a one-crew calm fleet, with extra env. */
+async function bandCells($: Parameters<Parameters<typeof test>[1]>[0], on: On, env: Record<string, string>): Promise<unknown> {
+  mock.clock(on, { now: NOW });
+  mock.store(on);
+  mock.env(on, { FM_HOME: HOME, ...env });
+  home(on, new Map([[SUMMARY, { text: summary([]), mtimeMs: NOW - 60_000 }]]));
+  const ui = await $.ui.mount(BAND);
+  const cells = (await ui.find({ type: "Raster" }))?.props.cells;
+  await ui.unmount();
+  return cells;
+}
+const SEED = NOW % 0x7fffffff;
+const expected = (variant: string) => packCells(sceneFrame(0, "calm", "light", 80, { seed: SEED, variant }), 80).cells;
+
+test("FLEET_WEATHER_SHIP pins the vessel, whatever its case", async ($, on) => {
+  expect(await bandCells($, on, { FLEET_WEATHER_SHIP: " Junk " })).toBe(expected("junk"));
+});
+
+test("without a pin the session's seed picks the vessel", async ($, on) => {
+  expect(await bandCells($, on, { FLEET_WEATHER_SHIP: "dinghy" })).toBe(expected(resolveVariant(undefined, SEED)));
 });
 
 test("a blocked decision storms for two hours from first sight, then rains", async ($, on) => {
