@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Status-line tee for fleet observability (ships-log phase 1). Claude Code's
+# status-line stdin is the only documented source of the subscription's 5-hour
+# and weekly limit percentages, so this keeps the latest JSON that carries
+# `rate_limits` for agents-quota-push, then hands the same bytes to the real
+# status line. One account backs every profile, so one snapshot file serves all.
+#
+# Runs on every assistant message: builtins plus one mv, no jq. A JSON without
+# rate_limits (a session before its first API response) never overwrites a good
+# snapshot.
+input=$(cat)
+
+case $input in
+  *'"rate_limits"'*)
+    (
+      umask 077
+      dir=${SHIPS_LOG_STATE_DIR:-$HOME/.local/state/ships-log}
+      [[ -d $dir ]] || mkdir -p "$dir"
+      tmp="$dir/.claude-statusline.$$"
+      printf '%s' "$input" > "$tmp" && mv -f "$tmp" "$dir/claude-statusline.json"
+    ) 2>/dev/null
+    ;;
+esac
+
+exec "${CLAUDE_STATUSLINE_BIN:-$HOME/.local/bin/claude-statusline}" <<<"$input"

@@ -161,7 +161,18 @@ server still registers and reports Connected, failing only on first use, so veri
 
 The statusLine is a compiled binary at `~/.local/bin/claude-statusline` (source:
 [jasonm4130/claude-statusline](https://github.com/jasonm4130/claude-statusline) — clone and
-`go build` it on a new machine; the bootstrap does not ship it).
+`go build` it on a new machine; the bootstrap does not ship it). Both profiles call it through
+`~/.local/bin/claude-statusline-tee`, which first keeps the latest status-line JSON carrying
+`rate_limits` at `~/.local/state/ships-log/claude-statusline.json`. That JSON is the only
+documented source of the 5-hour and weekly limit percentages.
+
+Both profiles export Claude Code OTel **metrics only** (`OTEL_LOGS_EXPORTER=none`) to brok's
+OTLP receiver at `192.168.5.10:4319`, as cumulative counters tagged `host=mac` and
+`profile=personal|fm-workers`. `~/.claude-fresh` exports nothing. The
+`dev.jasonmatthew.agents-quota-push` LaunchAgent runs `~/.local/bin/agents-quota-push` every
+60 s. It turns the status-line snapshot and `codex-usage --json` into `agents_plan_*` gauges on
+the same receiver, and logs only when the outcome changes, to
+`~/Library/Logs/agents-quota-push.log`.
 
 The tab-title hook plays ElevenLabs voice clips on finish/needs-input (fanfare), falling
 back to the Glass chime when no clips are generated.

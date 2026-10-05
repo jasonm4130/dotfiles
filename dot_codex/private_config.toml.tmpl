@@ -27,6 +27,11 @@
 {{- $_ := set $shellset "TZ" "Australia/Brisbane" -}}
 {{- $_ := set $shellenv "set" $shellset -}}
 {{- $_ := set $live "shell_environment_policy" $shellenv -}}
+{{/* Metrics only to brok's OTLP receiver (ships-log phase 1): exporter and trace_exporter stay off, so no prompt or tool content leaves. Codex sends delta temporality and no instance id; `env` is its only machine tag. */}}
+{{- $otel := get $live "otel" | default dict -}}
+{{- $_ := set $otel "environment" "mac" -}}
+{{- $_ := set $otel "metrics_exporter" (dict "otlp-http" (dict "endpoint" "http://192.168.5.10:4319/v1/metrics" "protocol" "binary")) -}}
+{{- $_ := set $live "otel" $otel -}}
 {{/* Retire disabled custom MCP definitions; plugin connections are separate. */}}
 {{- $mcp := get $live "mcp_servers" | default dict -}}
 {{- range $name := list "chrome-devtools" "claude-design" "cloudflare-docs" "openaiDeveloperDocs" "social" "tavily" -}}
