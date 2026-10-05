@@ -12,3 +12,7 @@ shipsLog:
   # Let's Encrypt chain (plan §3.4a). Set it to pin a narrower anchor.
   caFile: ""
   ingestUrl: "https://ships-log-ingest.jasonmatthew.me:4443/api/ingest/v1"
+  # Firstmate homes outside ~/.treehouse, as paths relative to $HOME. Homes under
+  # ~/.treehouse/firstmate-*/*/firstmate are globbed at apply time. Listed first.
+  firstmateHomes:
+    - "Work/Git/firstmate"

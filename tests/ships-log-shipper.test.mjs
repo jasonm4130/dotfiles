@@ -188,7 +188,7 @@ test('shipper config renders the four Mac sources over mTLS', (t) => {
   ]);
   assert.equal(config.state_dir, '~/.local/state/ships-log/shipper');
   assert.equal(config.session_tags_dir, '~/.local/state/ships-log/sessions');
-  assert.deepEqual(config.firstmate_homes, [], 'no homes renders [], not null (the shipper rejects null)');
+  assert.deepEqual(config.firstmate_homes, [path.join(home, 'Work/Git/firstmate')], 'the primary home is listed even with no treehouse homes');
 });
 
 test('shipper config pins a CA and lists Firstmate homes when present', (t) => {
@@ -196,7 +196,13 @@ test('shipper config pins a CA and lists Firstmate homes when present', (t) => {
   mkdirSync(path.join(home, '.treehouse/firstmate-abc/1/firstmate'), { recursive: true });
   const config = JSON.parse(render(home, 'dot_config/private_ships-log/shipper.json.tmpl', { shipsLog: { caFile: '/etc/ca.pem' } }));
   assert.equal(config.tls.ca, '/etc/ca.pem');
-  assert.deepEqual(config.firstmate_homes, [path.join(home, '.treehouse/firstmate-abc/1/firstmate')]);
+  assert.deepEqual(config.firstmate_homes, [path.join(home, 'Work/Git/firstmate'), path.join(home, '.treehouse/firstmate-abc/1/firstmate')]);
+});
+
+test('shipper config renders [] (not null) when no firstmate homes are configured or found', (t) => {
+  const home = sandbox(t);
+  const config = JSON.parse(render(home, 'dot_config/private_ships-log/shipper.json.tmpl', { shipsLog: { firstmateHomes: [] } }));
+  assert.deepEqual(config.firstmate_homes, []);
 });
 
 test('cert script passes the vault, single-quoted, to the installer', (t) => {
