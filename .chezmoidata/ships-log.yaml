@@ -3,10 +3,10 @@
 
 shipsLog:
   # 1Password vault holding the `ships-log-client-mac` item (fields `certificate`
-  # and `private-key`, created by the ships-log CA tool). Empty until the operator
-  # picks one: fill it in here, or per machine in ~/.config/chezmoi/chezmoi.toml
-  # under [data.shipsLog]. While it is empty the certificate installer skips.
-  opVault: ""
+  # and `private-key`, created by the ships-log CA tool). Override per machine in
+  # ~/.config/chezmoi/chezmoi.toml under [data.shipsLog]. If it is set empty the
+  # certificate installer skips.
+  opVault: "Private"
   # CA bundle (PEM path) the shipper trusts for the ingest server. Empty means
   # the system trust store, which already carries the ingest listener's
   # Let's Encrypt chain (plan §3.4a). Set it to pin a narrower anchor.
