@@ -1,0 +1,150 @@
+#!/usr/bin/env node
+// Push subscription limit gauges to brok's OTLP receiver (ships-log phase 1).
+// Run every 60 s by launchd. Sources, both secret-free:
+//   claude  the snapshot claude-statusline-tee keeps of the status-line JSON
+//   codex   codex-usage --json (codex app-server; never a model request),
+//           polled every CODEX_POLL_SECONDS and remembered in between
+// Each window's last reading is remembered, because Claude drops a window from
+// the status line once it resets; a window whose resets_at has passed is
+// pushed as 0 used. The receiver port is network-trusted (LAN and tailnet
+// only), so the push carries no credential.
+//
+// Gauges, named so every OTLP-to-Prometheus translation keeps them unchanged:
+//   agents_plan_used_ratio             0-1
+//   agents_plan_resets_at_seconds      unix time the window resets
+//   agents_plan_observed_at_seconds    unix time of the reading
+// Labels: host, provider (claude|codex), window, bucket.
+//
+// Prints only when the outcome changes (an error, or recovery from one), so a
+// Mac away from the tailnet does not fill the log with one line a minute.
+const { execFile } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+
+const env = process.env;
+const ENDPOINT = env.AGENTS_OTLP_ENDPOINT || 'http://192.168.5.10:4319/v1/metrics';
+const STATE_DIR = env.SHIPS_LOG_STATE_DIR || path.join(os.homedir(), '.local/state/ships-log');
+const CODEX_USAGE = env.CODEX_USAGE_BIN || path.join(os.homedir(), '.local/bin/codex-usage');
+const CODEX_POLL_SECONDS = Number(env.CODEX_POLL_SECONDS || 300);
+const HOST = env.AGENTS_HOST || 'mac';
+const SNAPSHOT = path.join(STATE_DIR, 'claude-statusline.json');
+const STATE = path.join(STATE_DIR, 'quota-state.json');
+
+const readJson = (file) => {
+  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
+};
+
+function writeState(state) {
+  fs.mkdirSync(STATE_DIR, { recursive: true, mode: 0o700 });
+  const tmp = `${STATE}.${process.pid}`;
+  fs.writeFileSync(tmp, JSON.stringify(state, null, 2), { mode: 0o600 });
+  fs.renameSync(tmp, STATE);
+}
+
+// Merge the status-line snapshot's windows into the remembered Claude windows.
+function readClaude(windows) {
+  let stat;
+  try { stat = fs.statSync(SNAPSHOT); } catch { return windows; }
+  const limits = readJson(SNAPSHOT)?.rate_limits;
+  if (!limits || typeof limits !== 'object') return windows;
+  const observedAt = Math.floor(stat.mtimeMs / 1000);
+  const next = { ...windows };
+  for (const [name, value] of Object.entries(limits)) {
+    if (!Number.isFinite(value?.used_percentage) || !Number.isFinite(value?.resets_at)) continue;
+    if (next[name] && next[name].observedAt > observedAt) continue;
+    next[name] = { window: name, bucket: 'claude', used: value.used_percentage / 100,
+      resetsAt: value.resets_at, observedAt };
+  }
+  return next;
+}
+
+function codexWindowName(minutes) {
+  if (minutes === 300) return 'five_hour';
+  if (minutes === 10080) return 'weekly';
+  return Number.isFinite(minutes) ? `${minutes}m` : 'unknown';
+}
+
+function runCodexUsage() {
+  return new Promise((resolve, reject) => {
+    execFile(CODEX_USAGE, ['--json'], { timeout: 30000 }, (error, stdout, stderr) => {
+      if (error) return reject(new Error((stderr || error.message).trim()));
+      try { resolve(JSON.parse(stdout)); } catch { reject(new Error('codex-usage printed invalid JSON')); }
+    });
+  });
+}
+
+async function readCodex(state, now) {
+  if (state.codexPolledAt && now - state.codexPolledAt < CODEX_POLL_SECONDS) return;
+  // Stamped before the call, so a failing codex-usage is retried on the poll
+  // interval rather than every minute.
+  state.codexPolledAt = now;
+  const usage = await runCodexUsage();
+  const observedAt = Math.floor(Date.parse(usage.observedAt) / 1000) || now;
+  const windows = {};
+  for (const w of usage.windows ?? []) {
+    const window = codexWindowName(w.durationMinutes);
+    windows[`${w.bucket}/${window}`] = { window, bucket: w.bucket, used: w.usedPercent / 100,
+      resetsAt: Math.floor(Date.parse(w.resetsAt) / 1000), observedAt };
+  }
+  state.codex = windows;
+}
+
+function buildPayload(state, now) {
+  const timeUnixNano = `${BigInt(now) * 1000000000n}`;
+  const series = { agents_plan_used_ratio: [], agents_plan_resets_at_seconds: [], agents_plan_observed_at_seconds: [] };
+  for (const provider of ['claude', 'codex']) {
+    for (const w of Object.values(state[provider] ?? {})) {
+      const attributes = [['host', HOST], ['provider', provider], ['window', w.window], ['bucket', w.bucket]]
+        .map(([key, value]) => ({ key, value: { stringValue: String(value) } }));
+      const point = (asDouble) => ({ attributes, timeUnixNano, asDouble });
+      series.agents_plan_used_ratio.push(point(w.resetsAt <= now ? 0 : w.used));
+      series.agents_plan_resets_at_seconds.push(point(w.resetsAt));
+      series.agents_plan_observed_at_seconds.push(point(w.observedAt));
+    }
+  }
+  const metrics = Object.entries(series)
+    .filter(([, dataPoints]) => dataPoints.length)
+    .map(([name, dataPoints]) => ({ name, gauge: { dataPoints } }));
+  if (!metrics.length) return null;
+  return { resourceMetrics: [{
+    resource: { attributes: [
+      { key: 'service.name', value: { stringValue: 'agents-quota-push' } },
+      { key: 'host', value: { stringValue: HOST } },
+    ] },
+    scopeMetrics: [{ scope: { name: 'agents-quota-push' }, metrics }],
+  }] };
+}
+
+async function push(payload) {
+  const response = await fetch(ENDPOINT, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!response.ok) throw new Error(`OTLP push to ${ENDPOINT} returned HTTP ${response.status}`);
+}
+
+async function main() {
+  const now = Math.floor(Date.now() / 1000);
+  const state = readJson(STATE) ?? {};
+  const errors = [];
+  state.claude = readClaude(state.claude ?? {});
+  await readCodex(state, now).catch((error) => errors.push(`codex-usage: ${error.message}`));
+  const payload = buildPayload(state, now);
+  if (payload) await push(payload).catch((error) => errors.push(error.cause?.message ?? error.message));
+  else errors.push('no limit readings yet');
+
+  const outcome = errors.join('; ');
+  const stamp = new Date(now * 1000).toISOString();
+  if (outcome && outcome !== state.lastError) console.error(`${stamp} agents-quota-push: ${outcome}`);
+  if (!outcome && state.lastError) console.error(`${stamp} agents-quota-push: recovered`);
+  state.lastError = outcome;
+  writeState(state);
+}
+
+main().catch((error) => {
+  console.error(`agents-quota-push: ${error.stack || error.message}`);
+  process.exitCode = 1;
+});
