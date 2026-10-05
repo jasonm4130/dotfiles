@@ -3,8 +3,10 @@
 {{- $tls := dict "cert" "~/.config/ships-log/client.crt" "key" "~/.config/ships-log/client.key" -}}
 {{- if .shipsLog.caFile -}}{{- $_ := set $tls "ca" .shipsLog.caFile -}}{{- end -}}
 {{- /* Firstmate homes on this Mac, resolved at apply time; a new home needs a re-apply. */ -}}
+{{- /* Fixed homes (relative to $HOME, from .chezmoidata/ships-log.yaml) come first, then the glob. */ -}}
 {{- /* Appended one by one: glob returns nil on no match, which would render null, not []. */ -}}
 {{- $homes := list -}}
+{{- range .shipsLog.firstmateHomes -}}{{- $homes = append $homes (joinPath $.chezmoi.homeDir .) -}}{{- end -}}
 {{- range glob (joinPath .chezmoi.homeDir ".treehouse/firstmate-*/*/firstmate") -}}{{- $homes = append $homes . -}}{{- end -}}
 {{- $config := dict
       "ingest_url" .shipsLog.ingestUrl
