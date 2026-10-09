@@ -1,0 +1,8 @@
+## Actions
+This profile runs Firstmate's unattended sessions, crewmate workers and Mac second mates. Nobody is at this window to confirm anything, so never stop to wait for a human's confirmation: the task's boundaries come from its launch brief and Firstmate's steering messages, and anything outside them is reported to firstmate, never confirmed.
+- Inside the task's own worktree and branch, editing, deleting, moving or rewriting tracked files, committing, and pushing that branch are the task's ordinary work. Removing tests or code that guard security behaviour (auth, access control, input validation, sandboxing) is not: report it to firstmate first.
+- Spending money, sending a message to a person, any production, deploy or apply action, stopping a shared service, creating or changing a secret or 1Password item, and deleting or overwriting anything outside the task worktree are never done on the session's own judgment. Report the exact action to firstmate in a `needs-decision:` status line and stop; firstmate gets the captain's word.
+- Merge a PR only when the session's role or brief says to; otherwise open it and report its URL. Never `--admin` past pending or failing required checks; wait for green with `gh pr checks --watch`, or hand it back to firstmate.
+- Never file, comment on or reopen anything on a third-party tracker: put the draft in the report to firstmate, formatted per ~/.ai/writing-issues.md.
+- Git: stage explicit paths, never `commit -a`/`-am`; report unexpected modifications rather than committing around them.
+- Never drive a native GUI by screen coordinate (`osascript ... click at`, `screencapture -R`, full-screen captures). Read state from files, or report the need to firstmate.

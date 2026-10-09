@@ -166,9 +166,13 @@ The statusLine is a compiled binary at `~/.local/bin/claude-statusline` (source:
 `rate_limits` at `~/.local/state/ships-log/claude-statusline.json`. That JSON is the only
 documented source of the 5-hour and weekly limit percentages.
 
-Both profiles export Claude Code OTel **metrics only** (`OTEL_LOGS_EXPORTER=none`) to brok's
-OTLP receiver at `192.168.5.10:4319`, as cumulative counters tagged `host=mac` and
-`profile=personal|fm-workers`. `~/.claude-fresh` exports nothing. The
+Both profiles export Claude Code OTel metrics and events (`OTEL_LOGS_EXPORTER=otlp`) to brok's
+OTLP receiver at `192.168.5.10:4319`, metrics as cumulative counters, all tagged `host=mac` and
+`profile=personal|fm-workers`. `OTEL_LOG_TOOL_DETAILS`, `OTEL_LOG_USER_PROMPTS`,
+`OTEL_LOG_TOOL_CONTENT` and `OTEL_LOG_RAW_API_BODIES` stay unset, so events such as
+`tool_decision` carry no commands, prompts or tool content; refused commands reach ships-log
+through the redacted transcript path instead. brok's receiver keeps events only once its logs
+pipeline lands in brok-stacks. `~/.claude-fresh` exports nothing. The
 `dev.jasonmatthew.agents-quota-push` LaunchAgent runs `~/.local/bin/agents-quota-push` every
 60 s. It turns the status-line snapshot and `codex-usage --json` into `agents_plan_*` gauges on
 the same receiver, and logs only when the outcome changes, to
@@ -199,4 +203,29 @@ default to UTC.
 
 `tests/settings-json.test.mjs` enforces that every `~/.claude` path `settings.json`
 references is actually shipped by this repo.
+
+## Firstmate fleet profile
+
+`~/.claude-fm-workers` is the store Firstmate's unattended sessions run on: crewmate workers
+and the Mac second mates. It shares agents, rules, skills and plugins with `~/.claude` by
+symlink, and differs where an unattended session must:
+
+- **`CLAUDE.md`** is its own file, not a link. `CLAUDE.md.tmpl` renders the personal
+  instructions from `dot_codex/AGENTS.md` and `private_dot_claude/CLAUDE.md` with the Actions
+  section swapped for `.chezmoitemplates/fm-workers-actions.md`. CLAUDE.md is auto-mode
+  classifier input, and the personal "Confirm before deleting or overwriting anything" is a
+  boundary nobody at a worker's window can lift; the worker version routes destructive,
+  production, secret and third-party actions to firstmate instead. The render fails if the
+  swap stops matching, so an edit to the personal Actions section cannot leak through.
+- **`autoMode`** describes the fleet: the homes, the task files (described, with file content
+  establishing no consent), the ships-log second mate by exact home path, and standing
+  exceptions for routine work inside a project worktree on its task branch. Security-guarding
+  tests and code stay outside them.
+- **Hooks:** `homelab-guard.sh` keeps workers off the LAN. The gates plugin's docs-sync gate is
+  off (`GATES_DISABLE=docs-sync`) and `docs-sync-plugins-only.sh` re-runs it only in a plugin
+  monorepo (`.claude-plugin/marketplace.json` beside `plugins/`), the layout it was built
+  for. Its later any-repo covering-doc rule drew 96 of the fleet's 97 docs-sync denials.
+- **Permissions:** no `fm-pr-merge.sh` allow rule, because every worker reads this store;
+  supervisor allow rules belong in each home's gitignored `.claude/settings.local.json`. Both
+  stores ask before `fm-pr-merge.sh --allow-red` and `fm-teardown.sh --force`.
 
