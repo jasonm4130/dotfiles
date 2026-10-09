@@ -286,5 +286,8 @@
       "**Org-specific CLIs**: op (1Password; only `op run --env-file .env.op -- <cmd>` inside the worktree), gh, gh-axi, git, docker (local only), mise, uv, pnpm, cargo, wrangler (local dev only, never deploy), no-mistakes, and the firstmate bin/ scripts named in the worker's brief.",
       "**Additional context**: Solo developer's private laptop. The session scratchpad under /private/tmp/claude-501/ is trusted for scratch scripts that stay inside the worktree's task."
     ]
-  }
+  },
+  "claudeMdExcludes": [
+    "/Users/jasonmatthew/.claude/CLAUDE.md"
+  ]
 }
