@@ -1,0 +1,21 @@
+{{- /*
+  The fleet profile's CLAUDE.md: the personal instructions, rendered from the same
+  sources, with the Actions section swapped for .chezmoitemplates/fm-workers-actions.md.
+  CLAUDE.md is auto-mode classifier input, and the personal "Confirm before ... deleting
+  or overwriting anything" is a boundary nobody at an unattended session's window can
+  lift. An @-import of the personal file would bring that line back, so the sources are
+  included at render time instead, and the render fails if the swap stops matching.
+*/ -}}
+{{- $actions := include ".chezmoitemplates/fm-workers-actions.md" -}}
+{{- /* sprig's regexReplaceAll* take (regex, string, replacement), so no pipe here. */ -}}
+{{- $agents := include "dot_codex/AGENTS.md" | replace "never relaxes the Actions confirmations" "never relaxes the Actions boundaries" -}}
+{{- $agents = regexReplaceAllLiteral "(?s)## Actions\n.*?\n## " $agents (printf "%s\n## " $actions) -}}
+{{- if or (contains "Confirm before" $agents) (contains "Actions confirmations" $agents) (not (contains "This profile runs Firstmate's unattended sessions" $agents)) -}}
+{{-   fail "private_dot_claude-fm-workers/CLAUDE.md.tmpl: the Actions swap no longer matches dot_codex/AGENTS.md; update the template" -}}
+{{- end -}}
+{{- $claude := regexReplaceAllLiteral "\\A@~/\\.codex/AGENTS\\.md\n+" (include "private_dot_claude/CLAUDE.md") "" -}}
+{{- if contains "@~/" $claude -}}
+{{-   fail "private_dot_claude-fm-workers/CLAUDE.md.tmpl: private_dot_claude/CLAUDE.md gained an import; decide whether workers should carry it" -}}
+{{- end -}}
+{{ $agents }}
+{{ $claude -}}
