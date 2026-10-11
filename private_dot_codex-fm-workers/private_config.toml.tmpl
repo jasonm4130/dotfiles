@@ -57,6 +57,10 @@
 {{- $_ := set $shellset "TZ" "Australia/Brisbane" -}}
 {{- $_ := set $shellenv "set" $shellset -}}
 {{- $_ := set $live "shell_environment_policy" $shellenv -}}
+{{- /* Title the terminal by the task branch (fm/<task>), so herdr's sidebar names the worker, not "codex". */ -}}
+{{- $tui := get $live "tui" | default dict -}}
+{{- $_ := set $tui "terminal_title" (list "git-branch" "run-state") -}}
+{{- $_ := set $live "tui" $tui -}}
 {{- /* Workers keep reporting metrics to brok's OTLP receiver, as they did from ~/.codex. */ -}}
 {{- $otel := get $live "otel" | default dict -}}
 {{- $_ := set $otel "environment" "mac" -}}
