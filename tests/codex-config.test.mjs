@@ -138,9 +138,13 @@ test('stale skill disables are dropped while unrelated skill config and Herdr li
   assert.equal(skill(value, 'name', 'unrelated').enabled, true);
   assert.equal(skill(value, 'path', '/fixture').enabled, true);
   assert.deepEqual(value.skills.config.filter(entry => entry.path).map(entry => entry.path), ['/fixture']);
-  assert.deepEqual(Object.keys(hooks.hooks), ['SessionStart']);
+  assert.deepEqual(Object.keys(hooks.hooks), ['SessionStart', 'PreToolUse']);
   assert.equal(hooks.hooks.SessionStart[0].hooks[0].command, "bash '/Users/jasonmatthew/.codex/herdr-agent-state.sh' session");
   assert.equal(hooks.hooks.SessionStart[0].hooks[0].timeout, 10);
+  // One guard entry: Codex keys hook trust by position, so the Herdr entry keeps its trust.
+  assert.equal(hooks.hooks.PreToolUse.length, 1);
+  assert.equal(hooks.hooks.PreToolUse[0].matcher, 'Bash|apply_patch');
+  assert.equal(hooks.hooks.PreToolUse[0].hooks[0].command, "bash '/Users/jasonmatthew/.codex/hooks/unattended-guard.sh'");
   assert.doesNotMatch(work, /\[agents\]|work-loop skill|orchestrator/);
   assert.match(work, /HERDR_ENV=1/);
 });
