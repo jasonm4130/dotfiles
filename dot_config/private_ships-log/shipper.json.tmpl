@@ -18,5 +18,6 @@
         (dict "id" "mac/fresh" "root" "~/.claude-fresh")
         (dict "id" "mac/codex" "root" "~/.codex/sessions"))
       "session_tags_dir" "~/.local/state/ships-log/sessions"
-      "firstmate_homes" $homes -}}
+      "firstmate_homes" $homes
+      "no_mistakes_homes" (list "~/.no-mistakes") -}}
 {{ toPrettyJson $config }}
