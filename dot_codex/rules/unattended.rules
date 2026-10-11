@@ -1,0 +1,41 @@
+# Commands an unattended Codex session must never run on its own: the Firstmate worker
+# profile's homelab and authority boundaries (~/.claude-fm-workers/settings.json).
+# "prompt" splits by who is present. Under approval_policy=never (--dangerously-bypass-
+# approvals-and-sandbox crewmates and no-mistakes agents, --profile review) Codex refuses
+# the command; an interactive session routes it to its approval reviewer instead.
+# Rules hold where hooks do not: Firstmate launches Codex crewmates with --disable hooks.
+# A network command naming a homelab host (curl, rsync ...) needs argument matching, so
+# hooks/unattended-guard.sh carries that half. Codex writes its own approvals to
+# default.rules beside this file; the strictest matching decision wins.
+
+prefix_rule(
+    pattern = [["ssh", "scp", "sftp", "mosh", "ansible", "ansible-playbook", "ansible-pull", "ansible-console"]],
+    decision = "prompt",
+    justification = "homelab-guard: unattended sessions may not reach the homelab (ssh/scp/ansible). Report the need to firstmate instead.",
+    match = ["ssh brok uptime", "scp f root@192.168.5.10:/tmp/", "ansible-playbook site.yml"],
+    not_match = ["ssh-keygen -l -f key.pub", "git status"],
+)
+
+prefix_rule(
+    pattern = ["incus", "remote"],
+    decision = "prompt",
+    justification = "homelab-guard: unattended sessions may not manage incus remotes. Report the need to firstmate instead.",
+)
+
+prefix_rule(
+    pattern = ["gh", "pr", "merge"],
+    decision = "prompt",
+    justification = "Unattended sessions do not merge PRs; the configured merge authority does. Open the PR and report its URL.",
+    not_match = ["gh pr view 1", "gh pr checks 1 --watch"],
+)
+
+prefix_rule(
+    pattern = ["chezmoi", ["apply", "update"]],
+    decision = "prompt",
+    justification = "Unattended sessions do not apply personal config outside their worktree. Report the exact chezmoi target to firstmate.",
+    not_match = ["chezmoi diff ~/.codex/config.toml", "chezmoi source-path ~/.codex"],
+)
+
+host_executable(name = "ssh", paths = ["/usr/bin/ssh", "/opt/homebrew/bin/ssh"])
+host_executable(name = "scp", paths = ["/usr/bin/scp", "/opt/homebrew/bin/scp"])
+host_executable(name = "sftp", paths = ["/usr/bin/sftp", "/opt/homebrew/bin/sftp"])

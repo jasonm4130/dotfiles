@@ -34,9 +34,31 @@ back to `CLAUDE.md`. The short home-directory file adds no duplicate global rule
 The shared Claude renderer only writes Claude's file.
 
 Native approval review, sandboxing, memory, and bundled app integrations remain.
-Herdr's native SessionStart hook is the sole retained global hook. Claude-related shell
-variables, custom pre/post-tool hooks, and the imported worker override are
+Herdr's native SessionStart hook is the only global hook that acts in an interactive
+session. Claude-related shell variables and the imported worker override are
 disconnected. The Claude source files and scripts are preserved.
+
+## Unattended sessions
+
+Firstmate crewmates, no-mistakes agents and Codex secondmates run Codex with
+`approval_policy=never`, so nobody can answer an approval. Two layers give them the
+Firstmate worker profile's boundaries:
+
+- `rules/unattended.rules` marks ssh, scp, sftp, mosh, ansible, `incus remote`,
+  `gh pr merge` and `chezmoi apply`/`update` as `prompt`. Under `never` Codex refuses
+  them (`approval required by policy, but AskForApproval is set to Never`); an
+  interactive session sends them to its approval reviewer instead. Rules still apply
+  when Firstmate launches a crewmate with `--disable hooks`.
+- `hooks/unattended-guard.sh`, the one PreToolUse hook, runs `homelab-guard.sh`,
+  `claude-hooks secrets-scan`, `disk-guard.sh pretool` and the docs-sync narrowing
+  hook on Bash and `apply_patch` payloads. It acts only when Codex reports
+  `permission_mode` `bypassPermissions`, which `approval_policy=never` produces, and
+  guards a payload missing that field. Codex skips an untrusted hook silently in
+  `codex exec`, so a new or changed entry needs `/hooks` review once per machine.
+
+Crewmates launched with `--disable hooks` therefore get the rules only: a curl or rsync
+to a homelab host, secrets-scan, disk-guard and docs-sync do not reach them.
+`tests/codex-hooks.test.mjs` covers the hook and the rules.
 
 Custom MCP connections are disabled in Codex, with their settings retained for
 deliberate re-enablement. The legacy work-loop and shared writing skill are disabled

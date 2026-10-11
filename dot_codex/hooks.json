@@ -10,6 +10,18 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/jasonmatthew/.codex/hooks/unattended-guard.sh'",
+            "timeout": 15
+          }
+        ]
+      }
     ]
   }
 }

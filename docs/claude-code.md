@@ -225,6 +225,8 @@ symlink, and differs where an unattended session must:
   off (`GATES_DISABLE=docs-sync`) and `docs-sync-plugins-only.sh` re-runs it only in a plugin
   monorepo (`.claude-plugin/marketplace.json` beside `plugins/`), the layout it was built
   for. Its later any-repo covering-doc rule drew 96 of the fleet's 97 docs-sync denials.
+  Unattended Codex sessions get these guards through `~/.codex` instead; see
+  `docs/codex-native.md`, "Unattended sessions".
 - **Permissions:** no `fm-pr-merge.sh` allow rule, because every worker reads this store;
   supervisor allow rules belong in each home's gitignored `.claude/settings.local.json`. Both
   stores ask before `fm-pr-merge.sh --allow-red` and `fm-teardown.sh --force`.
