@@ -1,8 +1,43 @@
 #!/usr/bin/env bash
 # Reloads when the plist changes: {{ include "private_Library/private_LaunchAgents/dev.jasonmatthew.vault-autosync.plist.tmpl" | sha256sum }}
+# Rebuilds when the helper changes: {{ include "dot_local/src/exact_vault-autosync-helper/main.c" | sha256sum }} {{ include "dot_local/src/exact_vault-autosync-helper/Info.plist" | sha256sum }}
+#
+# The agent runs VaultAutosync.app, not the script: macOS privacy protection
+# (TCC) blocks background jobs from ~/Documents, and Full Disk Access granted to
+# this one app reaches only the sync script, where granting /bin/bash would
+# reach every script. The grant is a one-time manual step (System Settings >
+# Privacy & Security > Full Disk Access > + > ~/Applications/VaultAutosync.app);
+# until it is made, every run fails as it did before, with "Operation not
+# permitted" in ~/Library/Logs/vault-autosync.log.
+#
+# An ad-hoc signature has no team identity, so TCC pins the grant to the code
+# hash. The build is reproducible, so a rebuild from unchanged sources keeps
+# the grant; an edit to main.c or Info.plist needs the grant made again.
 set -euo pipefail
 
+SRC="$HOME/.local/src/vault-autosync-helper"
+APP="$HOME/Applications/VaultAutosync.app"
 PLIST="$HOME/Library/LaunchAgents/dev.jasonmatthew.vault-autosync.plist"
+
+if ! command -v clang >/dev/null 2>&1; then
+  echo "❌ clang not found — cannot build VaultAutosync.app; install the Xcode Command Line Tools" >&2
+  exit 1
+fi
+
+echo "🔨 Building VaultAutosync.app"
+BUILD="$(mktemp -d)"
+trap 'rm -rf "$BUILD"' EXIT
+mkdir -p "$BUILD/VaultAutosync.app/Contents/MacOS"
+cp "$SRC/Info.plist" "$BUILD/VaultAutosync.app/Contents/Info.plist"
+clang -O2 -Wall -Wextra -Werror -DSYNC_HOME="\"$HOME\"" \
+  -o "$BUILD/VaultAutosync.app/Contents/MacOS/vault-autosync-helper" "$SRC/main.c"
+codesign --force --sign - --identifier dev.jasonmatthew.vault-autosync-helper "$BUILD/VaultAutosync.app"
+codesign --verify --strict "$BUILD/VaultAutosync.app"
+
+mkdir -p "$(dirname "$APP")"
+rm -rf "$APP"
+mv "$BUILD/VaultAutosync.app" "$APP"
+echo "✅ VaultAutosync.app built → $APP"
 
 echo "🔁 (Re)loading vault-autosync launchd agent"
 launchctl unload "$PLIST" 2>/dev/null || true

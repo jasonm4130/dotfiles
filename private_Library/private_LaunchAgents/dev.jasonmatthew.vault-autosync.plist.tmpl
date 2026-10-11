@@ -5,10 +5,16 @@
     <key>Label</key>
     <string>dev.jasonmatthew.vault-autosync</string>
 
+    <!-- The helper app, not the script: it holds the Full Disk Access grant
+         that ~/Documents needs, and runs only vault-autosync.sh
+         (run_onchange_after_21 builds it and explains). -->
     <key>ProgramArguments</key>
     <array>
-        <string>{{ .chezmoi.homeDir }}/.local/bin/vault-autosync.sh</string>
+        <string>{{ .chezmoi.homeDir }}/Applications/VaultAutosync.app/Contents/MacOS/vault-autosync-helper</string>
     </array>
+
+    <key>AssociatedBundleIdentifiers</key>
+    <string>dev.jasonmatthew.vault-autosync-helper</string>
 
     <key>StartInterval</key>
     <integer>600</integer>
