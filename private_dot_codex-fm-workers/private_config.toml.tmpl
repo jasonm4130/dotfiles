@@ -1,0 +1,68 @@
+{{- /*
+  CODEX_HOME for Firstmate's Codex workers. Like dot_codex/private_config.toml.tmpl it owns
+  a small policy layer and preserves whatever Codex writes at runtime (project trust,
+  notices, other hook state). auth.json is never managed: run
+  `CODEX_HOME=~/.codex-fm-workers codex login` once per machine.
+  Paths come from destDir, so a render into a temporary --destination is self-consistent.
+*/ -}}
+{{- $fleet := joinPath .chezmoi.destDir ".codex-fm-workers" -}}
+{{- $path := joinPath $fleet "config.toml" -}}
+{{- $live := dict -}}
+{{- if stat $path -}}
+{{- $live = fromToml (include $path) -}}
+{{- end -}}
+{{- $features := get $live "features" | default dict -}}
+{{- $_ := set $features "hooks" true -}}
+{{- $_ := set $live "features" $features -}}
+{{- /*
+  Pre-trust this home's own hooks.json, so neither `codex exec` (which skips an untrusted
+  hook silently) nor the TUI (which parks on a review modal) needs a /hooks review.
+  The merged hooks.json is the review. Codex keys trust by "<file>:<event>:<group>:<handler>"
+  and hashes the normalized hook: sha256 of sorted, compact JSON of
+  {event_name, matcher, hooks: [handler with async defaulted]} (codex-rs/hooks discovery.rs
+  hook_hash, config fingerprint.rs version_for_toml). Only the fields used here are
+  normalized, so anything else fails the render rather than seeding a hash Codex rejects.
+*/ -}}
+{{- $hooksFile := joinPath $fleet "hooks.json" -}}
+{{- $fleetHooks := includeTemplate "private_dot_codex-fm-workers/hooks.json.tmpl" . | fromJson -}}
+{{- $hooks := get $live "hooks" | default dict -}}
+{{- $state := get $hooks "state" | default dict -}}
+{{- range $event, $groups := $fleetHooks.hooks -}}
+{{- if ne $event "PreToolUse" -}}
+{{-   fail (printf "private_dot_codex-fm-workers: confirm Codex's trust hash for %s hooks before pre-trusting them" $event) -}}
+{{- end -}}
+{{- range $gi, $group := $groups -}}
+{{- range $hi, $handler := $group.hooks -}}
+{{- if or (ne (keys $handler | sortAlpha | join ",") "command,timeout,type") (ne $handler.type "command") (regexMatch "[<>&]" (printf "%s%s" $handler.command $group.matcher)) -}}
+{{-   fail "private_dot_codex-fm-workers: a fleet hook needs exactly type=command, command and timeout (no <, > or &) for its trust hash to match Codex's" -}}
+{{- end -}}
+{{- $identity := dict "event_name" (snakecase $event) "matcher" $group.matcher "hooks" (list (dict "type" "command" "command" $handler.command "timeout" $handler.timeout "async" false)) -}}
+{{- $key := printf "%s:%s:%d:%d" $hooksFile (snakecase $event) $gi $hi -}}
+{{- $_ := set $state $key (dict "enabled" true "trusted_hash" (printf "sha256:%s" (toJson $identity | sha256sum))) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- $_ := set $hooks "state" $state -}}
+{{- $_ := set $live "hooks" $hooks -}}
+{{- /* Startup prompts nobody at a worker's window can answer. */ -}}
+{{- $notice := get $live "notice" | default dict -}}
+{{- range $hide := list "hide_full_access_warning" "hide_world_writable_warning" "hide_rate_limit_model_nudge" -}}
+{{- $_ := set $notice $hide true -}}
+{{- end -}}
+{{- $_ := set $live "notice" $notice -}}
+{{- /* As in the personal config: commands get a core env, so `op run` secrets do not reach them. */ -}}
+{{- $shellenv := get $live "shell_environment_policy" | default dict -}}
+{{- $_ := set $shellenv "inherit" "core" -}}
+{{- $shellset := get $shellenv "set" | default dict -}}
+{{- $_ := set $shellset "TZ" "Australia/Brisbane" -}}
+{{- $_ := set $shellenv "set" $shellset -}}
+{{- $_ := set $live "shell_environment_policy" $shellenv -}}
+{{- /* Workers keep reporting metrics to brok's OTLP receiver, as they did from ~/.codex. */ -}}
+{{- $otel := get $live "otel" | default dict -}}
+{{- $_ := set $otel "environment" "mac" -}}
+{{- $_ := set $otel "metrics_exporter" (dict "otlp-http" (dict "endpoint" "http://192.168.5.10:4319/v1/metrics" "protocol" "binary")) -}}
+{{- $_ := set $live "otel" $otel -}}
+approval_policy = "never"
+check_for_update_on_startup = false
+
+{{ toToml (omit $live "approval_policy" "check_for_update_on_startup") -}}

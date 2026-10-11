@@ -3,7 +3,8 @@
 # "prompt" splits by who is present. Under approval_policy=never (--dangerously-bypass-
 # approvals-and-sandbox crewmates and no-mistakes agents, --profile review) Codex refuses
 # the command; an interactive session routes it to its approval reviewer instead.
-# Rules hold where hooks do not: Firstmate launches Codex crewmates with --disable hooks.
+# Rules hold where hooks do not, as in a crewmate launched with --disable hooks.
+# ~/.codex-fm-workers renders this file too.
 # A network command naming a homelab host (curl, rsync ...) needs argument matching, so
 # hooks/unattended-guard.sh carries that half. Codex writes its own approvals to
 # default.rules beside this file; the strictest matching decision wins.

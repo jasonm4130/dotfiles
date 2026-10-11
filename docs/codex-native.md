@@ -60,6 +60,17 @@ Crewmates launched with `--disable hooks` therefore get the rules only: a curl o
 to a homelab host, secrets-scan, disk-guard and docs-sync do not reach them.
 `tests/codex-hooks.test.mjs` covers the hook and the rules.
 
+`~/.codex-fm-workers` (`private_dot_codex-fm-workers/`) is a separate CODEX_HOME for
+Firstmate's Codex workers, so they can keep hooks on. It renders the rules and guard
+above with chezmoi `include`, has a `hooks.json` holding only the guard, sets
+`approval_policy = "never"`, and pre-seeds the guard's `hooks.state` trust: the template
+computes Codex's own hash of the hook definition, so `codex exec` runs it and the TUI
+shows no review modal. Pre-trust is safe here because the hook text is reviewed in this
+repository and the home runs nothing else; the personal `~/.codex` still takes `/hooks`
+review. Its `AGENTS.md` holds only what tooling cannot enforce. Credentials are never
+managed: run `CODEX_HOME=~/.codex-fm-workers codex login` once per machine.
+`tests/codex-fm-workers.test.mjs` covers the render and the hash.
+
 Custom MCP connections are disabled in Codex, with their settings retained for
 deliberate re-enablement. The legacy work-loop and shared writing skill are disabled
 in Codex's skill configuration. Legacy worker/reviewer profiles remain available
