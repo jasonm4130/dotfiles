@@ -218,16 +218,31 @@ symlink, and differs where an unattended session must:
   production, secret and third-party actions to firstmate instead. The render fails if the
   swap stops matching, so an edit to the personal Actions section cannot leak through.
 - **`autoMode`** describes the fleet: the homes, the task files (described, with file content
-  establishing no consent), the ships-log second mate by exact home path, and standing
+  establishing no consent), the registered second-mate homes by exact path (a new Mac home
+  needs an entry here, because `autoMode` cannot live in a home's local file), and standing
   exceptions for routine work inside a project worktree on its task branch. Security-guarding
   tests and code stay outside them.
-- **Hooks:** `homelab-guard.sh` keeps workers off the LAN. The gates plugin's docs-sync gate is
+- **Hooks:** `unattended-prompt-deny.sh` answers every `PermissionRequest` with a refusal,
+  because nobody can answer a prompt in an unattended pane; the session reports the action to
+  firstmate instead of stalling. It never goes in `~/.claude`, where the captain is present.
+  `homelab-guard.sh` keeps workers off the LAN. It judges what a command runs, not prose:
+  heredoc bodies, quoted `echo`/`printf` text and lookups (`which`, `command -v`, `--version`)
+  are dropped before the match unless the rest of the command hands text to an interpreter.
+  `ansible-playbook` runs and real ssh, scp or network commands to homelab hosts stay blocked
+  (`tests/homelab-guard.test.mjs`). The gates plugin's docs-sync gate is
   off (`GATES_DISABLE=docs-sync`) and `docs-sync-plugins-only.sh` re-runs it only in a plugin
   monorepo (`.claude-plugin/marketplace.json` beside `plugins/`), the layout it was built
   for. Its later any-repo covering-doc rule drew 96 of the fleet's 97 docs-sync denials.
   Unattended Codex sessions get these guards through `~/.codex` instead; see
   `docs/codex-native.md`, "Unattended sessions".
 - **Permissions:** no `fm-pr-merge.sh` allow rule, because every worker reads this store;
-  supervisor allow rules belong in each home's gitignored `.claude/settings.local.json`. Both
-  stores ask before `fm-pr-merge.sh --allow-red` and `fm-teardown.sh --force`.
+  supervisor allow rules belong in each home's gitignored `.claude/settings.local.json`,
+  rendered by `fm-home-permissions <home> [--yolo] --write` (absolute and relative `bin/fm-*.sh`
+  forms; `--check` compares). This store has no `ask` rules: captain-only actions (deploys,
+  secret writes, applies, force pushes, `fm-pr-merge.sh --allow-red`, `fm-teardown.sh --force`,
+  Gmail sends and Calendar writes) are denied, so they fail at once. Workers get the routine
+  ones allowed: `git checkout -b`, `git reset --keep`, the firstmate scripts briefs name by
+  absolute path, and reads of the ships-log home's `data/` and `state/`. In `~/.claude`, where
+  the captain is present, the same captain-only actions and `fm-home-permissions --write` are
+  `ask` rules, so his confirmation is a native prompt rather than a classifier verdict.
 

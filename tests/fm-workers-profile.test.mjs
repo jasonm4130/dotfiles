@@ -103,17 +103,52 @@ test('docs-sync hook ignores non-commit commands and fails open without the plug
   assert.equal(r.stdout, '');
 });
 
-test('fm-workers settings: no supervisor merge rules, attended force paths in both stores', () => {
+test('fm-workers settings: no supervisor merge rules, captain-only paths asked in main and denied to workers', () => {
   const workers = JSON.parse(read('private_dot_claude-fm-workers/settings.json'));
   const personal = JSON.parse(read('private_dot_claude/settings.json'));
   assert.deepEqual(workers.permissions.allow.filter((r) => r.includes('fm-pr-merge')), []);
+  for (const rule of ['Bash(*fm-pr-merge.sh*--allow-red*)', 'Bash(*fm-teardown.sh*--force*)']) {
+    assert.ok(personal.permissions.ask.includes(rule));
+    assert.ok(workers.permissions.deny.includes(rule));
+  }
+  // Nobody can answer a prompt in a worker pane: no ask rules there, and no prompt-deny hook in main.
+  assert.deepEqual(workers.permissions.ask, []);
+  assert.equal(personal.hooks.PermissionRequest, undefined);
   for (const store of [workers, personal]) {
-    assert.ok(store.permissions.ask.includes('Bash(*fm-pr-merge.sh*--allow-red*)'));
-    assert.ok(store.permissions.ask.includes('Bash(*fm-teardown.sh*--force*)'));
     assert.equal(store.autoMode.environment[0], '$defaults');
     assert.equal(store.autoMode.allow[0], '$defaults');
     for (const key of ['OTEL_LOG_TOOL_DETAILS', 'OTEL_LOG_USER_PROMPTS', 'OTEL_LOG_TOOL_CONTENT', 'OTEL_LOG_RAW_API_BODIES']) {
       assert.equal(store.env[key], undefined, `${key} would export commands or content`);
     }
   }
+});
+
+test('fm-workers PermissionRequest hook refuses every prompt at once', () => {
+  const workers = JSON.parse(read('private_dot_claude-fm-workers/settings.json'));
+  assert.equal(workers.hooks.PermissionRequest[0].hooks[0].command, '~/.claude-fm-workers/hooks/unattended-prompt-deny.sh');
+  const r = spawnSync('bash', [path.join(repoRoot, 'private_dot_claude-fm-workers/hooks/executable_unattended-prompt-deny.sh')], {
+    input: JSON.stringify({ hook_event_name: 'PermissionRequest', tool_name: 'Bash', tool_input: { command: 'python3 -c 1' } }),
+    encoding: 'utf8',
+  });
+  assert.equal(r.status, 0);
+  const out = JSON.parse(r.stdout).hookSpecificOutput;
+  assert.equal(out.hookEventName, 'PermissionRequest');
+  assert.equal(out.decision.behavior, 'deny');
+  assert.match(out.decision.message, /needs-decision/);
+});
+
+// Rule globs as Claude Code reads them: `*` is any text, and the rule covers the whole command.
+const matches = (rule, command) => {
+  const m = rule.match(/^Bash\((.*)\)$/);
+  return !!m && new RegExp(`^${m[1].split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`).test(command);
+};
+
+test('main store: fm-home-permissions --check is allowed and not shadowed by an ask rule; --write asks', () => {
+  const { allow, ask } = JSON.parse(read('private_dot_claude/settings.json')).permissions;
+  const check = 'fm-home-permissions /Users/x/.treehouse/firstmate-1/9/firstmate --yolo --check';
+  const write = 'fm-home-permissions /Users/x/.treehouse/firstmate-1/9/firstmate --yolo --write';
+  assert.ok(allow.some((r) => matches(r, check)));
+  assert.deepEqual(ask.filter((r) => matches(r, check)), [], 'ask outranks allow');
+  assert.ok(ask.some((r) => matches(r, write)));
+  assert.ok(!allow.some((r) => matches(r, write)));
 });

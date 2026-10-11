@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Render a firstmate home's .claude/settings.local.json: the supervisor allow rules
+# in the absolute and the relative (contract) form, fm-pr-merge only for a +yolo home.
+# Usage: fm-home-permissions <home-abs-path> [--yolo] --check|--write
+#
+# --check only compares and is allow-ruled in ~/.claude/settings.json; --write is
+# ask-ruled there, so writing a home's permission file is always the captain's click.
+# The mode is an explicit flag because an ask rule naming the bare command would also
+# match --check, and ask outranks allow.
+set -euo pipefail
+usage='usage: fm-home-permissions <home-abs-path> [--yolo] --check|--write'
+home=${1:?$usage}; shift
+yolo=0; mode=
+for a in "$@"; do
+  case $a in
+    --yolo) yolo=1 ;;
+    --check|--write) [ -z "$mode" ] || { echo "$usage" >&2; exit 2; }; mode=${a#--} ;;
+    *) echo "unknown option $a" >&2; exit 2 ;;
+  esac
+done
+[ -n "$mode" ] || { echo "$usage" >&2; exit 2; }
+case $home in /*) ;; *) echo "home must be an absolute path" >&2; exit 2 ;; esac
+[ -x "$home/bin/fm-wake-drain.sh" ] || { echo "not a firstmate home: $home" >&2; exit 2; }
+# Keep in step with brok-stacks nodes/group_vars/fm_instances.yml fm_secondmate_scripts.
+scripts=(fm-wake-drain fm-branch-outcome fm-branch-report fm-crew-state fm-brief fm-spawn
+  fm-captain-hold fm-tasks-axi fm-inbox fm-send fm-pr-check fm-lease fm-project-mode
+  fm-fleet-sync fm-fleet-ledger fm-peek fm-dispatch-resolve fm-procevent fm-startup-network
+  fm-session-start fm-teardown)
+[ "$yolo" = 1 ] && scripts+=(fm-pr-merge)
+json=$(printf '%s\n' "${scripts[@]}" | jq -R . | jq -s --arg h "$home" '{permissions: {
+  allow: (map(. as $s | ($h + "/bin/" + $s + ".sh") as $a | ("bin/" + $s + ".sh") as $r |
+    ["Bash(\($a) *)", "Bash(\($a))", "Bash(FM_HOME=* \($a) *)",
+     "Bash(\($r) *)", "Bash(\($r))", "Bash(FM_HOME=* \($r) *)"]) | add),
+  ask: ["Bash(*fm-pr-merge.sh*--allow-red*)", "Bash(*fm-teardown.sh*--force*)"]}}')
+f=$home/.claude/settings.local.json
+if [ "$mode" = check ]; then
+  if [ -f "$f" ] && diff -q <(jq -S . "$f") <(jq -S . <<<"$json") >/dev/null; then echo "current: $f"; exit 0; fi
+  echo "stale or missing: $f"; exit 1
+fi
+mkdir -p "$home/.claude"
+tmp=$(mktemp "$home/.claude/.settings.local.json.XXXXXX")
+printf '%s\n' "$json" >"$tmp" && mv "$tmp" "$f"
+echo "wrote $f"
