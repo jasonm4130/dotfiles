@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync} from 'node:fs';
-import {tmpdir} from 'node:os';
+import {homedir, tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
@@ -93,6 +93,28 @@ hide_gpt5_1_migration_prompt = true
   assert.equal(value.hooks.state['/elsewhere/.codex/hooks.json:session_start:0:0'].trusted_hash, 'sha256:kept');
   assert.equal(value.hooks.state[key].enabled, true);
   assert.notEqual(value.hooks.state[key].trusted_hash, placeholder);
+});
+
+test('fleet config declines trust for every registered project and drops its repo-hook trust', t => {
+  const data = readFileSync(new URL('../.chezmoidata/codex-fm-workers.yaml', import.meta.url), 'utf8');
+  const roots = [...data.matchAll(/^\s+- "([^"]+)"$/gm)].map(m => join(homedir(), m[1]));
+  const firstmate = join(homedir(), 'Work/Git/firstmate/projects/firstmate');
+  assert.ok(roots.includes(firstmate) && roots.includes(join(homedir(), 'Work/Git/firstmate')));
+  const {home, value} = render(t, () => `[projects."${firstmate}"]
+trust_level = "trusted"
+[projects."/fixture"]
+trust_level = "trusted"
+[hooks.state."${firstmate}/.codex/hooks.json:pre_tool_use:0:0"]
+trusted_hash = "sha256:answered-in-a-pane"
+[hooks.state."${firstmate}/.codex/hooks.json:stop:0:0"]
+trusted_hash = "sha256:answered-in-a-pane"
+[hooks.state."/elsewhere/.codex/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:kept"
+`);
+  for (const root of roots) assert.deepEqual(value.projects[root], {trust_level: 'untrusted'}, root);
+  assert.equal(value.projects['/fixture'].trust_level, 'trusted');
+  assert.deepEqual(Object.keys(value.hooks.state).sort(),
+    ['/elsewhere/.codex/hooks.json:session_start:0:0', `${home}/hooks.json:pre_tool_use:0:0`]);
 });
 
 test('fleet home never manages a credential', () => {

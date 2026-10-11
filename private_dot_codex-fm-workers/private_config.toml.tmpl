@@ -42,6 +42,23 @@
 {{- end -}}
 {{- end -}}
 {{- end -}}
+{{- /*
+  Decline trust for every registered project (.chezmoidata/codex-fm-workers.yaml), so a
+  worker never loads a repo's .codex/ hooks, config or rules and no dialog parks it. This
+  is a refusal, not a consent, and it overrides a "trusted" answered in a pane. Hook trust
+  recorded for those repos' .codex/hooks.json is dead weight once they are untrusted.
+*/ -}}
+{{- $projects := get $live "projects" | default dict -}}
+{{- range $rel := .codexFmWorkers.untrustedProjects -}}
+{{- $root := joinPath $.chezmoi.homeDir $rel -}}
+{{- $_ := set $projects $root (dict "trust_level" "untrusted") -}}
+{{- range $key := keys $state -}}
+{{- if hasPrefix (printf "%s/.codex/" $root) $key -}}
+{{- $_ := unset $state $key -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- $_ := set $live "projects" $projects -}}
 {{- $_ := set $hooks "state" $state -}}
 {{- $_ := set $live "hooks" $hooks -}}
 {{- /* Startup prompts nobody at a worker's window can answer. */ -}}
