@@ -5,7 +5,10 @@ description: Check Jason's LLM wiki before researching a topic from scratch - be
 
 The wiki lives at `~/Work/Git/llm-wiki`. Read its `index.md`, or run
 `python3 scripts/qmd_bootstrap.py --exec query "<question>" < /dev/null` from inside it
-(Claude sessions with the `wiki` MCP server can query that instead).
+(Claude sessions with the `wiki` MCP server can query that instead). A launchd job keeps the
+checkout and index fresh. The same index also holds shareable firstmate scout reports as the
+`fm-reports` collection: local-only, dated project research, so cite the report rather than
+treating it as wiki synthesis, and file a finding into the wiki only through `inbox/`.
 
 Its claims are dated: still re-verify anything time-sensitive. From another repo, write to it
 only through its `inbox/`, following its AGENTS.md.

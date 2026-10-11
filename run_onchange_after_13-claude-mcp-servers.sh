@@ -79,9 +79,17 @@ ensure cloudflare-docs --transport http https://docs.mcp.cloudflare.com/mcp
 # rather than QMD's global index; calling the runtime binary directly would
 # search the wrong index from any other directory. Skipped until the wiki is
 # cloned and bootstrapped (`python3 scripts/qmd_bootstrap.py` inside it).
+# Firstmate's crewmates run from their own config home, which has its own
+# ~/.claude-fm-workers/.claude.json, so the wiki is registered there as well;
+# otherwise they reach it only through the llm-wiki skill's CLI. The index also
+# carries the shareable firstmate scout reports as the `fm-reports` collection
+# (wiki-sync.sh keeps both fresh).
 wiki="$HOME/Work/Git/llm-wiki/scripts/qmd_bootstrap.py"
 if [ -f "$wiki" ]; then
   ensure wiki -- python3 "$wiki" --exec mcp
+  if [ -d "$HOME/.claude-fm-workers" ]; then
+    CLAUDE_CONFIG_DIR="$HOME/.claude-fm-workers" ensure wiki -- python3 "$wiki" --exec mcp
+  fi
 fi
 
 # OAuth-backed servers need one interactive login per machine. Registration
