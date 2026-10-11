@@ -1,0 +1,32 @@
+# Projects Firstmate's Codex workers decline to trust (~/.codex-fm-workers/config.toml).
+# Paths are relative to $HOME and name each repository's primary checkout: Codex keys
+# project trust on the root of the main worktree, so every treehouse worktree of a listed
+# repo inherits its row and new worktrees need nothing. An untrusted project's .codex/
+# config, hooks and rules never load, so neither the folder-trust nor the hook-review
+# dialog appears, while the home's own guard hook still runs.
+# Add a row when Firstmate registers a project (data/projects.md). Until then the
+# project has no row: its repo hooks stay off, but the folder-trust dialog still shows.
+# A project is trusted here only after the captain reviews its hooks: remove its row
+# and pin the reviewed hashes, never answer the dialog from a worker's pane.
+codexFmWorkers:
+  untrustedProjects:
+    # The Firstmate home itself; its worktrees are ~/.treehouse/firstmate-*/N/firstmate.
+    - "Work/Git/firstmate"
+    - "Work/Git/firstmate/projects/agentlens"
+    - "Work/Git/firstmate/projects/ambient"
+    - "Work/Git/firstmate/projects/anything-but-metric"
+    - "Work/Git/firstmate/projects/brok-stacks"
+    - "Work/Git/firstmate/projects/dotfiles"
+    - "Work/Git/firstmate/projects/durable-actors"
+    - "Work/Git/firstmate/projects/endurebyte"
+    - "Work/Git/firstmate/projects/firstmate"
+    - "Work/Git/firstmate/projects/jasonm4130-cf"
+    - "Work/Git/firstmate/projects/ledger"
+    - "Work/Git/firstmate/projects/llm-wiki"
+    - "Work/Git/firstmate/projects/main-vault"
+    - "Work/Git/firstmate/projects/sail-with-me"
+    - "Work/Git/firstmate/projects/ships-log"
+    - "Work/Git/firstmate/projects/skopia"
+    - "Work/Git/firstmate/projects/skopia-www"
+    - "Work/Git/firstmate/projects/transcoder"
+    - "Work/Git/firstmate/projects/unifi"
