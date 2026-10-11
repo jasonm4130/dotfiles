@@ -17,9 +17,15 @@ Host github-443
   Port 443
   User git
   HostKeyAlias github.com
+  # The agent also holds repo deploy keys; GitHub accepts the first key offered.
+  IdentityFile ~/.ssh/github-jasonm4130.pub
+  IdentitiesOnly yes
 
 Host github.com
   User git
+  # The agent also holds repo deploy keys; GitHub accepts the first key offered.
+  IdentityFile ~/.ssh/github-jasonm4130.pub
+  IdentitiesOnly yes
   # Share one connection across parallel git operations so a busy fleet
   # sends one SYN per 10 minutes instead of one per fetch or push.
   ControlMaster auto
