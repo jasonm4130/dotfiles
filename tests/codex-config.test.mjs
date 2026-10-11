@@ -141,6 +141,8 @@ test('stale skill disables are dropped while unrelated skill config and Herdr li
   assert.deepEqual(Object.keys(hooks.hooks), ['SessionStart', 'PreToolUse']);
   assert.equal(hooks.hooks.SessionStart[0].hooks[0].command, "bash '/Users/jasonmatthew/.codex/herdr-agent-state.sh' session");
   assert.equal(hooks.hooks.SessionStart[0].hooks[0].timeout, 10);
+  // The axi CLIs install their own SessionStart context hooks; the source keeps them so an apply cannot drop them.
+  assert.deepEqual(hooks.hooks.SessionStart.slice(1).map(entry => entry.hooks[0].command), ['gh-axi', 'chrome-devtools-axi', 'lavish-axi']);
   // One guard entry: Codex keys hook trust by position, so the Herdr entry keeps its trust.
   assert.equal(hooks.hooks.PreToolUse.length, 1);
   assert.equal(hooks.hooks.PreToolUse[0].matcher, 'Bash|apply_patch');
