@@ -207,6 +207,7 @@ test('shipper config renders the four Mac sources over mTLS', (t) => {
   assert.equal(config.state_dir, '~/.local/state/ships-log/shipper');
   assert.equal(config.session_tags_dir, '~/.local/state/ships-log/sessions');
   assert.deepEqual(config.firstmate_homes, [path.join(home, 'Work/Git/firstmate')], 'the primary home is listed even with no treehouse homes');
+  assert.deepEqual(config.no_mistakes_homes, ['~/.no-mistakes']);
 });
 
 test('shipper config pins a CA and lists Firstmate homes when present', (t) => {
