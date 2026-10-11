@@ -6,7 +6,8 @@
 # no-mistakes agents, a Codex secondmate, --profile review) as permission_mode
 # "bypassPermissions". Interactive sessions keep the native baseline (docs/codex-native.md).
 # A payload without a readable permission_mode is guarded, so a renamed field fails closed.
-# Firstmate crewmates launch with --disable hooks and get only rules/unattended.rules.
+# ~/.codex-fm-workers, Firstmate's worker CODEX_HOME, renders this file and pre-trusts it;
+# a crewmate launched with --disable hooks gets only rules/unattended.rules.
 set -uo pipefail
 payload=$(cat)
 read -r mode tool < <(printf '%s' "$payload" | python3 -c '

@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '{{ .chezmoi.destDir }}/.codex-fm-workers/hooks/unattended-guard.sh'",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
