@@ -37,6 +37,15 @@
 	gpgsign = true
 [tag]
 	gpgsign = true
+# Throwaway repos under temp folders (test suites) never sign: see ~/.config/git/nosign.
+[includeIf "gitdir:/var/folders/**"]
+	path = ~/.config/git/nosign
+[includeIf "gitdir:/private/var/folders/**"]
+	path = ~/.config/git/nosign
+[includeIf "gitdir:/tmp/**"]
+	path = ~/.config/git/nosign
+[includeIf "gitdir:/private/tmp/**"]
+	path = ~/.config/git/nosign
 [credential "https://github.com"]
 	helper = 
 	helper = !/opt/homebrew/bin/gh auth git-credential

@@ -1,0 +1,8 @@
+# Included only for repositories under temp folders (see ~/.gitconfig).
+# Test suites create throwaway repos and commit constantly; signing each of
+# those through 1Password's op-ssh-sign made 1Password re-scan every process
+# per commit and pin it at ~800% CPU under parallel `pnpm check` runs.
+[commit]
+	gpgsign = false
+[tag]
+	gpgsign = false
