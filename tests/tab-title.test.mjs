@@ -241,3 +241,20 @@ test('firstmate worker (FM_TASK_ID set) → silent even in a voiced cwd', async 
   runHookWithSound({ hook_event_name: 'Stop', cwd: '/tmp/proj' }, f, { FM_TASK_ID: 'some-task' });
   await assertNothingPlayed(f);
 });
+
+test('CLAUDE_FANFARE_EVENTS=input → Stop silent', async () => {
+  const f = makeFanfare({ stop: 1, input: 1 });
+  runHookWithSound({ hook_event_name: 'Stop', cwd: '/tmp/proj' }, f, { CLAUDE_FANFARE_EVENTS: 'input' });
+  await assertNothingPlayed(f);
+});
+
+test('CLAUDE_FANFARE_EVENTS=input → permission_prompt still plays', async () => {
+  const f = makeFanfare({ stop: 1, input: 1 });
+  runHookWithSound(
+    { hook_event_name: 'Notification', notification_type: 'permission_prompt', cwd: '/tmp/proj' },
+    f,
+    { CLAUDE_FANFARE_EVENTS: 'input' },
+  );
+  const clip = await playedClip(f);
+  assert.ok(clip && clip.startsWith(path.join(f.dir, 'input') + path.sep), `clip from input/: ${clip}`);
+});

@@ -21,6 +21,8 @@
  * for a session whose cwd is one of CLAUDE_FANFARE_CWDS (colon-separated;
  * default the firstmate checkout) and which is not a firstmate worker
  * (FM_TASK_ID unset), so only the first mate session speaks.
+ * CLAUDE_FANFARE_EVENTS (colon-separated, default "stop:input") limits which
+ * moments speak; "input" alone sounds only when the session needs you.
  *
  * Stdin is read async, not via readFileSync('/dev/stdin'): the sync read
  * intermittently throws EAGAIN when stdin is a non-blocking pipe, and this
@@ -112,7 +114,9 @@ function main(raw) {
 
   const fanfareCwds = (process.env.CLAUDE_FANFARE_CWDS
     ?? path.join(os.homedir(), 'Work/Git/firstmate')).split(':').filter(Boolean);
-  const voiced = fanfareCwds.includes(cwd) && !process.env.FM_TASK_ID;
+  const voicedKinds = (process.env.CLAUDE_FANFARE_EVENTS ?? 'stop:input').split(':');
+  const voiced = fanfareCwds.includes(cwd) && !process.env.FM_TASK_ID
+    && clipKind !== null && voicedKinds.includes(clipKind);
   if (voiced && process.env.CLAUDE_TAB_TITLE_SILENT !== '1') {
     const clip = clipKind === null ? null : pickClip(clipKind);
     if (clip !== null) {

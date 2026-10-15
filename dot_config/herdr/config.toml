@@ -36,7 +36,7 @@ rows = [["state_icon", "workspace", "git_status"]]
 row_gap = 0
 
 [ui.toast]
-delivery = "system"                    # macOS notification when a background agent needs you
+delivery = "herdr"                     # in-app only: worker panes never raise a macOS notification; the console session sounds through tab-title.mjs
 delay_seconds = 2
 
 [ui.sound]
