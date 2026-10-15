@@ -59,7 +59,7 @@ def main() -> None:
     cwd = payload.get("cwd")
     if not isinstance(cwd, str):
         cwd = os.getcwd()
-    task = os.environ.get("FM_TASK_ID") or None
+    task = os.environ.get("FM_TASK_ID") or os.environ.get("AGENTOS_TASK_ID") or None
     tag = {
         "v": 1,
         "session_id": session_id,
