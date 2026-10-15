@@ -14,6 +14,8 @@
 
 That is the full set of chezmoi-managed agents — `find private_Library/private_LaunchAgents -type f` is the source of truth, and this list drifted once by documenting only two of four.
 
+Retired: `dev.jasonmatthew.unifi-drift`, the UniFi drift check that `jasonm4130/unifi` installed by hand at 09:40 daily. It runs on dell-01's host since 2026-10-11 (brok-stacks `nodes/README.md`, "UniFi drift check") and alerts through brok, so `run_onchange_after_22` unloads the Mac copy and deletes its plist. Its old log, `~/Library/Logs/unifi-drift.log`, and stamp, `~/.local/state/unifi-drift/`, are left in place for history.
+
 ## ships-log transcript shipper
 
 The shipper ([jasonm4130-labs/ships-log](https://github.com/jasonm4130-labs/ships-log) `apps/shipper`) tails the transcripts of `~/.claude` (`mac/personal`), `~/.claude-fm-workers` (`mac/fm-workers`), `~/.claude-fresh` (`mac/fresh`) and `~/.codex/sessions` (`mac/codex`), redacts them and posts them over mTLS to `https://ships-log-ingest.jasonmatthew.me:4443/api/ingest/v1`. Its config is `~/.config/ships-log/shipper.json` (rendered from `dot_config/private_ships-log/shipper.json.tmpl`, settings in `.chezmoidata/ships-log.yaml`); its state, including `status.json`, is under `~/.local/state/ships-log/shipper/`, and `ships-log-shipper status` prints it. The transcript files are its buffer, so a stopped shipper or an expired certificate delays shipping without losing anything inside Claude Code's 30-day retention.
