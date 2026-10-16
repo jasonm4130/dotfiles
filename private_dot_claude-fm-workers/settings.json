@@ -217,7 +217,13 @@
       "Bash(/Users/jasonmatthew/Work/Git/firstmate/bin/fm-procevent.sh handled *)",
       "Bash(/Users/jasonmatthew/.treehouse/firstmate-7bab20/3/firstmate/bin/fm-fleet-ledger.sh appended *)",
       "Read(~/.treehouse/firstmate-7bab20/3/firstmate/data/**)",
-      "Read(~/.treehouse/firstmate-7bab20/3/firstmate/state/**)"
+      "Read(~/.treehouse/firstmate-7bab20/3/firstmate/state/**)",
+      "mcp__claude_ai_Gmail__label_thread",
+      "mcp__claude_ai_Gmail__unlabel_thread",
+      "mcp__claude_ai_Gmail__label_message",
+      "mcp__claude_ai_Gmail__unlabel_message",
+      "mcp__claude_ai_Gmail__create_label",
+      "mcp__claude_ai_Gmail__update_label"
     ],
     "deny": [
       "Read(//**/.env)",
