@@ -203,6 +203,8 @@ test('shipper config renders the four Mac sources over mTLS', (t) => {
     { id: 'mac/fm-workers', root: '~/.claude-fm-workers' },
     { id: 'mac/fresh', root: '~/.claude-fresh' },
     { id: 'mac/codex', root: '~/.codex/sessions' },
+    { id: 'mac/agentos', root: '~/Work/Git/agentos/profile' },
+    { id: 'mac/agentos-codex', root: '~/Work/Git/agentos/profile/codex/sessions' },
   ]);
   assert.equal(config.state_dir, '~/.local/state/ships-log/shipper');
   assert.equal(config.session_tags_dir, '~/.local/state/ships-log/sessions');
