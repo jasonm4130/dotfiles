@@ -2,16 +2,18 @@
 # No secret values here: only where they live.
 
 shipsLog:
-  # 1Password vault holding the `ships-log-client-mac` item (fields `certificate`
-  # and `private-key`, created by the ships-log CA tool). Override per machine in
-  # ~/.config/chezmoi/chezmoi.toml under [data.shipsLog]. If it is set empty the
-  # certificate installer skips.
+  # 1Password vault holding the `ships-log-ingest-token` item (field `password`,
+  # created per ships-log docs/go-live-runbook.md stage 8). Override per machine
+  # in ~/.config/chezmoi/chezmoi.toml under [data.shipsLog]. If it is set empty
+  # the token installer skips.
   opVault: "Private"
   # CA bundle (PEM path) the shipper trusts for the ingest server. Empty means
   # the system trust store, which already carries the ingest listener's
   # Let's Encrypt chain (plan §3.4a). Set it to pin a narrower anchor.
   caFile: ""
-  ingestUrl: "https://ships-log-ingest.jasonmatthew.me:4443/api/ingest/v1"
+  # The brok token listener (operator ruling q813). The brok-stacks task
+  # "Ships-log ingest accepts the Mac shipper's token on brok" must serve this URL.
+  ingestUrl: "https://ships-log-ingest.jasonmatthew.me:4444/api/ingest/v1"
   # Firstmate homes outside ~/.treehouse, as paths relative to $HOME. Homes under
   # ~/.treehouse/firstmate-*/*/firstmate are globbed at apply time. Listed first.
   firstmateHomes:

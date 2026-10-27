@@ -1,8 +1,9 @@
 /**
- * Guards the ships-log phase 2 Mac side: the SessionStart tag hook, the 1Password
- * client-certificate installer, and the rendered shipper config, LaunchAgent gate
- * and .chezmoiignore rule. Everything runs against a throwaway HOME, a stub `op`
- * and fixture PEM text, so nothing reads 1Password, real transcripts or launchd.
+ * Guards the ships-log Mac side: the SessionStart tag hook, the 1Password
+ * client-certificate and ingest-token installers, and the rendered shipper config,
+ * LaunchAgent gate and .chezmoiignore rule. Everything runs against a throwaway
+ * HOME, a stub `op` and fixture values, so nothing reads 1Password, real
+ * transcripts or launchd.
  */
 
 import { test } from 'node:test';
@@ -16,6 +17,10 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HOOK = path.join(repoRoot, 'private_dot_claude/hooks/executable_ships-log-session-tag.py');
 const INSTALL = path.join(repoRoot, 'dot_local/bin/executable_ships-log-install-cert');
+const INSTALL_TOKEN = path.join(repoRoot, 'dot_local/bin/executable_ships-log-install-token');
+const TOKEN_INGEST_URL = 'https://ships-log-ingest.jasonmatthew.me:4444/api/ingest/v1';
+// 64 letters and digits, the runbook's recipe; obviously not a real token.
+const FAKE_TOKEN = 'fixture'.repeat(9) + 'Token0';
 
 // Fixture PEM armour around a non-key body. The key label is assembled at run
 // time so secret scanners do not read this file as holding a key.
@@ -35,7 +40,7 @@ const mode = (p) => statSync(p).mode & 0o777;
 // --- SessionStart tag hook -------------------------------------------------
 
 function runHook(dir, input, env = {}) {
-  const { FM_TASK_ID: _t, FM_HOME: _h, FM_TASK_INBOX: _i, CLAUDE_CONFIG_DIR: _c, ...base } = process.env;
+  const { FM_TASK_ID: _t, AGENTOS_TASK_ID: _a, FM_HOME: _h, FM_TASK_INBOX: _i, CLAUDE_CONFIG_DIR: _c, ...base } = process.env;
   return spawnSync('python3', [HOOK], { input, encoding: 'utf8',
     env: { ...base, SHIPS_LOG_STATE_DIR: path.join(dir, 'state'), ...env } });
 }
@@ -116,20 +121,20 @@ function opStub(dir, fields) {
   writeFileSync(stub, `#!/usr/bin/env bash
 echo "$*" >> ${JSON.stringify(calls)}
 [ "$1" = read ] || exit 64
-case "$2" in
+case "\${@: -1}" in
 ${Object.entries(fields).map(([ref, value], i) => {
     const file = path.join(dir, `field-${i}`);
     writeFileSync(file, value);
     return `  ${JSON.stringify(ref)}) cat ${JSON.stringify(file)} ;;`;
   }).join('\n')}
-  *) echo "[ERROR] could not read secret '$2': item not found" >&2; exit 1 ;;
+  *) echo "[ERROR] could not read secret '\${@: -1}': item not found" >&2; exit 1 ;;
 esac
 `, { mode: 0o755 });
   return { stub, calls };
 }
 
-function runInstall(dir, args, op) {
-  return spawnSync('bash', [INSTALL, ...args], { encoding: 'utf8',
+function runInstall(dir, args, op, script = INSTALL) {
+  return spawnSync('bash', [script, ...args], { encoding: 'utf8',
     env: { ...process.env, SHIPS_LOG_CONFIG_DIR: path.join(dir, 'cfg'), SHIPS_LOG_OP_BIN: op } });
 }
 
@@ -184,6 +189,56 @@ test('installer refuses a field that is not PEM and installs nothing', (t) => {
   assert.deepEqual(readdirSync(path.join(dir, 'cfg')), []);
 });
 
+// --- ingest token installer -----------------------------------------------
+
+const TOKEN_REF = 'op://Infra/ships-log-ingest-token/password';
+const runInstallToken = (dir, args, op) => runInstall(dir, args, op, INSTALL_TOKEN);
+
+test('token installer skips cleanly with no vault set', (t) => {
+  const dir = sandbox(t);
+  const { stub, calls } = opStub(dir, {});
+  const result = runInstallToken(dir, [''], stub);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stderr, /no 1Password vault set/);
+  assert.equal(existsSync(calls), false, 'op is not called without a vault');
+  assert.equal(existsSync(path.join(dir, 'cfg')), false);
+});
+
+test('token installer skips cleanly when the 1Password item does not exist yet', (t) => {
+  const dir = sandbox(t);
+  const { stub } = opStub(dir, {});
+  const result = runInstallToken(dir, ['Infra'], stub);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stderr, /could not read op:\/\/Infra\/ships-log-ingest-token\/password/);
+  assert.deepEqual(readdirSync(path.join(dir, 'cfg')), [], 'no partial file or temp dir left');
+});
+
+test('token installer writes the token as a 0600 file from op read and never echoes it', (t) => {
+  const dir = sandbox(t);
+  const { stub, calls } = opStub(dir, { [TOKEN_REF]: FAKE_TOKEN });
+  const result = runInstallToken(dir, ['Infra'], stub);
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(!result.stdout.includes(FAKE_TOKEN) && !result.stderr.includes(FAKE_TOKEN), 'the token is never echoed');
+  const cfg = path.join(dir, 'cfg');
+  assert.deepEqual(readdirSync(cfg), ['ingest.token']);
+  assert.equal(readFileSync(path.join(cfg, 'ingest.token'), 'utf8'), FAKE_TOKEN);
+  assert.equal(mode(path.join(cfg, 'ingest.token')), 0o600);
+  assert.equal(mode(cfg), 0o700);
+  assert.deepEqual(readFileSync(calls, 'utf8').trim().split('\n'), [`read -n ${TOKEN_REF}`]);
+});
+
+test('token installer refuses a value that is not a Bearer token and installs nothing', (t) => {
+  for (const bad of ['short', `${'a'.repeat(30)}=`, `${FAKE_TOKEN} spaced`, `${FAKE_TOKEN}\n${FAKE_TOKEN}`]) {
+    const dir = sandbox(t);
+    const { stub } = opStub(dir, { [TOKEN_REF]: bad });
+    const result = runInstallToken(dir, ['Infra'], stub);
+    assert.equal(result.status, 1, JSON.stringify(bad));
+    assert.match(result.stderr, /not a Bearer token of at least 32 characters/);
+    assert.ok(!result.stderr.includes(bad), 'the refused value is never echoed');
+    assert.deepEqual(readdirSync(path.join(dir, 'cfg')), []);
+  }
+});
+
 // --- rendered templates (chezmoi execute-template, isolated HOME) ----------
 
 function render(home, file, overrides) {
@@ -193,11 +248,12 @@ function render(home, file, overrides) {
     env: { ...process.env, HOME: home } });
 }
 
-test('shipper config renders the four Mac sources over mTLS', (t) => {
+test('shipper config renders the Mac sources over the ingest token', (t) => {
   const home = sandbox(t);
   const config = JSON.parse(render(home, 'dot_config/private_ships-log/shipper.json.tmpl'));
-  assert.equal(config.ingest_url, 'https://ships-log-ingest.jasonmatthew.me:4443/api/ingest/v1');
-  assert.deepEqual(config.tls, { cert: '~/.config/ships-log/client.crt', key: '~/.config/ships-log/client.key' });
+  assert.equal(config.ingest_url, TOKEN_INGEST_URL);
+  assert.equal(config.token_file, '~/.config/ships-log/ingest.token');
+  assert.equal('tls' in config, false, 'no client certificate, and no CA pin by default');
   assert.deepEqual(config.sources, [
     { id: 'mac/personal', root: '~/.claude' },
     { id: 'mac/fm-workers', root: '~/.claude-fm-workers' },
@@ -216,7 +272,7 @@ test('shipper config pins a CA and lists Firstmate homes when present', (t) => {
   const home = sandbox(t);
   mkdirSync(path.join(home, '.treehouse/firstmate-abc/1/firstmate'), { recursive: true });
   const config = JSON.parse(render(home, 'dot_config/private_ships-log/shipper.json.tmpl', { shipsLog: { caFile: '/etc/ca.pem' } }));
-  assert.equal(config.tls.ca, '/etc/ca.pem');
+  assert.deepEqual(config.tls, { ca: '/etc/ca.pem' }, 'a CA pin alone, never a client certificate');
   assert.deepEqual(config.firstmate_homes, [path.join(home, 'Work/Git/firstmate'), path.join(home, '.treehouse/firstmate-abc/1/firstmate')]);
 });
 
@@ -226,35 +282,36 @@ test('shipper config renders [] (not null) when no firstmate homes are configure
   assert.deepEqual(config.firstmate_homes, []);
 });
 
-test('cert script passes the vault, single-quoted, to the installer', (t) => {
+test('install script passes the vault, single-quoted, to the token installer', (t) => {
   const home = sandbox(t);
-  const empty = render(home, 'run_onchange_after_19-ships-log-client-cert.sh.tmpl', { shipsLog: { opVault: '' } });
-  assert.match(empty, /ships-log-install-cert" ''$/m);
-  const set = render(home, 'run_onchange_after_19-ships-log-client-cert.sh.tmpl', { shipsLog: { opVault: 'Infra' } });
-  assert.match(set, /ships-log-install-cert" 'Infra'$/m);
+  const empty = render(home, 'run_onchange_after_19-ships-log-ingest-token.sh.tmpl', { shipsLog: { opVault: '' } });
+  assert.match(empty, /ships-log-install-token" ''$/m);
+  const set = render(home, 'run_onchange_after_19-ships-log-ingest-token.sh.tmpl', { shipsLog: { opVault: 'Infra' } });
+  assert.match(set, /ships-log-install-token" 'Infra'$/m);
+  assert.doesNotMatch(set, /ships-log-install-cert/, 'a full apply must not put the certificate files back');
 });
 
 test('LaunchAgent script is a no-op with a message until the binary exists', (t) => {
   const home = sandbox(t);
   const script = render(home, 'run_onchange_after_20-launchd-ships-log-shipper.sh.tmpl');
-  assert.match(script, /binary=absent cert=absent/);
+  assert.match(script, /binary=absent token=absent/);
   const result = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...process.env, HOME: home } });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /ships-log shipper not loaded: .*ships-log-shipper is missing/);
 });
 
-test('LaunchAgent script waits for the client certificate after the binary', (t) => {
+test('LaunchAgent script waits for the ingest token after the binary', (t) => {
   const home = sandbox(t);
   mkdirSync(path.join(home, '.local/bin'), { recursive: true });
   writeFileSync(path.join(home, '.local/bin/ships-log-shipper'), '#!/bin/sh\n', { mode: 0o755 });
   const script = render(home, 'run_onchange_after_20-launchd-ships-log-shipper.sh.tmpl');
-  assert.match(script, /binary=present cert=absent/, 'the binary appearing changes the script, so chezmoi re-runs it');
+  assert.match(script, /binary=present token=absent/, 'the binary appearing changes the script, so chezmoi re-runs it');
   const result = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...process.env, HOME: home } });
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /no client certificate yet/);
+  assert.match(result.stdout, /no ingest token yet/);
 });
 
-test('.chezmoiignore holds the plist back until binary and certificate exist', (t) => {
+test('.chezmoiignore holds the plist back until binary and ingest token exist', (t) => {
   const home = sandbox(t);
   const plist = 'Library/LaunchAgents/dev.jasonmatthew.ships-log-shipper.plist';
   const ignored = () => render(home, '.chezmoiignore').split('\n').includes(plist);
@@ -265,6 +322,8 @@ test('.chezmoiignore holds the plist back until binary and certificate exist', (
   mkdirSync(path.join(home, '.config/ships-log'), { recursive: true });
   writeFileSync(path.join(home, '.config/ships-log/client.crt'), FAKE_CERT);
   writeFileSync(path.join(home, '.config/ships-log/client.key'), FAKE_KEY);
+  assert.equal(ignored(), true, 'a client certificate no longer starts the shipper');
+  writeFileSync(path.join(home, '.config/ships-log/ingest.token'), FAKE_TOKEN);
   assert.equal(ignored(), false);
 });
 
