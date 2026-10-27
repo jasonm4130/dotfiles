@@ -227,6 +227,17 @@ test('token installer writes the token as a 0600 file from op read and never ech
   assert.deepEqual(readFileSync(calls, 'utf8').trim().split('\n'), [`read -n ${TOKEN_REF}`]);
 });
 
+test('token installer accepts a 32-character token whose last character is padding', (t) => {
+  const dir = sandbox(t);
+  const padded = `${'a'.repeat(31)}=`;
+  const { stub } = opStub(dir, { [TOKEN_REF]: padded });
+  const result = runInstallToken(dir, ['Infra'], stub);
+  assert.equal(result.status, 0, result.stderr);
+  const file = path.join(dir, 'cfg', 'ingest.token');
+  assert.equal(readFileSync(file, 'utf8'), padded);
+  assert.equal(mode(file), 0o600);
+});
+
 test('token installer refuses a value that is not a Bearer token and installs nothing', (t) => {
   for (const bad of ['short', `${'a'.repeat(30)}=`, `${FAKE_TOKEN} spaced`, `${FAKE_TOKEN}\n${FAKE_TOKEN}`]) {
     const dir = sandbox(t);
@@ -309,6 +320,30 @@ test('LaunchAgent script waits for the ingest token after the binary', (t) => {
   const result = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...process.env, HOME: home } });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /no ingest token yet/);
+});
+
+test('LaunchAgent script loads the agent with a token and no client certificate', (t) => {
+  const home = sandbox(t);
+  mkdirSync(path.join(home, '.local/bin'), { recursive: true });
+  writeFileSync(path.join(home, '.local/bin/ships-log-shipper'), '#!/bin/sh\n', { mode: 0o755 });
+  mkdirSync(path.join(home, '.config/ships-log'), { recursive: true });
+  writeFileSync(path.join(home, '.config/ships-log/ingest.token'), FAKE_TOKEN);
+  const agents = path.join(home, 'Library/LaunchAgents');
+  mkdirSync(agents, { recursive: true });
+  const plist = path.join(agents, 'dev.jasonmatthew.ships-log-shipper.plist');
+  writeFileSync(plist, '<plist/>');
+  const bin = path.join(home, 'stub-bin');
+  const calls = path.join(home, 'launchctl-calls');
+  mkdirSync(bin);
+  writeFileSync(path.join(bin, 'launchctl'), `#!/bin/sh\necho "$*" >> ${JSON.stringify(calls)}\n`, { mode: 0o755 });
+  const script = render(home, 'run_onchange_after_20-launchd-ships-log-shipper.sh.tmpl');
+  assert.match(script, /binary=present token=present/);
+  assert.equal(existsSync(path.join(home, '.config/ships-log/client.crt')), false);
+  const result = spawnSync('bash', ['-c', script], { encoding: 'utf8',
+    env: { ...process.env, HOME: home, PATH: `${bin}:${process.env.PATH}` } });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /ships-log-shipper agent loaded/);
+  assert.deepEqual(readFileSync(calls, 'utf8').trim().split('\n'), [`unload ${plist}`, `load -w ${plist}`]);
 });
 
 test('.chezmoiignore holds the plist back until binary and ingest token exist', (t) => {
