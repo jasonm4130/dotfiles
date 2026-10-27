@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Installs the ships-log ingest token from 1Password into
+# ~/.config/ships-log/ingest.token (0600), the shipper's `token_file`.
+#
+#   ships-log-install-token <vault>
+#
+# chezmoi runs this from run_onchange_after_19 when the vault setting changes.
+# Run it by hand after the 1Password item is first created and after every
+# rotation: run_onchange only re-runs on a source change, and the item
+# changing in 1Password is not one. The shipper re-reads the file on every
+# POST, so a rotation needs no restart.
+#
+# The value travels only through `op read` into a file created under umask
+# 077; nothing is echoed. Missing prerequisites (no vault, no op, no item yet,
+# 1Password locked) are a clean skip with a message, never a failed apply:
+# until the token exists the shipper is simply not loaded
+# (run_onchange_after_20).
+set -euo pipefail
+
+VAULT="${1:-}"
+ITEM="${SHIPS_LOG_TOKEN_ITEM:-ships-log-ingest-token}"
+DEST="${SHIPS_LOG_CONFIG_DIR:-$HOME/.config/ships-log}"
+OP="${SHIPS_LOG_OP_BIN:-op}"
+REF="op://$VAULT/$ITEM/password"
+
+skip() { echo "⏭  ships-log ingest token: $*" >&2; exit 0; }
+
+[ -n "$VAULT" ] || skip "no 1Password vault set — fill in shipsLog.opVault (.chezmoidata/ships-log.yaml or [data.shipsLog] in chezmoi.toml), then run: ships-log-install-token <vault>"
+command -v "$OP" >/dev/null 2>&1 || skip "1Password CLI ($OP) not found; install it and re-run: ships-log-install-token $VAULT"
+
+umask 077
+mkdir -p "$DEST"
+chmod 700 "$DEST"
+tmp=$(mktemp -d "$DEST/.install.XXXXXX")
+trap 'rm -rf "$tmp"' EXIT
+
+# A missing item, a missing field and a locked 1Password all land here; op's
+# own message names which, so pass it through.
+if ! "$OP" read -n "$REF" > "$tmp/ingest.token"; then
+  skip "could not read $REF (item not created yet, or 1Password locked). Create it per ships-log docs/go-live-runbook.md stage 8, then run: ships-log-install-token $VAULT"
+fi
+
+# The server takes only an RFC 6750 Bearer token of at least 32 characters;
+# anything else would make every POST a retry, so refuse it here instead.
+# $(<…) drops trailing newlines, as the shipper does; an inner one fails.
+BEARER='^[A-Za-z0-9._~+/-]+=*$'
+token=$(<"$tmp/ingest.token")
+[[ "$token" =~ $BEARER && ${#token} -ge 32 ]] || { echo "❌ $REF is not a Bearer token of at least 32 characters; nothing installed" >&2; exit 1; }
+
+chmod 600 "$tmp/ingest.token"
+mv -f "$tmp/ingest.token" "$DEST/ingest.token"
+echo "✅ ships-log ingest token installed → ${DEST/#$HOME/\~}/ingest.token (0600)"
