@@ -33,53 +33,31 @@ Host github.com
   ControlPersist 10m
   # 1Password prompts for Touch ID on first use per session, then caches.
 
-# Firstmate's route to its remote second-mate home on dell-01 (the isolated fm
-# Incus container, brok-stacks nodes/README.md "fm instance"). A dedicated
-# on-disk key so supervision never waits on a 1Password prompt; its reach is
-# that sandbox only.
-Host fm-dell01
-  # dell-01's tailnet name works at home and away; HostKeyAlias keeps the
-  # existing known_hosts entry. 192.168.5.20 on the same port is the fallback.
-  HostName dell-01
-  HostKeyAlias [192.168.5.20]:2222
-  Port 2222
-  User fm
-  IdentityFile ~/.ssh/fm-dell01
+Host dell-03-agentos
+  HostName dell-03
+  Port 2230
+  User agentos
+  IdentityFile ~/.ssh/agentos-dell03
   IdentitiesOnly yes
   IdentityAgent none
   ForwardAgent no
   StrictHostKeyChecking yes
 
-Host fm-dell02
-  # endurebyte's second mate on dell-02 (brok-stacks #443). Same shape as
-  # fm-dell01; 192.168.5.21 on the same port is the fallback.
+Host dell-01-agentos
+  HostName dell-01
+  Port 2230
+  User agentos
+  IdentityFile ~/.ssh/agentos-dell01
+  IdentitiesOnly yes
+  IdentityAgent none
+  ForwardAgent no
+  StrictHostKeyChecking yes
+
+Host dell-02-agentos
   HostName dell-02
-  HostKeyAlias [192.168.5.21]:2222
-  Port 2222
-  User fm
-  IdentityFile ~/.ssh/fm-dell02
-  IdentitiesOnly yes
-  IdentityAgent none
-  ForwardAgent no
-  StrictHostKeyChecking yes
-
-# Second-mate sandbox fm-abm on dell-01 (brok-stacks nodes/README.md).
-Host fm-abm-dell01
-  HostName dell-01
-  Port 2223
-  User fm
-  IdentityFile ~/.ssh/fm-abm-dell01
-  IdentitiesOnly yes
-  IdentityAgent none
-  ForwardAgent no
-  StrictHostKeyChecking yes
-
-# Second-mate sandbox fm-skopia on dell-01 (brok-stacks nodes/README.md).
-Host fm-skopia-dell01
-  HostName dell-01
-  Port 2224
-  User fm
-  IdentityFile ~/.ssh/fm-skopia-dell01
+  Port 2230
+  User agentos
+  IdentityFile ~/.ssh/agentos-dell02
   IdentitiesOnly yes
   IdentityAgent none
   ForwardAgent no
