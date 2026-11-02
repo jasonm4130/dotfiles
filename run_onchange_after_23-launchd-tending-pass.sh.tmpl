@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Reloads when the plist changes: {{ include "private_Library/private_LaunchAgents/dev.jasonmatthew.tending-pass.plist.tmpl" | sha256sum }}
+set -euo pipefail
+
+PLIST="$HOME/Library/LaunchAgents/dev.jasonmatthew.tending-pass.plist"
+
+# The agent's first, hand-loaded name, before it moved into chezmoi.
+OLD="$HOME/Library/LaunchAgents/dev.tending.pass.plist"
+if [ -f "$OLD" ]; then
+  launchctl unload "$OLD" 2>/dev/null || true
+  rm -f "$OLD"
+fi
+
+mkdir -p "$HOME/.local/state/tending/logs"
+echo "🔁 (Re)loading tending-pass launchd agent"
+launchctl unload "$PLIST" 2>/dev/null || true
+launchctl load -w "$PLIST"
+echo "✅ tending-pass agent loaded"
