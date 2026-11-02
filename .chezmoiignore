@@ -28,6 +28,8 @@ CLAUDE.md
 !.claude/rules/**/**
 !.claude/sounds/
 !.claude/sounds/**/**
+!.claude/mcp/
+!.claude/mcp/**/**
 # Only repo-owned skills: skills/synced belongs to claude.ai.
 !.claude/skills/
 !.claude/skills/herdr
