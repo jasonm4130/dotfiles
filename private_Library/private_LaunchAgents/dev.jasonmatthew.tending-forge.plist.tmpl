@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>dev.jasonmatthew.tending-forge</string>
+
+    <!-- Tending's forge job (the slice 3 plan, step 9; call 7), every 5 minutes, from the promoted release:
+         it records each review on a task's PR, notices a claims block edited on GitHub and a head pushed by
+         anyone else. It reads only tasks with an open PR, so an idle site makes no GitHub call. A chezmoi
+         template: it goes beside dev.jasonmatthew.tending-quota.plist.tmpl, loaded on Jason's go. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>{{ .chezmoi.homeDir }}/.local/share/tending/current/tending</string>
+        <string>forge</string>
+    </array>
+
+    <!-- The same PATH as the quota agent's; the forge job runs git as /usr/bin/git. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>{{ .chezmoi.homeDir }}/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>StartInterval</key>
+    <integer>300</integer>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+
+    <key>StandardOutPath</key>
+    <string>{{ .chezmoi.homeDir }}/.local/state/tending/logs/forge.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>{{ .chezmoi.homeDir }}/.local/state/tending/logs/forge.log</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>
