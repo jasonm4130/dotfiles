@@ -25,8 +25,11 @@
     <key>StartInterval</key>
     <integer>300</integer>
 
+    <!-- Standard, not Background: launchd's background priority doubles the CPU a check costs (runtime tests
+         10.0 s at standard, 23.1 s at background, measured 2026-11-13), and the check budget is calibrated at
+         standard priority. An evidence run started from here must be measured as it was calibrated. -->
     <key>ProcessType</key>
-    <string>Background</string>
+    <string>Standard</string>
 
     <key>StandardOutPath</key>
     <string>{{ .chezmoi.homeDir }}/.local/state/tending/logs/forge.log</string>
