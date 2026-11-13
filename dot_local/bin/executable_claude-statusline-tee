@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# Status-line tee for fleet observability (ships-log phase 1). Claude Code's
-# status-line stdin is the only documented source of the subscription's 5-hour
-# and weekly limit percentages, so this keeps the latest JSON that carries
-# `rate_limits` for agents-quota-push, then hands the same bytes to the real
-# status line. One account backs every profile, so one snapshot file serves all.
+# Status-line tee. Claude Code's status-line stdin is the only documented
+# source of the subscription's 5-hour and weekly limit percentages, so this
+# keeps the latest JSON that carries `rate_limits` (the usage skill reads it),
+# then hands the same bytes to the real status line.
 #
 # Runs on every assistant message: builtins plus one mv, no jq. A JSON without
 # rate_limits (a session before its first API response) never overwrites a good

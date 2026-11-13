@@ -32,10 +32,8 @@ CLAUDE.md
 !.claude/mcp/**/**
 # Only repo-owned skills: skills/synced belongs to claude.ai.
 !.claude/skills/
-!.claude/skills/herdr
-!.claude/skills/llm-wiki
-!.claude/skills/gmail-connector/
-!.claude/skills/gmail-connector/**/**
+!.claude/skills/usage/
+!.claude/skills/usage/**/**
 
 # Belt-and-braces: explicit re-ignores (parent ignore covers them, but be loud)
 .claude/.claude.json
@@ -65,11 +63,3 @@ CLAUDE.md
 archive
 archive/**
 
-# ships-log shipper: deploy the LaunchAgent only once it can start, so login
-# never loads a job whose binary or ingest token is missing
-# (run_onchange_after_20 explains how to install both).
-{{- $slBin := joinPath .chezmoi.homeDir ".local/bin/ships-log-shipper" }}
-{{- $slToken := joinPath .chezmoi.homeDir ".config/ships-log/ingest.token" }}
-{{- if not (and (stat $slBin) (stat $slToken)) }}
-Library/LaunchAgents/dev.jasonmatthew.ships-log-shipper.plist
-{{- end }}

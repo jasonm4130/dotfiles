@@ -8,6 +8,12 @@
   },
   "model": "opus",
   "effortLevel": "medium",
+  "autoCompactWindow": 300000,
+  "modelSettings": {
+    "claude-haiku-5-5": {
+      "autoCompactWindow": 200000
+    }
+  },
   "teammateMode": "in-process",
   "statusLine": {
     "type": "command",
