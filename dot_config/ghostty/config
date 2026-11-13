@@ -56,3 +56,7 @@ keybind = cmd+alt+j=goto_split:down
 keybind = cmd+]=goto_split:next
 keybind = cmd+[=goto_split:previous
 keybind = cmd+shift+p=toggle_command_palette
+# Shift+Enter sends ESC+CR (Alt+Enter), which Claude Code and Codex read as a
+# newline. This works without the Kitty keyboard protocol, so a multiplexer
+# (herdr) that drops the enhanced Shift+Enter key cannot break it.
+keybind = shift+enter=text:\x1b\r
