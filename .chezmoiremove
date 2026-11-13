@@ -7,8 +7,20 @@
 
 # Reset 2026-11: fleet profiles, hooks, rules, agents, skills and MCP helpers
 # were dropped from the source; remove their rendered targets too.
-.claude-fm-workers
-.codex-fm-workers
+# Only the files chezmoi managed: the profile homes also hold session
+# transcripts and logins, which a directory entry here would delete with them.
+.claude-fm-workers/CLAUDE.md
+.claude-fm-workers/settings.json
+.claude-fm-workers/hooks
+.claude-fm-workers/agents
+.claude-fm-workers/plugins
+.claude-fm-workers/rules
+.claude-fm-workers/skills
+.codex-fm-workers/AGENTS.md
+.codex-fm-workers/config.toml
+.codex-fm-workers/hooks.json
+.codex-fm-workers/hooks
+.codex-fm-workers/rules
 .claude/agents
 .claude/hooks
 .claude/rules
