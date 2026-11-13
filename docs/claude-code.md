@@ -113,10 +113,13 @@ server still registers and reports Connected, failing only on first use, so veri
 
 The statusLine is a compiled binary at `~/.local/bin/claude-statusline` (source:
 [jasonm4130/claude-statusline](https://github.com/jasonm4130/claude-statusline) — clone and
-`go build` it on a new machine; the bootstrap does not ship it). Both profiles call it through
-`~/.local/bin/claude-statusline-tee`, which first keeps the latest status-line JSON carrying
-`rate_limits` at `~/.local/state/ships-log/claude-statusline.json`. That JSON is the only
-documented source of the 5-hour and weekly limit percentages.
+`go build` it on a new machine; the bootstrap does not ship it). Both profiles call it directly
+with `CLAUDE_STATUSLINE_SNAPSHOT` set, so the binary itself keeps the latest status-line JSON
+carrying `rate_limits` at `~/.local/state/ships-log/claude-statusline.json` (v0.3.0 and later;
+this replaced a bash tee wrapper that cost about 11 ms per render). That JSON is the only
+documented source of the 5-hour and weekly limit percentages. `refreshInterval: 30` re-renders
+the line every 30 s on top of event-driven updates, so the cache clock and limit pace go stale
+for at most that long.
 
 Both profiles export Claude Code OTel metrics and events (`OTEL_LOGS_EXPORTER=otlp`) to brok's
 OTLP receiver at `192.168.5.10:4319`, metrics as cumulative counters, all tagged `host=mac` and
