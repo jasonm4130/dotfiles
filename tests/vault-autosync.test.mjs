@@ -5,7 +5,7 @@
  * and someone mid-rebase must not have their index staged under them.
  *
  * SAFETY: every run gets a throwaway HOME, a bare remote and two clones under a
- * temp dir ("mac" stands in for ~/Documents/Main, "mate" for the second mate),
+ * temp dir ("mac" stands in for ~/Code/main-vault, "mate" for the second mate),
  * a stub notifier instead of osascript, and no global git config. runSync()
  * refuses to run against the real HOME or the real vault.
  */
@@ -53,7 +53,7 @@ function setup(t) {
   const log = path.join(dir, 'vault-autosync.log');
 
   function runSync(extra = {}) {
-    if (path.resolve(home) === path.resolve(os.homedir()) || mac === path.join(os.homedir(), 'Documents/Main')) {
+    if (path.resolve(home) === path.resolve(os.homedir()) || mac === path.join(os.homedir(), 'Code/main-vault')) {
       throw new Error('refusing to run vault-autosync against the real HOME or vault');
     }
     return spawnSync('bash', [SCRIPT], {
