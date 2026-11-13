@@ -65,7 +65,8 @@
   },
   "enabledPlugins": {
     "codex@openai-codex": true,
-    "grok-build@xai-grok-build": true
+    "grok-build@xai-grok-build": true,
+    "typescript-lsp@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "openai-codex": {
@@ -83,5 +84,6 @@
   },
   "outputStyle": "Concise",
   "theme": "dark",
-  "tui": "fullscreen"
+  "tui": "fullscreen",
+  "remoteControlAtStartup": true
 }
