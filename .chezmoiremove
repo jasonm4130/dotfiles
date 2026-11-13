@@ -47,9 +47,6 @@ Library/LaunchAgents/dev.jasonmatthew.tending-forge.plist
 Library/LaunchAgents/dev.jasonmatthew.codex-shared-server.plist
 Library/LaunchAgents/dev.jasonmatthew.claude-canary.plist
 Library/LaunchAgents/dev.jasonmatthew.agents-quota-push.plist
-Library/LaunchAgents/dev.jasonmatthew.ships-log-shipper.plist
 .local/bin/agents-quota-push
 .local/bin/claude-canary
 .local/bin/ships-log-install-cert
-.local/bin/ships-log-install-token
-.config/ships-log/shipper.json

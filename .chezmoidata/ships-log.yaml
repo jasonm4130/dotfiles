@@ -16,5 +16,4 @@ shipsLog:
   ingestUrl: "https://ships-log-ingest.jasonmatthew.me:4444/api/ingest/v1"
   # Firstmate homes outside ~/.treehouse, as paths relative to $HOME. Homes under
   # ~/.treehouse/firstmate-*/*/firstmate are globbed at apply time. Listed first.
-  firstmateHomes:
-    - "Work/Git/firstmate"
+  firstmateHomes: []

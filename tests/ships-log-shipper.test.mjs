@@ -1,6 +1,6 @@
 /**
  * Guards the ships-log Mac side: the SessionStart tag hook, the 1Password
- * client-certificate and ingest-token installers, and the rendered shipper config,
+ * ingest-token installer, and the rendered shipper config,
  * LaunchAgent gate and .chezmoiignore rule. Everything runs against a throwaway
  * HOME, a stub `op` and fixture values, so nothing reads 1Password, real
  * transcripts or launchd.
@@ -15,7 +15,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const INSTALL = path.join(repoRoot, 'dot_local/bin/executable_ships-log-install-cert');
 const INSTALL_TOKEN = path.join(repoRoot, 'dot_local/bin/executable_ships-log-install-token');
 const TOKEN_INGEST_URL = 'https://ships-log-ingest.jasonmatthew.me:4444/api/ingest/v1';
 // 64 letters and digits, the runbook's recipe; obviously not a real token.
@@ -56,63 +55,10 @@ esac
   return { stub, calls };
 }
 
-function runInstall(dir, args, op, script = INSTALL) {
+function runInstall(dir, args, op, script) {
   return spawnSync('bash', [script, ...args], { encoding: 'utf8',
     env: { ...process.env, SHIPS_LOG_CONFIG_DIR: path.join(dir, 'cfg'), SHIPS_LOG_OP_BIN: op } });
 }
-
-test('installer skips cleanly with no vault set', (t) => {
-  const dir = sandbox(t);
-  const { stub, calls } = opStub(dir, {});
-  const result = runInstall(dir, [''], stub);
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stderr, /no 1Password vault set/);
-  assert.equal(existsSync(calls), false, 'op is not called without a vault');
-  assert.equal(existsSync(path.join(dir, 'cfg')), false);
-});
-
-test('installer skips cleanly when the 1Password item does not exist yet', (t) => {
-  const dir = sandbox(t);
-  const { stub } = opStub(dir, {});
-  const result = runInstall(dir, ['Infra'], stub);
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stderr, /could not read op:\/\/Infra\/ships-log-client-mac\/certificate/);
-  assert.deepEqual(readdirSync(path.join(dir, 'cfg')), [], 'no partial files or temp dir left');
-});
-
-test('installer writes the certificate and key as 0600 files from op read', (t) => {
-  const dir = sandbox(t);
-  const { stub, calls } = opStub(dir, {
-    'op://Infra/ships-log-client-mac/certificate': FAKE_CERT,
-    'op://Infra/ships-log-client-mac/private-key': FAKE_KEY,
-  });
-  const result = runInstall(dir, ['Infra'], stub);
-  assert.equal(result.status, 0, result.stderr);
-  assert.ok(!result.stdout.includes(KEY_LABEL) && !result.stderr.includes(KEY_LABEL), 'key material is never echoed');
-  const cfg = path.join(dir, 'cfg');
-  assert.deepEqual(readdirSync(cfg).sort(), ['client.crt', 'client.key']);
-  assert.equal(readFileSync(path.join(cfg, 'client.crt'), 'utf8'), FAKE_CERT);
-  assert.equal(readFileSync(path.join(cfg, 'client.key'), 'utf8'), FAKE_KEY);
-  assert.equal(mode(path.join(cfg, 'client.crt')), 0o600);
-  assert.equal(mode(path.join(cfg, 'client.key')), 0o600);
-  assert.equal(mode(cfg), 0o700);
-  assert.deepEqual(readFileSync(calls, 'utf8').trim().split('\n'),
-    ['read op://Infra/ships-log-client-mac/certificate', 'read op://Infra/ships-log-client-mac/private-key']);
-});
-
-test('installer refuses a field that is not PEM and installs nothing', (t) => {
-  const dir = sandbox(t);
-  const { stub } = opStub(dir, {
-    'op://Infra/ships-log-client-mac/certificate': 'oops',
-    'op://Infra/ships-log-client-mac/private-key': FAKE_KEY,
-  });
-  const result = runInstall(dir, ['Infra'], stub);
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /not a PEM certificate/);
-  assert.deepEqual(readdirSync(path.join(dir, 'cfg')), []);
-});
-
-// --- ingest token installer -----------------------------------------------
 
 const TOKEN_REF = 'op://Infra/ships-log-ingest-token/password';
 const runInstallToken = (dir, args, op) => runInstall(dir, args, op, INSTALL_TOKEN);
@@ -190,15 +136,13 @@ test('shipper config renders the Mac sources over the ingest token', (t) => {
   assert.equal('tls' in config, false, 'no client certificate, and no CA pin by default');
   assert.deepEqual(config.sources, [
     { id: 'mac/personal', root: '~/.claude' },
-    { id: 'mac/fm-workers', root: '~/.claude-fm-workers' },
     { id: 'mac/fresh', root: '~/.claude-fresh' },
     { id: 'mac/codex', root: '~/.codex/sessions' },
-    { id: 'mac/agentos', root: '~/Work/Git/agentos/profile' },
-    { id: 'mac/agentos-codex', root: '~/Work/Git/agentos/profile/codex/sessions' },
+    { harness: 'grok', id: 'mac/grok', root: '~/.grok/sessions' },
   ]);
   assert.equal(config.state_dir, '~/.local/state/ships-log/shipper');
   assert.equal(config.session_tags_dir, '~/.local/state/ships-log/sessions');
-  assert.deepEqual(config.firstmate_homes, [path.join(home, 'Work/Git/firstmate')], 'the primary home is listed even with no treehouse homes');
+  assert.deepEqual(config.firstmate_homes, [], 'no fixed homes and no treehouse homes');
   assert.deepEqual(config.no_mistakes_homes, ['~/.no-mistakes']);
 });
 
@@ -207,7 +151,7 @@ test('shipper config pins a CA and lists Firstmate homes when present', (t) => {
   mkdirSync(path.join(home, '.treehouse/firstmate-abc/1/firstmate'), { recursive: true });
   const config = JSON.parse(render(home, 'dot_config/private_ships-log/shipper.json.tmpl', { shipsLog: { caFile: '/etc/ca.pem' } }));
   assert.deepEqual(config.tls, { ca: '/etc/ca.pem' }, 'a CA pin alone, never a client certificate');
-  assert.deepEqual(config.firstmate_homes, [path.join(home, 'Work/Git/firstmate'), path.join(home, '.treehouse/firstmate-abc/1/firstmate')]);
+  assert.deepEqual(config.firstmate_homes, [path.join(home, '.treehouse/firstmate-abc/1/firstmate')]);
 });
 
 test('shipper config renders [] (not null) when no firstmate homes are configured or found', (t) => {
