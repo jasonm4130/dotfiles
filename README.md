@@ -69,7 +69,7 @@ turns up.
 
 | | |
 |---|---|
-| **[Claude Code](docs/claude-code.md)** | settings, hooks, agents, rules, MCP config, guards, sounds |
+| **Claude Code and Codex** | `~/.claude/settings.json`, `~/.claude/CLAUDE.md` (imports `~/.codex/AGENTS.md`), and the Codex model choice in `~/.codex/config.toml`. Reset on 2026-11-13: the hooks, custom agents, rules, skills, MCP helpers and Firstmate worker profiles were removed, so [docs/claude-code.md](docs/claude-code.md) and the Codex docs describe the setup before the reset. The earlier state is on the `pre-reset-2026-11-13` branch. |
 | **[Components](docs/components.md)** | zsh, mise, Starship, language servers, Ghostty, Zed, fonts, Codex, Brewfile, CI |
 | **[Maintenance](docs/maintenance.md)** | launchd jobs, one-time manual steps, fanfare voice clips |
 

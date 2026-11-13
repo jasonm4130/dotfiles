@@ -4,3 +4,26 @@
 # — inert, since settings.json no longer points at them, but confusing to find.
 .claude/hooks/secrets-scan.js
 .claude/hooks/json-config-guard.js
+
+# Reset 2026-11: fleet profiles, hooks, rules, agents, skills and MCP helpers
+# were dropped from the source; remove their rendered targets too.
+.claude-fm-workers
+.codex-fm-workers
+.claude/agents
+.claude/hooks
+.claude/rules
+.claude/mcp
+.claude/skills/gmail-connector
+.claude/skills/herdr
+.claude/skills/llm-wiki
+.codex/hooks.json
+.codex/hooks
+.codex/rules
+.codex/review.config.toml
+.codex/work.config.toml
+.codex/herdr-agent-state.sh
+.agents/skills/herdr
+.agents/skills/llm-wiki
+.agents/skills/writing-artifacts
+.local/bin/fm-home-permissions
+.local/bin/claude-stay-awake.sh

@@ -15,7 +15,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const HOOK = path.join(repoRoot, 'private_dot_claude/hooks/executable_ships-log-session-tag.py');
 const INSTALL = path.join(repoRoot, 'dot_local/bin/executable_ships-log-install-cert');
 const INSTALL_TOKEN = path.join(repoRoot, 'dot_local/bin/executable_ships-log-install-token');
 const TOKEN_INGEST_URL = 'https://ships-log-ingest.jasonmatthew.me:4444/api/ingest/v1';
@@ -36,82 +35,6 @@ function sandbox(t) {
 }
 
 const mode = (p) => statSync(p).mode & 0o777;
-
-// --- SessionStart tag hook -------------------------------------------------
-
-function runHook(dir, input, env = {}) {
-  const { FM_TASK_ID: _t, AGENTOS_TASK_ID: _a, FM_HOME: _h, FM_TASK_INBOX: _i, CLAUDE_CONFIG_DIR: _c, ...base } = process.env;
-  return spawnSync('python3', [HOOK], { input, encoding: 'utf8',
-    env: { ...base, SHIPS_LOG_STATE_DIR: path.join(dir, 'state'), ...env } });
-}
-
-test('hook writes a SessionTag-shaped file and prints nothing', (t) => {
-  const dir = sandbox(t);
-  const id = '0b5c2f3e-1111-4222-8333-944455556666';
-  const result = runHook(dir, JSON.stringify({ session_id: id, cwd: '/tmp/project', hook_event_name: 'SessionStart' }),
-    { FM_TASK_ID: 'sl-p2-mac-shipper', FM_HOME: '/fm/home/', CLAUDE_CONFIG_DIR: '/cfg/claude-fm-workers' });
-  assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.stdout, '', 'SessionStart stdout becomes model context');
-  const tagsDir = path.join(dir, 'state', 'sessions');
-  assert.deepEqual(readdirSync(tagsDir), [`${id}.json`], 'no temp file left behind');
-  const tag = JSON.parse(readFileSync(path.join(tagsDir, `${id}.json`), 'utf8'));
-  assert.deepEqual(Object.keys(tag).sort(), ['config_root', 'cwd', 'fm_home', 'fm_task_id', 'host', 'session_id', 'ts', 'v']);
-  assert.equal(tag.v, 1);
-  assert.equal(tag.session_id, id);
-  assert.equal(tag.fm_task_id, 'sl-p2-mac-shipper');
-  assert.equal(tag.cwd, '/tmp/project');
-  assert.equal(tag.host, 'mac', 'the ships-log host id, not the machine name');
-  assert.equal(tag.fm_home, '/fm/home');
-  assert.equal(tag.config_root, '/cfg/claude-fm-workers');
-  assert.match(tag.ts, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/);
-  assert.equal(mode(tagsDir), 0o700);
-});
-
-test('hook writes a null fm_task_id outside Firstmate', (t) => {
-  const dir = sandbox(t);
-  const result = runHook(dir, JSON.stringify({ session_id: 'abc-123', cwd: '/tmp' }));
-  assert.equal(result.status, 0, result.stderr);
-  const tag = JSON.parse(readFileSync(path.join(dir, 'state', 'sessions', 'abc-123.json'), 'utf8'));
-  assert.equal(tag.fm_task_id, null);
-  assert.equal(tag.fm_home, null);
-  assert.equal(tag.config_root, path.join(os.homedir(), '.claude'));
-});
-
-test('hook derives fm_home from FM_TASK_INBOX when FM_HOME is unset', (t) => {
-  const dir = sandbox(t);
-  const read = (id) => JSON.parse(readFileSync(path.join(dir, 'state', 'sessions', `${id}.json`), 'utf8'));
-  runHook(dir, JSON.stringify({ session_id: 'inbox-1', cwd: '/tmp' }),
-    { FM_TASK_ID: 'x', FM_TASK_INBOX: '/h/firstmate/state/x.inbox' });
-  assert.equal(read('inbox-1').fm_home, '/h/firstmate');
-  runHook(dir, JSON.stringify({ session_id: 'inbox-2', cwd: '/tmp' }),
-    { FM_TASK_ID: 'x', FM_TASK_INBOX: '/h/firstmate/elsewhere/x.inbox' });
-  assert.equal(read('inbox-2').fm_home, null, 'an inbox outside <home>/state names no home');
-  runHook(dir, JSON.stringify({ session_id: 'inbox-3', cwd: '/tmp' }),
-    { FM_HOME: '/a', FM_TASK_INBOX: '/b/state/x.inbox' });
-  assert.equal(read('inbox-3').fm_home, '/a', 'FM_HOME wins');
-});
-
-test('hook ignores unsafe session ids and bad input without failing', (t) => {
-  const dir = sandbox(t);
-  for (const input of [JSON.stringify({ session_id: '../escape', cwd: '/tmp' }),
-    JSON.stringify({ session_id: 'a..b', cwd: '/tmp' }), JSON.stringify({ cwd: '/tmp' }), 'not json', '[]']) {
-    const result = runHook(dir, input);
-    assert.equal(result.status, 0, `${input}: ${result.stderr}`);
-    assert.equal(result.stdout, '');
-    assert.equal(result.stderr, '');
-  }
-  assert.equal(existsSync(path.join(dir, 'state', 'sessions')), false);
-  assert.equal(existsSync(path.join(dir, 'escape.json')), false);
-});
-
-test('both chezmoi-managed Claude settings register the hook', () => {
-  for (const rel of ['private_dot_claude/settings.json', 'private_dot_claude-fm-workers/settings.json']) {
-    const settings = JSON.parse(readFileSync(path.join(repoRoot, rel), 'utf8'));
-    const commands = (settings.hooks.SessionStart ?? []).flatMap((e) => (e.hooks ?? []).map((h) => h.command));
-    assert.ok(commands.includes('~/.claude/hooks/ships-log-session-tag.py'), `${rel} does not register the tag hook`);
-  }
-});
-
 // --- client certificate installer ------------------------------------------
 
 /** A stub `op` that serves fixture fields, or fails like a missing item. */

@@ -1,66 +1,9 @@
-{{- $home := .chezmoi.homeDir -}}
-{{- $path := joinPath $home ".codex/config.toml" -}}
+{{- $path := joinPath .chezmoi.homeDir ".codex/config.toml" -}}
 {{- $live := dict -}}
 {{- if stat $path -}}
 {{- $live = fromToml (include $path) -}}
 {{- end -}}
-{{/* Own a small policy layer; preserve app state, permissions and connections. */}}
-{{- $agents := get $live "agents" | default dict -}}
-{{- $_ := unset $agents "max_threads" -}}
-{{- $_ := set $agents "default_subagent_model" "gpt-6-sol" -}}
-{{- $_ := set $agents "default_subagent_reasoning_effort" "medium" -}}
-{{- $_ := set $agents "max_concurrent_threads_per_session" 2 -}}
-{{- $_ := set $live "agents" $agents -}}
-{{- $features := get $live "features" | default dict -}}
-{{- $_ := set $features "memories" true -}}
-{{- $_ := set $features "prevent_idle_sleep" true -}}
-{{- $_ := set $live "features" $features -}}
-{{- $memories := get $live "memories" | default dict -}}
-{{- $_ := set $memories "generate_memories" true -}}
-{{- $_ := set $memories "use_memories" true -}}
-{{- $_ := set $memories "min_rate_limit_remaining_percent" 25 -}}
-{{- $_ := set $live "memories" $memories -}}
-{{/* Commands get a core env only, so secrets exported by an `op run` parent do not reach them. */}}
-{{- $shellenv := get $live "shell_environment_policy" | default dict -}}
-{{- $_ := set $shellenv "inherit" "core" -}}
-{{- $shellset := get $shellenv "set" | default dict -}}
-{{- $_ := set $shellset "TZ" "Australia/Brisbane" -}}
-{{- $_ := set $shellenv "set" $shellset -}}
-{{- $_ := set $live "shell_environment_policy" $shellenv -}}
-{{/* Metrics only to brok's OTLP receiver (ships-log phase 1): exporter and trace_exporter stay off, so no prompt or tool content leaves. Codex sends delta temporality and no instance id; `env` is its only machine tag. */}}
-{{- $otel := get $live "otel" | default dict -}}
-{{- $_ := set $otel "environment" "mac" -}}
-{{- $_ := set $otel "metrics_exporter" (dict "otlp-http" (dict "endpoint" "http://192.168.5.10:4319/v1/metrics" "protocol" "binary")) -}}
-{{- $_ := set $live "otel" $otel -}}
-{{/* Retire disabled custom MCP definitions; plugin connections are separate. */}}
-{{- $mcp := get $live "mcp_servers" | default dict -}}
-{{- range $name := list "chrome-devtools" "claude-design" "cloudflare-docs" "openaiDeveloperDocs" "social" "tavily" -}}
-{{- if hasKey $mcp $name -}}
-{{- if eq (toString (get (get $mcp $name) "enabled")) "false" -}}
-{{- $_ := unset $mcp $name -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-{{- $_ := set $live "mcp_servers" $mcp -}}
-{{/* Drop stale disables: work-loop is deleted; writing-artifacts is shared with Codex. */}}
-{{- $skills := get $live "skills" | default dict -}}
-{{- $kept := list -}}
-{{- range $entry := get $skills "config" | default list -}}
-{{- $stale := list "work-loop" "writing-artifacts" -}}
-{{- if not (or (has (get $entry "name") $stale) (has (base (toString (get $entry "path"))) $stale)) -}}
-{{- $kept = append $kept $entry -}}
-{{- end -}}
-{{- end -}}
-{{- if $kept -}}
-{{- $_ := set $skills "config" $kept -}}
-{{- $_ := set $live "skills" $skills -}}
-{{- else -}}
-{{- $_ := unset $live "skills" -}}
-{{- end -}}
-model = "gpt-6-astra"
-model_reasoning_effort = "low"
-service_tier = "default"
-approvals_reviewer = "auto_review"
-{{ toToml (dict "developer_instructions" (includeTemplate "codex-developer-instructions.md" . | trim)) }}project_doc_fallback_filenames = []
-
-{{ toToml (omit $live "model" "model_reasoning_effort" "service_tier" "approvals_reviewer" "project_doc_fallback_filenames" "developer_instructions") -}}
+{{/* Own the model choice only; preserve the app's own state (projects, plugins, desktop, tui). */}}
+model = "gpt-6.1-sol"
+model_reasoning_effort = "medium"
+{{ toToml (omit $live "model" "model_reasoning_effort" "developer_instructions" "approvals_reviewer" "agents" "otel" "mcp_servers" "hooks") -}}
