@@ -7,6 +7,7 @@ A repo's own AGENTS.md wins where it conflicts with this file, except for the co
 - When a check ran, quote its result line. Run a thing once before calling it working; say so when no check could run.
 - Put a warning, risk or cost in the first line of a reply. Prose by default, no trailing recap.
 - Git: stage explicit paths, never `commit -a`. Merge PRs with `gh pr merge --merge`; never `--admin` past failing checks.
+- Make changes in a git worktree, not the main checkout: Jason and other sessions commit there at the same time. Remove the worktree once its branch has merged.
 - Python uses uv; JS/TS uses pnpm; GitHub goes through `gh`.
 - Repos live in `~/Code`. Personal config lives in chezmoi: edit the source, read `chezmoi diff <target>`, then `chezmoi apply <target>`.
 - If a repo has no AGENTS.md, ask before substantial work whether to write a short one.
