@@ -13,7 +13,17 @@ ZSH_THEME_TERM_TAB_TITLE_IDLE='%~'
 ZSH_THEME_TERM_TITLE_IDLE='%~'
 
 # mise — version manager (replaces Volta + pyenv)
-eval "$(mise activate zsh)"
+# Coding agents (Claude Code, Codex, Grok) snapshot this shell's PATH once and
+# never run the cd hook, so `mise activate` would freeze the global `lts` node
+# ahead of each repo's pin. Agents get shims only, which resolve per directory.
+# They also inherit the launching terminal's activated PATH, so drop mise's
+# install dirs first or they would still shadow the shims.
+if [[ -n "$CLAUDECODE$AI_AGENT$CODEX_SANDBOX$CODEX_COMPANION_SESSION_ID" ]]; then
+  path=(${path:#$HOME/.local/share/mise/installs/*})
+  eval "$(mise activate zsh --shims)"
+else
+  eval "$(mise activate zsh)"
+fi
 
 # PATH — Google Cloud SDK
 export PATH="$HOME/google-cloud-sdk/bin:$PATH"

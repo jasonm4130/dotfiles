@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Installs the ships-log ingest token from 1Password (op read only, into
+# ~/.config/ships-log/ingest.token, 0600). Re-runs when the vault setting or
+# the installer changes: {{ include "dot_local/bin/executable_ships-log-install-token" | sha256sum }}
+# Rotation and first install after the item exists: run ships-log-install-token
+# by hand, since a 1Password change does not re-trigger this script.
+set -euo pipefail
+
+exec "$HOME/.local/bin/ships-log-install-token" {{ .shipsLog.opVault | squote }}
