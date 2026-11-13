@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Keeps the llm-wiki checkout (~/Code/llm-wiki) fresh behind the `wiki`
-# QMD MCP and the llm-wiki skill, run headless by launchd every 10 minutes.
+# Keeps the llm-wiki checkout (~/Code/llm-wiki) and its QMD index fresh for
+# agents that search it, run headless by launchd every 10 minutes.
 # Each run:
 #
 #   1. publishes inbox entries a repository session left untracked, through
