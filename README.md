@@ -71,7 +71,7 @@ turns up.
 |---|---|
 | **Claude Code and Codex** | `~/.claude/settings.json`, `~/.claude/CLAUDE.md` (imports `~/.codex/AGENTS.md`), and the Codex model choice in `~/.codex/config.toml`. Reset on 2026-11-13: the hooks, custom agents, rules, skills, MCP helpers and Firstmate worker profiles were removed, so [docs/claude-code.md](docs/claude-code.md) and the Codex docs describe the setup before the reset. The earlier state is on the `pre-reset-2026-11-13` branch. |
 | **[Components](docs/components.md)** | zsh, mise, Starship, language servers, Ghostty, Zed, fonts, Codex, Brewfile, CI |
-| **[Maintenance](docs/maintenance.md)** | launchd jobs, one-time manual steps, fanfare voice clips |
+| **[Maintenance](docs/maintenance.md)** | launchd jobs, one-time manual steps |
 
 Run `chezmoi managed` for the authoritative file list.
 
@@ -91,7 +91,6 @@ Run `chezmoi managed` for the authoritative file list.
 | Settle source↔destination drift interactively | `chezmoi-drift` |
 | Check the language servers are actually up | `lsp-doctor` (add `--repair` to fix) |
 | Read subscription usage and reset times | `claude-usage`, `codex-usage`, `grok-usage` (add `--json`; the `usage` skill runs all three) |
-| Rebuild the compiled hook guard | `go build -C ~/.local/src/claude-hooks -o ~/.local/bin/claude-hooks .` (or just `chezmoi apply`) |
 
 ## Design
 
