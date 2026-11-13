@@ -18,7 +18,8 @@
   "teammateMode": "in-process",
   "statusLine": {
     "type": "command",
-    "command": "~/.local/bin/claude-statusline-tee"
+    "command": "CLAUDE_STATUSLINE_SNAPSHOT=$HOME/.local/state/ships-log/claude-statusline.json ~/.local/bin/claude-statusline",
+    "refreshInterval": 30
   },
   "permissions": {
     "allow": [
