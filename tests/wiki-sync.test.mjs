@@ -7,7 +7,7 @@
  * the staging folder the index reads.
  *
  * SAFETY: every run gets a throwaway HOME, a bare remote and two clones under a
- * temp dir ("mac" stands in for ~/Work/Git/llm-wiki, "other" for another
+ * temp dir ("mac" stands in for ~/Code/llm-wiki, "other" for another
  * writer), a stub notifier, a stub scripts/wiki.py, no global git config and
  * WIKI_SYNC_SKIP_QMD=1. runSync() refuses to run against the real HOME or wiki.
  */
@@ -78,7 +78,7 @@ function setup(t) {
   const log = path.join(dir, 'wiki-sync.log');
 
   function runSync(extra = {}) {
-    if (path.resolve(home) === path.resolve(os.homedir()) || mac === path.join(os.homedir(), 'Work/Git/llm-wiki')) {
+    if (path.resolve(home) === path.resolve(os.homedir()) || mac === path.join(os.homedir(), 'Code/llm-wiki')) {
       throw new Error('refusing to run wiki-sync against the real HOME or wiki');
     }
     return spawnSync('bash', [SCRIPT], {

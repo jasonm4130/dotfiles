@@ -2,7 +2,7 @@
 # Weekly Obsidian daily-note backfill from local git history.
 #
 #   1. For each of the last 7 days, gather THIS user's authored commits across
-#      every repo in ~/Work/Git (bots + the graphify fork-sync excluded), in
+#      every repo in ~/Code (bots + the graphify fork-sync excluded), in
 #      Brisbane-local time, bucketed by the day they landed.
 #   2. Hand each day's commit bundle to `claude -p` (sonnet), which synthesises
 #      the work into the daily note's Notes/Wins sections — narrative, not raw
@@ -23,7 +23,7 @@
 set -u
 
 CLAUDE=${DAILY_NOTES_CLAUDE:-}
-GIT_ROOT=~/Work/Git
+GIT_ROOT=~/Code
 VAULT=~/Documents/Main
 DAILY_DIR="$VAULT/Daily"
 TEMPLATE="$VAULT/_templates/Daily.md"

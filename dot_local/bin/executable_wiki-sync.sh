@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Keeps the llm-wiki checkout (~/Work/Git/llm-wiki) fresh behind the `wiki`
+# Keeps the llm-wiki checkout (~/Code/llm-wiki) fresh behind the `wiki`
 # QMD MCP and the llm-wiki skill, run headless by launchd every 10 minutes.
 # Each run:
 #
@@ -47,8 +47,8 @@ set -uo pipefail
 # against the node the wiki sessions run, and a different major breaks them.
 export PATH="$HOME/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
-WIKI="${WIKI_SYNC_DIR:-$HOME/Work/Git/llm-wiki}"
-REPORTS="${WIKI_SYNC_REPORTS_DIR:-$HOME/Work/Git/firstmate/data}"
+WIKI="${WIKI_SYNC_DIR:-$HOME/Code/llm-wiki}"
+REPORTS="${WIKI_SYNC_REPORTS_DIR:-$HOME/Code/firstmate/data}"
 POLICY="${WIKI_SYNC_POLICY:-$HOME/.config/wiki-sync/fm-reports.policy}"
 STAGE="${WIKI_SYNC_STAGE_DIR:-$HOME/.local/share/wiki-sync/fm-reports}"
 STATE_DIR="${WIKI_SYNC_STATE_DIR:-$HOME/.local/state/wiki-sync}"

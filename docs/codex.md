@@ -69,7 +69,7 @@ entry into dotfiles, as already done for the Claude integration.
 The writing skill is a chezmoi-managed symlink from
 `~/.agents/skills/writing-artifacts` into the claude-skills checkout.
 It has one source and its adjacent resources remain available. A new machine
-needs that checkout at `~/Work/Git/claude-skills` before using the skill.
+needs that checkout at `~/Code/claude-skills` before using the skill.
 
 ## Memory and setup iteration
 

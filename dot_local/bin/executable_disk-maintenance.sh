@@ -6,7 +6,7 @@ set -uo pipefail
 # launchd runs with a minimal PATH; add the locations of the tools we call.
 export PATH="/opt/homebrew/bin:$HOME/.cargo/bin:$HOME/.local/share/mise/shims:$HOME/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
-GITROOT="$HOME/Work/Git"
+GITROOT="$HOME/Code"
 IDLE_DAYS=30
 
 echo "=========================================="

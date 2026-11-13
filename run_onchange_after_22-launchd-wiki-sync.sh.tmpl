@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Reloads when the plist changes: {{ include "private_Library/private_LaunchAgents/dev.jasonmatthew.wiki-sync.plist.tmpl" | sha256sum }}
 #
-# Keeps ~/Work/Git/llm-wiki and its QMD index fresh every 10 minutes
+# Keeps ~/Code/llm-wiki and its QMD index fresh every 10 minutes
 # (dot_local/bin/executable_wiki-sync.sh explains what a run does). Without a
 # checkout there is nothing to sync, so the agent is not loaded until the wiki
 # is cloned. Which firstmate reports it indexes is set by
@@ -11,8 +11,8 @@ set -euo pipefail
 
 PLIST="$HOME/Library/LaunchAgents/dev.jasonmatthew.wiki-sync.plist"
 
-if [ ! -d "$HOME/Work/Git/llm-wiki/.git" ]; then
-  echo "⏭  ~/Work/Git/llm-wiki not cloned; skipping wiki-sync agent"
+if [ ! -d "$HOME/Code/llm-wiki/.git" ]; then
+  echo "⏭  ~/Code/llm-wiki not cloned; skipping wiki-sync agent"
   exit 0
 fi
 

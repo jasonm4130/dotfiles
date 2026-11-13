@@ -2,7 +2,7 @@
   "analysis": { "agent": "claude", "model": "claude-sonnet-5-5", "effort": null },
   "synthesis": { "agent": "claude", "model": "claude-opus-5-5", "effort": null },
   "discovery": {
-    "cloneRoots": ["~/Work/Git", "~/Work/Git/firstmate/projects"]
+    "cloneRoots": ["~/Code", "~/Code/firstmate/projects"]
   },
   "user": {
     "memoryFiles": [".codex/AGENTS.md", ".claude/CLAUDE.md"],
@@ -10,7 +10,7 @@
     "synthesis": { "agent": "claude", "model": "claude-opus-5-5", "effort": null },
     "discovery": {
       "harnesses": ["claude", "codex"],
-      "cloneRoots": ["~/Work/Git", "~/Work/Git/firstmate/projects"]
+      "cloneRoots": ["~/Code", "~/Code/firstmate/projects"]
     }
   }
 }
