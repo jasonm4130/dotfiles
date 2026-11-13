@@ -10,4 +10,6 @@ A repo's own AGENTS.md wins where it conflicts with this file, except for the co
 - Make changes in a git worktree, not the main checkout: Jason and other sessions commit there at the same time. Remove the worktree once its branch has merged.
 - Python uses uv; JS/TS uses pnpm; GitHub goes through `gh`.
 - Repos live in `~/Code`. Personal config lives in chezmoi: edit the source, read `chezmoi diff <target>`, then `chezmoi apply <target>`.
+- Before researching a topic from scratch, search Jason's LLM wiki: `python3 ~/Code/llm-wiki/scripts/qmd_bootstrap.py --exec query "<question>" < /dev/null`, or read `~/Code/llm-wiki/index.md`. Its claims are dated, so re-verify anything time-sensitive.
+- A durable finding from other work goes to the wiki as one new file in `~/Code/llm-wiki/inbox/`, following that repo's AGENTS.md.
 - If a repo has no AGENTS.md, ask before substantial work whether to write a short one.
