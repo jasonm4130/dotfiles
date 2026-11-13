@@ -85,5 +85,6 @@
   "outputStyle": "Concise",
   "theme": "dark",
   "tui": "fullscreen",
-  "remoteControlAtStartup": true
+  "remoteControlAtStartup": true,
+  "agentPushNotifEnabled": true
 }
