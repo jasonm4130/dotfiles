@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Keeps the Obsidian vault (~/Documents/Main, a clone of the private
+# Keeps the Obsidian vault (~/Code/main-vault, a clone of the private
 # jasonm4130/Obsidian-Main-Vault) in step with origin, run headless by launchd
 # every 10 minutes whether or not Obsidian is open. Each run commits whatever
 # is uncommitted (the vault's .gitignore decides what that is), rebases onto
@@ -24,7 +24,7 @@ set -uo pipefail
 
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
-VAULT="${VAULT_SYNC_DIR:-$HOME/Documents/Main}"
+VAULT="${VAULT_SYNC_DIR:-$HOME/Code/main-vault}"
 STATE_DIR="${VAULT_SYNC_STATE_DIR:-$HOME/.local/state/vault-autosync}"
 LOG="${VAULT_SYNC_LOG:-$HOME/Library/Logs/vault-autosync.log}"
 REACH_HOST="${VAULT_SYNC_REACH_HOST-github.com}"
