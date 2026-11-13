@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+"""Read Claude subscription usage; never starts a model request.
+
+Asks the endpoint Claude Code's own /usage calls, with the login Claude Code
+keeps in the Keychain. Never refreshes that login: a refresh rotates the token
+and can sign Claude Code out. When the login has expired or is refused, falls
+back to the status-line snapshot and says so. Never prints a credential.
+"""
+import getpass, json, os, subprocess, sys, time, urllib.error, urllib.request
+from datetime import datetime, timezone
+
+SNAPSHOT = os.path.expanduser("~/.local/state/ships-log/claude-statusline.json")
+URL = "https://api.anthropic.com/api/oauth/usage"
+
+
+def iso(value):
+    if isinstance(value, (int, float)):
+        return datetime.fromtimestamp(value, timezone.utc).isoformat(timespec="seconds")
+    return datetime.fromisoformat(value).astimezone(timezone.utc).isoformat(timespec="seconds")
+
+
+def from_endpoint():
+    found = subprocess.run(
+        ["security", "find-generic-password", "-a", getpass.getuser(),
+         "-s", "Claude Code-credentials", "-w"],
+        capture_output=True, text=True, timeout=15)
+    if found.returncode != 0:
+        raise RuntimeError("no Claude Code login in the Keychain")
+    oauth = json.loads(found.stdout).get("claudeAiOauth") or {}
+    if not oauth.get("accessToken"):
+        raise RuntimeError("Claude Code login has no access token")
+    if oauth.get("expiresAt", 0) / 1000 <= time.time():
+        raise RuntimeError("Claude Code login has expired; run claude to renew it")
+    request = urllib.request.Request(URL, headers={
+        "Authorization": "Bearer " + oauth["accessToken"],
+        "anthropic-beta": "oauth-2025-04-20",
+        "User-Agent": "claude-code/usage-skill",
+    })
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            body = json.loads(response.read())
+    except urllib.error.HTTPError as error:
+        raise RuntimeError(f"usage endpoint answered HTTP {error.code}") from None
+    windows = []
+    for limit in body.get("limits") or []:
+        if limit.get("percent") is None or not limit.get("resets_at"):
+            continue
+        model = ((limit.get("scope") or {}).get("model") or {}).get("display_name")
+        windows.append({"window": limit.get("kind"), "model": model,
+                        "usedPercent": limit["percent"], "resetsAt": iso(limit["resets_at"])})
+    for name in ("five_hour", "seven_day"):
+        value = body.get(name)
+        if value and value.get("utilization") is not None and not any(
+                w["window"] == {"five_hour": "session", "seven_day": "weekly_all"}[name] for w in windows):
+            windows.append({"window": name, "model": None,
+                            "usedPercent": value["utilization"], "resetsAt": iso(value["resets_at"])})
+    if not windows:
+        raise RuntimeError("usage endpoint returned no windows this script recognises")
+    return {"source": "endpoint", "windows": windows}
+
+
+def from_snapshot(reason):
+    limits = json.load(open(SNAPSHOT)).get("rate_limits") or {}
+    windows = [{"window": name, "model": None, "usedPercent": value["used_percentage"],
+                "resetsAt": iso(value["resets_at"])} for name, value in limits.items()]
+    if not windows:
+        raise RuntimeError("status-line snapshot holds no usage windows")
+    return {"source": "snapshot", "fallbackReason": reason,
+            "snapshotAgeMinutes": round((time.time() - os.path.getmtime(SNAPSHOT)) / 60),
+            "windows": windows}
+
+
+def main():
+    if any(arg != "--json" for arg in sys.argv[1:]):
+        sys.exit("usage: claude-usage [--json]")
+    try:
+        result = from_endpoint()
+    except Exception as error:  # every endpoint failure falls back, with its reason
+        try:
+            result = from_snapshot(str(error))
+        except Exception as second:
+            sys.exit(f"claude-usage: {error}; snapshot fallback failed: {second}")
+    result["observedAt"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    if "--json" in sys.argv[1:]:
+        print(json.dumps(result, indent=2))
+        return
+    if result["source"] == "snapshot":
+        print(f"from the status-line snapshot, {result['snapshotAgeMinutes']} min old ({result['fallbackReason']})")
+    for w in result["windows"]:
+        scope = f" [{w['model']}]" if w["model"] else ""
+        print(f"claude {w['window']}{scope}: {w['usedPercent']}% used; resets {w['resetsAt']}")
+
+
+main()

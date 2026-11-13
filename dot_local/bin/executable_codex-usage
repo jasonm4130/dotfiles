@@ -55,12 +55,22 @@ async function main() {
     }
   }
   if (!windows.length) throw new Error('Codex returned no subscription usage windows');
-  const result = { observedAt: new Date().toISOString(), windows };
+  // Plan, credit balance and free limit resets sit beside the windows; absent fields stay null.
+  const pick = key => response?.[key] ?? response?.rateLimits?.[key] ?? null;
+  const credits = pick('credits');
+  const result = {
+    observedAt: new Date().toISOString(),
+    plan: pick('planType'),
+    creditBalance: credits?.unlimited ? 'unlimited' : credits?.balance ?? null,
+    limitResetsAvailable: pick('rateLimitResetCredits')?.availableCount ?? null,
+    windows,
+  };
   if (args.includes('--json')) console.log(JSON.stringify(result, null, 2));
   else {
     for (const value of windows) {
       console.log(`${value.bucket}/${value.window}: ${value.remainingPercent}% remaining; resets ${value.resetsAt}`);
     }
+    if (result.limitResetsAvailable) console.log(`free limit resets available: ${result.limitResetsAvailable}`);
     console.log('Reported percentages may be rounded. Bucket names do not establish model mappings.');
   }
 }

@@ -1,0 +1,66 @@
+#!/usr/bin/env node
+// Read the Grok plan's usage through Grok's own agent; never starts a session or a model request.
+// The `_x.ai/billing` method is undocumented and may change with any Grok Build release.
+const { spawn } = require('node:child_process');
+const readline = require('node:readline');
+
+function main() {
+  const args = process.argv.slice(2);
+  if (args.some(arg => arg !== '--json')) throw new Error('usage: grok-usage [--json]');
+  const child = spawn('grok', ['agent', 'stdio'], { stdio: ['pipe', 'pipe', 'ignore'] });
+  const send = message => child.stdin.write(JSON.stringify({ jsonrpc: '2.0', ...message }) + '\n');
+  // Exit at once: the agent takes several seconds to stop after its answer.
+  const finish = (error, value) => {
+    child.kill();
+    if (error) { console.error(`grok-usage: ${error.message}`); process.exit(1); }
+    report(value, args.includes('--json'));
+    process.exit(0);
+  };
+  setTimeout(() => finish(new Error('Grok usage request timed out')), 30000);
+  child.on('error', error => finish(error));
+  child.on('exit', () => finish(new Error('Grok exited before returning usage')));
+  child.stdin.on('error', error => finish(error));
+  readline.createInterface({ input: child.stdout }).on('line', line => {
+    let message;
+    try { message = JSON.parse(line); } catch { return; }
+    if (message.id !== 1 && message.id !== 2) return;
+    if (message.error) {
+      return finish(new Error(message.error.code === -32601
+        ? 'this Grok Build version no longer answers _x.ai/billing'
+        : message.error.message));
+    }
+    if (message.id === 1) send({ id: 2, method: '_x.ai/billing', params: {} });
+    else finish(null, message.result);
+  });
+  send({ id: 1, method: 'initialize', params: {
+    protocolVersion: 1, clientCapabilities: {},
+    clientInfo: { name: 'dotfiles_usage', version: '1.0' },
+  } });
+}
+
+function report(response, asJson) {
+  const config = response?.config;
+  const period = config?.currentPeriod;
+  if (!Number.isFinite(config?.creditUsagePercent) || !period?.end) {
+    console.error('grok-usage: Grok returned an unrecognized usage shape');
+    process.exit(1);
+  }
+  const result = {
+    observedAt: new Date().toISOString(),
+    plan: response.subscription_tier ?? null,
+    windows: [{
+      window: String(period.type ?? '').replace('USAGE_PERIOD_TYPE_', '').toLowerCase() || 'unknown',
+      usedPercent: config.creditUsagePercent,
+      remainingPercent: 100 - config.creditUsagePercent,
+      resetsAt: new Date(period.end).toISOString(),
+    }],
+  };
+  if (asJson) console.log(JSON.stringify(result, null, 2));
+  else {
+    for (const value of result.windows) {
+      console.log(`grok ${value.window}: ${value.usedPercent}% used; resets ${value.resetsAt}`);
+    }
+  }
+}
+
+try { main(); } catch (error) { console.error(`grok-usage: ${error.message}`); process.exit(1); }

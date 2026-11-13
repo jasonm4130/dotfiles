@@ -5,37 +5,29 @@ description: Read how much of the Claude, Codex and Grok subscription allowances
 
 # Subscription usage across Claude, Codex and Grok
 
-None of these checks starts a model request. Report each provider as percent used, the window it covers, and the reset time in local time.
+Run all three; none starts a model request. Each prints JSON with a `windows` list of `usedPercent` and `resetsAt` (UTC).
+
+```bash
+claude-usage --json < /dev/null
+codex-usage --json < /dev/null
+grok-usage --json < /dev/null
+```
+
+Report each provider as percent used, the window it covers, and the reset in local time. All three read undocumented interfaces that can change with any CLI release, so a script that exits non-zero is a finding to report with its message, not a reason to guess a number.
 
 ## Claude
 
-Claude Code only exposes limits through the status line. `~/.local/bin/claude-statusline-tee` saves the latest status-line JSON that carried them:
+`claude-usage` asks the endpoint behind Claude Code's own `/usage`, using the login Claude Code keeps in the Keychain. `window` is `weekly_all` for the whole plan and `weekly_scoped` for one model, named in `model`. A window the endpoint leaves out was not reported; do not report it as zero.
 
-```bash
-python3 - <<'EOF'
-import json, os, time
-p = os.path.expanduser("~/.local/state/ships-log/claude-statusline.json")
-age = (time.time() - os.path.getmtime(p)) / 60
-for name, w in json.load(open(p)).get("rate_limits", {}).items():
-    reset = time.strftime("%a %d %b %H:%M", time.localtime(w["resets_at"]))
-    print(f"claude {name}: {w['used_percentage']}% used, resets {reset}")
-print(f"snapshot is {age:.0f} min old")
-EOF
-```
-
-The snapshot is only as fresh as the last assistant message in any session, so say how old it is. A window that is missing from `rate_limits` was not reported by Claude Code; do not report it as zero.
+When `source` is `snapshot`, the login had expired or was refused and the numbers come from the last status-line update: say so, give `snapshotAgeMinutes`, and give `fallbackReason`. Never refresh the login from a script or by hand: a refresh rotates the token and can sign Claude Code out. Any normal Claude Code request renews it.
 
 ## Codex
 
-```bash
-codex-usage --json < /dev/null
-```
-
-Each entry in `windows` gives `usedPercent`, `durationMinutes` (10080 is the weekly window) and `resetsAt` in UTC. Convert `resetsAt` to local time.
+`codex-usage` asks Codex's own app-server, which handles the login. `durationMinutes` 10080 is the weekly window. `limitResetsAvailable` counts free full resets of the limit: mention them when a window is above 80%. `creditBalance` is prepaid credit, separate from the plan's windows.
 
 ## Grok
 
-`grok usage` cannot print plan usage outside a session (checked on Grok Build 1.0.77), and `grok -p "/usage"` treats it as a prompt. Ask Jason to run `/usage` inside an interactive `grok` session and paste the result. Re-check `grok usage < /dev/null` after a Grok Build update before repeating this.
+`grok-usage` asks Grok's own agent for billing over its stdio protocol; it creates no session. If it reports that the Grok Build version no longer answers `_x.ai/billing`, or a login error, ask Jason to run `/usage` inside an interactive `grok` session and paste the result.
 
 ## Using the numbers
 
