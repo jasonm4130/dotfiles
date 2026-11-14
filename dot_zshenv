@@ -26,6 +26,8 @@
 # (git keeps its own editor via .gitconfig core.editor=nvim.)
 export EDITOR="zed --wait"
 export VISUAL="zed --wait"
+# The Dells k3s cluster; installed from 1Password by kubeconfig-install.
+export KUBECONFIG="$HOME/.kube/dells.yaml"
 
 # Agent shells only: make zsh behave like bash for the two things models write
 # assuming bash. `echo === x ===` fails under EQUALS (`=cmd` expansion) and an
