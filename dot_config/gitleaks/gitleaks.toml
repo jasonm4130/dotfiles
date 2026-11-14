@@ -8,6 +8,12 @@ description = "1Password URIs and known false positives"
 regexes = [
   '''op://[A-Za-z0-9 _/-]+''',
   '''postToLinkedIn''',
+  # Public OpenRouter / Qwen model IDs in when-model's first_seen export (2026-11-14)
+  '''\bunbiased/pareto\b''',
+  '''\bperplexity/sonar\b''',
+  '''\bqwen3\.7-plus\b''',
+  '''\bscaledown/summarize\b''',
+  '''\belorian/glimpse\b''',
 ]
 paths = [
   '''docs/specs/.*\.md''',
