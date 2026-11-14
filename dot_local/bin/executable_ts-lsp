@@ -1,0 +1,16 @@
+#!/bin/sh
+# TypeScript language server for Claude Code's ts-lsp plugin (~/.claude/local-marketplace).
+# Uses the nearest project's own TypeScript when it is 7+ (`tsc --lsp`, the native port,
+# which matches what `pnpm typecheck` sees); otherwise falls back to the global
+# typescript-language-server + typescript@6 (see ~/.config/mise/config.toml).
+dir=$PWD
+while [ "$dir" != "/" ]; do
+  tsc=$dir/node_modules/.bin/tsc
+  if [ -x "$tsc" ]; then
+    major=$("$tsc" -v 2>/dev/null | sed -n 's/^Version \([0-9]*\).*/\1/p')
+    if [ "${major:-0}" -ge 7 ]; then exec "$tsc" --lsp --stdio; fi
+    break
+  fi
+  dir=$(dirname "$dir")
+done
+exec typescript-language-server --stdio

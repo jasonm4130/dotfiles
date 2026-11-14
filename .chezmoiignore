@@ -30,6 +30,8 @@ CLAUDE.md
 !.claude/sounds/**/**
 !.claude/mcp/
 !.claude/mcp/**/**
+!.claude/local-marketplace/
+!.claude/local-marketplace/**/**
 # Only repo-owned skills: skills/synced belongs to claude.ai.
 !.claude/skills/
 !.claude/skills/usage/

@@ -68,7 +68,8 @@
   "enabledPlugins": {
     "codex@openai-codex": true,
     "grok-build@xai-grok-build": true,
-    "typescript-lsp@claude-plugins-official": true
+    "typescript-lsp@claude-plugins-official": false,
+    "ts-lsp@local": true
   },
   "extraKnownMarketplaces": {
     "openai-codex": {
@@ -81,6 +82,12 @@
       "source": {
         "source": "github",
         "repo": "xai-org/grok-build-plugin-cc"
+      }
+    },
+    "local": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/jasonmatthew/.claude/local-marketplace"
       }
     }
   },

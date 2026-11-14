@@ -1,0 +1,11 @@
+{
+  "name": "local",
+  "owner": { "name": "Jason Matthew" },
+  "plugins": [
+    {
+      "name": "ts-lsp",
+      "source": "./plugins/ts-lsp",
+      "description": "TypeScript LSP: the project's TS 7 `tsc --lsp` when present, else typescript-language-server"
+    }
+  ]
+}
