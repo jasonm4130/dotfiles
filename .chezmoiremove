@@ -24,7 +24,6 @@
 .claude/agents
 .claude/hooks
 .claude/rules
-.claude/mcp
 .claude/skills/gmail-connector
 .claude/skills/herdr
 .claude/skills/llm-wiki
