@@ -8,6 +8,7 @@ A repo's own AGENTS.md wins where it conflicts with this file, except for the co
 - Put a warning, risk or cost in the first line of a reply. Prose by default, no trailing recap.
 - Git: stage explicit paths, never `commit -a`. Merge PRs with `gh pr merge --merge`; never `--admin` past failing checks.
 - Make changes in a git worktree, not the main checkout: Jason and other sessions commit there at the same time. Remove the worktree once its branch has merged.
+- Run anything that waits more than about a minute (CI watches, deploys, playbooks, builds, poll loops) in the background, so it never blocks the chat; pick up its result when it finishes.
 - Python uses uv; JS/TS uses pnpm; GitHub goes through `gh`.
 - Runtimes come from mise: respect a repo's `mise.toml`, `.tool-versions`, `.nvmrc` or `engines`, and use `mise use` or `mise exec`, not brew, nvm or global installs. Global npm tools exist per Node version, so one installed under one version is missing under another; run `mise reshim` after installing.
 - Repos live in `~/Code`. Personal config lives in chezmoi: edit the source, read `chezmoi diff <target>`, then `chezmoi apply <target>`.
