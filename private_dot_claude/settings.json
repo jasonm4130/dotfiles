@@ -95,5 +95,28 @@
   "theme": "dark",
   "tui": "fullscreen",
   "remoteControlAtStartup": true,
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "hooks": {
+    "TeammateIdle": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/claude-team-guard"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Agent|SendMessage",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/claude-team-guard"
+          }
+        ]
+      }
+    ]
+  }
 }
