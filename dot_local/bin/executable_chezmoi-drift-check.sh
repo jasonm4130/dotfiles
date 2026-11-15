@@ -20,3 +20,13 @@ if [[ -n "$drift" ]]; then
 else
   echo "=== $(date): no drift ==="
 fi
+
+# Repos in ~/Code that the private code map doesn't mention yet.
+map_check="$HOME/Code/.map/bin/check"
+if [[ -x "$map_check" ]]; then
+  if ! unmapped="$("$map_check")"; then
+    echo "=== $(date): code map out of date ==="
+    printf '%s\n' "$unmapped"
+    /usr/bin/osascript -e "display notification \"Repos missing from ~/Code/.map — run ~/Code/.map/bin/check\" with title \"code map\""
+  fi
+fi
