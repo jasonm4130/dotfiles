@@ -21,6 +21,22 @@ echo "=== brew weekly update started $(date) ==="
 rc=0
 brew update || rc=$?
 brew upgrade --formula || rc=$?
-brew upgrade --cask || rc=$?
+# Casks that update themselves (auto_updates true: Chrome, Signal, Obsidian...)
+# are left to their own updaters. brew replaces an app by deleting the bundle
+# and moving the new one in, which breaks a running Chrome: its old version
+# directory vanishes, so every new tab's renderer fails to launch (sad-tab) until
+# a relaunch. Current brew lists these as outdated even without --greedy.
+outdated="$(brew outdated --cask --quiet)" || rc=$?
+manual=()
+if [ -n "$outdated" ]; then
+  # shellcheck disable=SC2086 # word-split the token list on purpose
+  while IFS= read -r token; do
+    [ -n "$token" ] && manual+=("$token")
+  done < <(brew info --cask --json=v2 $outdated | jq -r '.casks[] | select(.auto_updates != true) | .token') || rc=$?
+  echo "Skipping self-updating casks: $(brew info --cask --json=v2 $outdated | jq -r '[.casks[] | select(.auto_updates == true) | .token] | join(" ")')"
+fi
+if [ "${#manual[@]}" -gt 0 ]; then
+  brew upgrade --cask "${manual[@]}" || rc=$?
+fi
 echo "=== brew weekly update finished $(date) (exit $rc) ==="
 exit "$rc"
