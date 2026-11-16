@@ -24,7 +24,9 @@
   "permissions": {
     "allow": [
       "Read(~/Code/**)",
-      "Read(~/.local/share/chezmoi/**)"
+      "Read(~/.local/share/chezmoi/**)",
+      "Read(~/.ssh/config)",
+      "Edit(~/.ssh/config)"
     ],
     "deny": [
       "Read(//**/.env)",
@@ -41,7 +43,9 @@
       "Edit(//**/.env)",
       "Edit(//**/.env.local)",
       "Edit(//**/.env.*.local)",
-      "Edit(~/.ssh/**)",
+      "Edit(~/.ssh/id*)",
+      "Edit(~/.ssh/*[-_.]*)",
+      "Edit(~/.ssh/*/**)",
       "Bash(git commit -a*)",
       "Bash(git commit --all*)"
     ],
