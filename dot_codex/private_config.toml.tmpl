@@ -4,6 +4,6 @@
 {{- $live = fromToml (include $path) -}}
 {{- end -}}
 {{/* Own the model choice only; preserve the app's own state (projects, plugins, desktop, tui). */}}
-model = "gpt-6.1-sol"
+model = "gpt-6.2-sol"
 model_reasoning_effort = "medium"
 {{ toToml (omit $live "model" "model_reasoning_effort" "developer_instructions" "approvals_reviewer" "agents" "otel" "mcp_servers" "hooks") -}}
