@@ -84,3 +84,6 @@ eval "$(direnv hook zsh)"
 # `cdi` opens the fzf picker. Must stay last — it wraps whatever `cd` is at
 # the point it loads, so anything above that redefines cd would clobber it.
 eval "$(zoxide init zsh --cmd cd)"
+
+# Added by Kiri: its docker and kiri commands (kiri setup --uninstall removes this)
+case ":$PATH:" in *":$HOME/.kiri/bin:"*) ;; *) export PATH="$PATH:$HOME/.kiri/bin" ;; esac
