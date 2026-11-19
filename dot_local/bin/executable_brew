@@ -1,0 +1,10 @@
+#!/bin/sh
+# Shim ahead of /opt/homebrew/bin on PATH: adds ghcr auth to every brew call,
+# interactive or not (scripts, Claude Code's Bash tool), without paying for
+# `gh auth token` at shell startup. Why the token exists and why it must be
+# base64-encoded: see the comment above the brew note in ~/.zshrc.
+if [ -z "$HOMEBREW_DOCKER_REGISTRY_TOKEN" ] && command -v gh >/dev/null 2>&1; then
+  t="$(gh auth token 2>/dev/null | tr -d '\n' | base64 | tr -d '\n')"
+  [ -n "$t" ] && export HOMEBREW_DOCKER_REGISTRY_TOKEN="$t"
+fi
+exec /opt/homebrew/bin/brew "$@"
