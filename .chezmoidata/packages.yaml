@@ -24,6 +24,7 @@ brew:
   - getagentseal/codeburn/codeburn
   - cmake
   - direnv
+  - docker-credential-helper
   - duti
   - expat
   - findutils
@@ -74,7 +75,6 @@ brew:
   - bambu-studio
   - discord
   - displaylink
-  - docker-desktop
   - figma
   - firefox@developer-edition
   - flux-app
