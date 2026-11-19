@@ -51,8 +51,12 @@ export PATH="$PATH:$HOME/.cache/lm-studio/bin"
 # Sourced from gh's own Keychain entry rather than 1Password: it is the same
 # credential, so copying it into a second store would only add a thing to rotate.
 # Unset when gh is absent or logged out, and brew falls back to anonymous.
-command -v gh >/dev/null 2>&1 && \
-  export HOMEBREW_DOCKER_REGISTRY_TOKEN="$(gh auth token 2>/dev/null | tr -d '\n' | base64 | tr -d '\n')"
+# Fetched per brew call, not per shell: `gh auth token` costs ~30ms at startup.
+brew() {
+  local t
+  command -v gh >/dev/null 2>&1 && t="$(gh auth token 2>/dev/null | tr -d '\n' | base64 | tr -d '\n')"
+  if [[ -n $t ]]; then HOMEBREW_DOCKER_REGISTRY_TOKEN="$t" command brew "$@"; else command brew "$@"; fi
+}
 
 # Aliases
 alias zshconfig="code ~/.zshrc"
