@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Reloads when the plist changes: {{ include "private_Library/private_LaunchAgents/dev.jasonmatthew.tailscale-home-routes.plist.tmpl" | sha256sum }}
+set -euo pipefail
+
+PLIST="$HOME/Library/LaunchAgents/dev.jasonmatthew.tailscale-home-routes.plist"
+
+if [ ! -x /Applications/Tailscale.app/Contents/MacOS/Tailscale ] && ! command -v tailscale >/dev/null 2>&1; then
+  echo "⏭️  Tailscale not installed; skipping tailscale-home-routes agent"
+  exit 0
+fi
+
+if [ ! -r "$HOME/.config/tailscale-home/gateway-macs" ]; then
+  echo "ℹ️  ~/.config/tailscale-home/gateway-macs missing: the agent loads but changes nothing until it exists"
+fi
+
+echo "🔁 (Re)loading tailscale-home-routes launchd agent"
+launchctl unload "$PLIST" 2>/dev/null || true
+launchctl load -w "$PLIST"
+echo "✅ tailscale-home-routes agent loaded"
