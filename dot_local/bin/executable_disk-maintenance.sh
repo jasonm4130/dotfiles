@@ -30,6 +30,10 @@ if command -v cargo-sweep >/dev/null 2>&1; then
     echo "--- cargo sweep (cap shared target at ${CARGO_TARGET_MAX}) ---"
     cargo sweep --maxsize "$CARGO_TARGET_MAX" "$(dirname "$cap_proj")" 2>&1 || true
   fi
+  # cargo sweep ignores incremental/ (113GB of a 115GB target once). It only
+  # speeds up rebuilds, so drop sessions untouched for a week.
+  echo "--- cargo incremental (stale > 7d) ---"
+  find "$HOME/.cache/cargo"/target*/*/incremental -mindepth 1 -maxdepth 1 -mtime +7 -exec rm -rf {} + 2>/dev/null || true
 else
   echo "--- cargo-sweep not installed, skipping Rust sweep ---"
 fi
