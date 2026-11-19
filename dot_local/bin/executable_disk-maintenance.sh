@@ -23,7 +23,13 @@ if command -v cargo-sweep >/dev/null 2>&1; then
   # Also sweep the shared target dir directly.
   [ -d "$HOME/.cache/cargo" ] && cargo sweep --time "$IDLE_DAYS" -r "$HOME/.cache/cargo" 2>&1 || true
   # Then cap it: drop the oldest artifacts until it is under CARGO_TARGET_MAX.
-  [ -d "$HOME/.cache/cargo/target" ] && cargo sweep --maxsize "$CARGO_TARGET_MAX" "$HOME/.cache/cargo/target" 2>&1 || true
+  # cargo sweep takes a project, not a target dir; any project here resolves to
+  # the shared target through ~/.cargo/config.toml, so the first one found will do.
+  cap_proj="$(find "$GITROOT" -maxdepth 2 -name Cargo.toml -not -path '*/node_modules/*' 2>/dev/null | head -1)"
+  if [ -n "$cap_proj" ]; then
+    echo "--- cargo sweep (cap shared target at ${CARGO_TARGET_MAX}) ---"
+    cargo sweep --maxsize "$CARGO_TARGET_MAX" "$(dirname "$cap_proj")" 2>&1 || true
+  fi
 else
   echo "--- cargo-sweep not installed, skipping Rust sweep ---"
 fi
