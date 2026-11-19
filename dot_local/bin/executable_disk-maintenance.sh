@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Monthly disk maintenance: trim regenerable build artifacts and package caches.
+# Weekly disk maintenance: trim regenerable build artifacts and package caches.
 # Scheduled via ~/Library/LaunchAgents/com.jasonmatthew.disk-maintenance.plist
 set -uo pipefail
 
@@ -8,6 +8,9 @@ export PATH="/opt/homebrew/bin:$HOME/.cargo/bin:$HOME/.local/share/mise/shims:$H
 
 GITROOT="$HOME/Code"
 IDLE_DAYS=30
+# Hard ceiling for the shared cargo target dir (~/.cargo/config.toml target-dir).
+# Age alone does not bound it: active builds kept it at 200GB.
+CARGO_TARGET_MAX="50GB"
 
 echo "=========================================="
 echo "disk-maintenance run: $(date)"
@@ -19,6 +22,8 @@ if command -v cargo-sweep >/dev/null 2>&1; then
   cargo sweep --time "$IDLE_DAYS" -r "$GITROOT" 2>&1 || true
   # Also sweep the shared target dir directly.
   [ -d "$HOME/.cache/cargo" ] && cargo sweep --time "$IDLE_DAYS" -r "$HOME/.cache/cargo" 2>&1 || true
+  # Then cap it: drop the oldest artifacts until it is under CARGO_TARGET_MAX.
+  [ -d "$HOME/.cache/cargo/target" ] && cargo sweep --maxsize "$CARGO_TARGET_MAX" "$HOME/.cache/cargo/target" 2>&1 || true
 else
   echo "--- cargo-sweep not installed, skipping Rust sweep ---"
 fi
