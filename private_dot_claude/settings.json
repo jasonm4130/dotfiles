@@ -10,6 +10,7 @@
   "model": "opus",
   "effortLevel": "medium",
   "advisorModel": "fable",
+  "autoDreamEnabled": false,
   "autoCompactWindow": 300000,
   "modelSettings": {
     "claude-haiku-5-5": {
