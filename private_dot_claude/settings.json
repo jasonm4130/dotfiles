@@ -7,22 +7,6 @@
     "commit": "",
     "pr": ""
   },
-  "model": "opus",
-  "effortLevel": "medium",
-  "advisorModel": "fable",
-  "autoDreamEnabled": false,
-  "autoCompactWindow": 300000,
-  "modelSettings": {
-    "claude-haiku-5-5": {
-      "autoCompactWindow": 100000
-    }
-  },
-  "teammateMode": "in-process",
-  "statusLine": {
-    "type": "command",
-    "command": "CLAUDE_STATUSLINE_SNAPSHOT=$HOME/.local/state/ships-log/claude-statusline.json ~/.local/bin/claude-statusline",
-    "refreshInterval": 30
-  },
   "permissions": {
     "allow": [
       "Read(~/Code/**)",
@@ -63,48 +47,7 @@
     ],
     "defaultMode": "auto"
   },
-  "autoMode": {
-    "environment": [
-      "$defaults",
-      "**Trusted repo**: any git checkout under ~/Code whose origin is under github.com/jasonm4130 or github.com/jasonm4130-labs, plus the chezmoi source at ~/.local/share/chezmoi (origin github.com/jasonm4130/dotfiles) and the files it renders under $HOME",
-      "**Secrets management**: 1Password; secrets reach commands via `op run --env-file .env.op -- <command>`, never plaintext",
-      "**Additional context**: Solo developer on a private laptop; no employer data on this machine. Commits, pushes and `gh pr merge --merge` on the trusted repos are routine; `--admin` merges and force pushes are not"
-    ]
-  },
-  "enabledPlugins": {
-    "codex@openai-codex": true,
-    "grok-build@xai-grok-build": true,
-    "typescript-lsp@claude-plugins-official": false,
-    "ts-lsp@local": true,
-    "pyright-lsp@claude-plugins-official": true,
-    "rust-analyzer-lsp@claude-plugins-official": true,
-    "gopls-lsp@claude-plugins-official": true
-  },
-  "extraKnownMarketplaces": {
-    "openai-codex": {
-      "source": {
-        "source": "github",
-        "repo": "openai/codex-plugin-cc"
-      }
-    },
-    "xai-grok-build": {
-      "source": {
-        "source": "github",
-        "repo": "xai-org/grok-build-plugin-cc"
-      }
-    },
-    "local": {
-      "source": {
-        "source": "directory",
-        "path": "/Users/jasonmatthew/.claude/local-marketplace"
-      }
-    }
-  },
-  "outputStyle": "Concise",
-  "theme": "dark",
-  "tui": "fullscreen",
-  "remoteControlAtStartup": true,
-  "agentPushNotifEnabled": true,
+  "model": "opus",
   "hooks": {
     "TeammateIdle": [
       {
@@ -174,6 +117,70 @@
           }
         ]
       }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "CLAUDE_STATUSLINE_SNAPSHOT=$HOME/.local/state/ships-log/claude-statusline.json ~/.local/bin/claude-statusline",
+    "refreshInterval": 30
+  },
+  "enabledPlugins": {
+    "codex@openai-codex": true,
+    "grok-build@xai-grok-build": true,
+    "typescript-lsp@claude-plugins-official": false,
+    "ts-lsp@local": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "gopls-lsp@claude-plugins-official": true,
+    "pstack@jasonm4130-claude-skills": true
+  },
+  "extraKnownMarketplaces": {
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
+    },
+    "xai-grok-build": {
+      "source": {
+        "source": "github",
+        "repo": "xai-org/grok-build-plugin-cc"
+      }
+    },
+    "local": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/jasonmatthew/.claude/local-marketplace"
+      }
+    },
+    "jasonm4130-claude-skills": {
+      "source": {
+        "source": "github",
+        "repo": "jasonm4130/claude-skills"
+      }
+    }
+  },
+  "outputStyle": "Concise",
+  "effortLevel": "medium",
+  "modelSettings": {
+    "claude-haiku-5-5": {
+      "autoCompactWindow": 100000
+    }
+  },
+  "autoCompactWindow": 300000,
+  "advisorModel": "fable",
+  "tui": "fullscreen",
+  "autoDreamEnabled": false,
+  "theme": "dark",
+  "teammateMode": "in-process",
+  "remoteControlAtStartup": true,
+  "agentPushNotifEnabled": true,
+  "autoMode": {
+    "environment": [
+      "$defaults",
+      "**Trusted repo**: any git checkout under ~/Code whose origin is under github.com/jasonm4130 or github.com/jasonm4130-labs, plus the chezmoi source at ~/.local/share/chezmoi (origin github.com/jasonm4130/dotfiles) and the files it renders under $HOME",
+      "**Secrets management**: 1Password; secrets reach commands via `op run --env-file .env.op -- <command>`, never plaintext",
+      "**Additional context**: Solo developer on a private laptop; no employer data on this machine. Commits, pushes and `gh pr merge --merge` on the trusted repos are routine; `--admin` merges and force pushes are not"
     ]
   }
 }

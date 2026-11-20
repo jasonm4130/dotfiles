@@ -109,7 +109,6 @@ brew:
   - bmewburn.vscode-intelephense-client
   - bradlc.vscode-tailwindcss
   - christian-kohler.npm-intellisense
-  - codestream.codestream
   - dart-code.dart-code
   - dart-code.flutter
   - dbaeumer.vscode-eslint
