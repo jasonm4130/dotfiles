@@ -11,7 +11,10 @@
 #   3. mirrors the shareable firstmate scout reports into a staging folder
 #      that the wiki index carries as a second collection, `fm-reports`;
 #   4. refreshes the QMD index (keyword index and embeddings) through the
-#      wiki's own qmd_bootstrap.py, so `--check` stays green for sessions.
+#      wiki's own qmd_bootstrap.py, so `--check` stays green for sessions;
+#   5. alerts, at most once a day, when the oldest inbox entry still waiting
+#      for ingest (per the wiki's `scripts/ingest_gate.py pending`) is
+#      INBOX_STALE_DAYS old: the unattended ingest routine has stopped.
 #
 # It never guesses: a checkout with tracked edits, a Git operation in progress,
 # local commits or a divergence is left exactly as it is. Most of those are a
@@ -40,7 +43,8 @@
 # reachability check), WIKI_SYNC_NOTIFY (a command given title and message),
 # WIKI_SYNC_LOG_MAX_BYTES, WIKI_SYNC_SETTLE (seconds an inbox file must sit
 # untouched before it is published), WIKI_SYNC_SKIP_QMD (1 skips step 4),
-# WIKI_SYNC_TODAY (YYYY-MM-DD, for stale_after).
+# WIKI_SYNC_TODAY (YYYY-MM-DD, for stale_after and inbox age),
+# WIKI_SYNC_INBOX_STALE_DAYS (days before a waiting inbox entry alerts).
 set -uo pipefail
 
 # mise shims first, as in an interactive shell: QMD's native modules are built
@@ -62,6 +66,7 @@ REMOTE=origin
 BRANCH=main
 ALERT_EVERY=3600
 SYNC_STALE=21600
+INBOX_STALE_DAYS="${WIKI_SYNC_INBOX_STALE_DAYS:-3}"
 
 mkdir -p "$STATE_DIR" "$(dirname "$LOG")"
 
@@ -365,7 +370,38 @@ refresh_index() {
   fi
 }
 
+# ── 5: alert when the inbox is not being ingested ───────────────────────────
+# Its own state file and a daily limit: the sync alert above clears itself on
+# every clean run, and this condition says nothing about the sync.
+INBOX_ALERT_FILE="$STATE_DIR/inbox-alert"
+check_inbox_age() {
+  local out oldest odate age now last=0
+  [ -f "$WIKI/scripts/ingest_gate.py" ] || return 0
+  if ! out=$(cd "$WIKI" && python3 scripts/ingest_gate.py pending 2>&1); then
+    log "ingest_gate.py pending failed: $(tail -n1 <<<"$out")"
+    return 0
+  fi
+  oldest=$(grep -m1 '^inbox/' <<<"$out")
+  if [ -z "$oldest" ]; then
+    rm -f "$INBOX_ALERT_FILE"
+    return 0
+  fi
+  odate=$(sed -n 's|^inbox/\([0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}\).*|\1|p' <<<"$oldest")
+  [ -n "$odate" ] || return 0
+  age=$(python3 -c 'import sys, datetime as d; print((d.date.fromisoformat(sys.argv[2]) - d.date.fromisoformat(sys.argv[1])).days)' "$odate" "$TODAY" 2>/dev/null) || return 0
+  [ "$age" -ge "$INBOX_STALE_DAYS" ] || return 0
+  now=$(date +%s)
+  [ -f "$INBOX_ALERT_FILE" ] && last=$(head -n1 "$INBOX_ALERT_FILE" 2>/dev/null || echo 0)
+  case "$last" in '' | *[!0-9]*) last=0 ;; esac
+  if [ $((now - last)) -ge 86400 ]; then
+    log "ALERT: inbox not ingested; $(grep -c '^inbox/' <<<"$out") waiting, oldest ${oldest#inbox/} is ${age} days old"
+    notify "Wiki inbox not being ingested" "$(grep -c '^inbox/' <<<"$out") entries waiting; the oldest is ${age} days old. The unattended ingest routine may have stopped."
+    echo "$now" >"$INBOX_ALERT_FILE"
+  fi
+}
+
 sync_wiki || problem=1
+[ "$SYNCED" -eq 1 ] && check_inbox_age
 stage_reports || problem=1
 if [ "${WIKI_SYNC_SKIP_QMD:-0}" != 1 ]; then
   refresh_index || problem=1

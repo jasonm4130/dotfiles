@@ -254,3 +254,21 @@ test('without a policy file no report is staged, even a stale copy from before',
   assert.deepEqual(s.staged(), []);
   assert.match(s.logText(), /no report policy at /);
 });
+
+test('an inbox entry left waiting for days alerts once a day; a fresh inbox stays quiet', (t) => {
+  const s = setup(t);
+  writeFileSync(path.join(s.mac, 'scripts/ingest_gate.py'),
+    "import sys\nassert sys.argv[1] == 'pending'\nprint('inbox/2026-11-01-0900-old.md')\nprint('inbox/2026-11-19-0900-new.md')\n");
+  s.git(s.mac, 'add', '-A');
+  s.git(s.mac, 'commit', '--quiet', '-m', 'gate');
+  s.git(s.mac, 'push', '--quiet', 'origin', 'main');
+
+  s.runSync({ WIKI_SYNC_TODAY: '2026-11-03' });
+  assert.deepEqual(s.notifications(), []);
+
+  s.runSync({ WIKI_SYNC_TODAY: '2026-11-20' });
+  s.runSync({ WIKI_SYNC_TODAY: '2026-11-20' });
+  const alerts = s.notifications().filter((n) => n.startsWith('Wiki inbox not being ingested'));
+  assert.equal(alerts.length, 1);
+  assert.match(alerts[0], /2 entries waiting; the oldest is 19 days old/);
+});
