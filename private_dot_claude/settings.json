@@ -182,5 +182,18 @@
       "**Secrets management**: 1Password; secrets reach commands via `op run --env-file .env.op -- <command>`, never plaintext",
       "**Additional context**: Solo developer on a private laptop; no employer data on this machine. Commits, pushes and `gh pr merge --merge` on the trusted repos are routine; `--admin` merges and force pushes are not"
     ]
-  }
+  },
+  "pluginConfigs": {
+    "cc-plugin-agents-md@builtin": {
+      "options": {
+        "instructionFiles": "claude-md-and-agents-md"
+      }
+    }
+  },
+  "claudeMdExcludes": [
+    "**/node_modules/**",
+    "**/vendor/**",
+    "**/.venv/**",
+    "**/target/**"
+  ]
 }
