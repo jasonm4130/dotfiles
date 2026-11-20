@@ -7,3 +7,7 @@ graphify-out/
 **/.claude/.cc-writes/
 
 **/.claude/settings.local.json
+
+# Per-machine agent instructions (import ~/Code/.map/<repo>/memory.md)
+CLAUDE.local.md
+AGENTS.local.md
