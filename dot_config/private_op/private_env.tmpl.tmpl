@@ -42,4 +42,4 @@ MOONSHOT_API_KEY={{ op://Agents/ry4cmehmdyurpof6gumdkyvlk4/credential }}
 # takes precedence over `wrangler login` OAuth. The cloudflare MCP servers OAuth
 # separately (type:http, no env) and are unaffected. Load on demand only for
 # non-interactive REST/CI use:
-#   export CLOUDFLARE_API_TOKEN=$(op-fast read op:<slash><slash>Private/cloudflare-api/credential)
+#   export CLOUDFLARE_API_TOKEN=$(op-agent read op:<slash><slash>Agents/cloudflare-api/credential)
