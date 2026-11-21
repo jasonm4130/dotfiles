@@ -68,54 +68,6 @@
             "command": "~/.local/bin/claude-team-guard"
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.local/bin/claude-dream"
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.local/bin/claude-dream"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.local/bin/claude-dream"
-          }
-        ]
-      }
-    ],
-    "PostCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.local/bin/claude-dream"
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.local/bin/claude-dream"
-          }
-        ]
       }
     ]
   },
@@ -195,5 +147,6 @@
     "**/vendor/**",
     "**/.venv/**",
     "**/target/**"
-  ]
+  ],
+  "autoMemoryEnabled": false
 }
