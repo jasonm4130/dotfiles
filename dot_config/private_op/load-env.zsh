@@ -3,13 +3,10 @@
 # the pair, so this lives in one file with a once-per-process guard rather than
 # being copied into both. Two copies is how the dead `||` below went unnoticed.
 #
-# On persistence: op-fast caches secrets in the macOS Keychain, which is
-# process-independent and survives reboots. That is the persistence layer, and
-# it is why Touch ID is not prompted per tty. This file only re-exports from
-# that cache into the current process (~30ms warm), so there is nothing to
-# persist at the shell level — only the redundant second call to avoid.
-#
-# TTLs are in ~/.config/op-fast/config.toml (4h default, 15m for stripe-secret).
+# Secrets come from the Agents vault through `op-agent` (the 1Password service
+# account "agents", token in the login Keychain), so a new shell resolves them
+# with no Touch ID prompt. There is no local cache: each shell asks 1Password
+# once (~0.5-1s). Items outside the Agents vault cannot go in env.tmpl.
 
 # Recovery hatch, defined before the guard so it exists even on the early return.
 # The guard below is on *attempted*, which means a shell that started while
@@ -29,11 +26,10 @@ op-env-reload() {
 # plain variable already suppresses the second call — which is all this needs to
 # do. Exporting would also suppress it in every CHILD shell, which is worse than
 # redundant: the child would keep whatever the parent resolved, indefinitely, and
-# op-fast's TTL would never get a chance to expire a rotated secret. Let children
-# re-ask; op-fast answers from its Keychain cache in ~30ms and owns freshness.
+# a rotated secret would never reach them. Let children re-ask.
 [[ -n ${_OP_ENV_TRIED:-} ]] && return 0
 
-command -v op-fast >/dev/null 2>&1 || return 0
+command -v op-agent >/dev/null 2>&1 || return 0
 [[ -r $HOME/.config/op/env.tmpl ]] || return 0
 
 typeset -g _OP_ENV_TRIED=1
@@ -48,15 +44,18 @@ _op_xtrace=0
 [[ -o xtrace ]] && _op_xtrace=1
 set +x
 
-# Capture first, THEN parse. `eval "$(op-fast ...)" || warn` cannot work: a failed
-# op-fast yields an empty substitution, and `eval ""` exits 0, so the warning
+# Comment lines are stripped before inject: `op inject` parses {{ }} even inside
+# comments, and env.tmpl's explanatory comments contain them.
+#
+# Capture first, THEN parse. `eval "$(op ...)" || warn` cannot work: a failed
+# op yields an empty substitution, and `eval ""` exits 0, so the warning
 # branch is unreachable. That was the previous behaviour in .zshrc — a locked
 # 1Password produced silence and an unset $TAVILY_API_KEY with no explanation.
 #
 # No `local` here: at sourced top level zsh treats it as a declaration and echoes
 # `_op_env=''` into an interactive terminal. Plain assignment, unset at the end.
-if _op_env=$(op-fast inject -i "$HOME/.config/op/env.tmpl" 2>/dev/null) && [[ -n $_op_env ]]; then
-  # Parsed, NOT eval'd. `op-fast inject` is raw textual substitution with no shell
+if _op_env=$(grep -v '^[[:space:]]*#' "$HOME/.config/op/env.tmpl" | op-agent inject 2>/dev/null) && [[ -n $_op_env ]]; then
+  # Parsed, NOT eval'd. `op inject` is raw textual substitution with no shell
   # quoting, so eval handed every secret to the zsh parser as code: `$$` became
   # the PID (wrong value, no error anywhere), a value with one `"` raised
   # `(eval):1: unmatched "` and aborted every export after it — and because
@@ -71,7 +70,7 @@ if _op_env=$(op-fast inject -i "$HOME/.config/op/env.tmpl" 2>/dev/null) && [[ -n
   # env.tmpl keep its comment block and blank lines. A consequence: a value
   # spanning multiple lines is not representable here and would be truncated at
   # its first newline. env.tmpl holds single-line tokens; a multi-line secret
-  # (a PEM key, say) belongs in an on-demand `op-fast read`, the way
+  # (a PEM key, say) belongs in an on-demand `op-agent read`, the way
   # STRIPE_SECRET_KEY and CLOUDFLARE_API_TOKEN already are.
   #
   # The herestring keeps this in the current shell — a pipe would fork, and the

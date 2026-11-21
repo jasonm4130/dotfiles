@@ -9,7 +9,7 @@ import path from 'node:path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOADER_PATH = path.join(__dirname, '..', 'dot_config', 'private_op', 'load-env.zsh');
 
-// Every "secret" below is a fixture invented for this file. The stub op-fast
+// Every "secret" below is a fixture invented for this file. The stub op-agent
 // never talks to 1Password — the loader is exercised entirely against a fake
 // $HOME with a fake binary on PATH, so a failing assertion can never print a
 // real credential.
@@ -24,7 +24,7 @@ const zshOnly = spawnSync('zsh', ['-f', '-c', 'exit 0']).status === 0
 
 /**
  * Build a throwaway $HOME containing the loader, an env.tmpl, and a stub
- * `op-fast` on PATH that emits `payload` verbatim and exits `exitCode`.
+ * `op-agent` on PATH that emits `payload` verbatim and exits `exitCode`.
  * Every call is tallied so the once-per-process guard can be asserted.
  */
 function makeSandbox(payload, { exitCode = 0, withTemplate = true, withOpFast = true } = {}) {
@@ -41,10 +41,10 @@ function makeSandbox(payload, { exitCode = 0, withTemplate = true, withOpFast = 
   const payloadFile = path.join(home, 'payload');
   writeFileSync(payloadFile, payload);
   if (withOpFast) {
-    // Args are ignored on purpose: the loader's contract with op-fast is
+    // Args are ignored on purpose: the loader's contract with op-agent is
     // "stdout is the injected file, exit status says whether it worked".
     writeFileSync(
-      path.join(binDir, 'op-fast'),
+      path.join(binDir, 'op-agent'),
       `#!/bin/sh\nprintf 'x\\n' >> '${callsFile}'\ncat '${payloadFile}'\nexit ${exitCode}\n`,
       { mode: 0o755 },
     );
@@ -152,7 +152,7 @@ test('blank lines and env.tmpl comments are skipped, not exported', zshOnly, () 
 
 // --- The warning branch stays reachable ---
 
-test('op-fast failing with empty output warns in an interactive shell', zshOnly, () => {
+test('op-agent failing with empty output warns in an interactive shell', zshOnly, () => {
   const s = makeSandbox('', { exitCode: 1 });
   const { stderr } = runLoader(s, { interactive: true });
   assert.ok(stderr.includes('1Password not loaded'), `expected the warning, got: ${stderr}`);
@@ -167,7 +167,7 @@ test('the same failure is silent in a non-interactive shell', zshOnly, () => {
 
 // --- Once per process, and silent when there is nothing to do ---
 
-test('sourcing twice in one process invokes op-fast exactly once', zshOnly, () => {
+test('sourcing twice in one process invokes op-agent exactly once', zshOnly, () => {
   const s = makeSandbox('GUARD_TEST=once\n');
   const { calls, vars } = runLoader(s, {
     names: ['GUARD_TEST'],
@@ -183,7 +183,7 @@ test('op-env-reload clears the guard and re-injects', zshOnly, () => {
   assert.equal(calls, 2);
 });
 
-test('no op-fast on PATH → silent no-op', zshOnly, () => {
+test('no op-agent on PATH → silent no-op', zshOnly, () => {
   const s = makeSandbox('X=y\n', { withOpFast: false });
   const { status, stdout, stderr } = runLoader(s, { interactive: true });
   assert.equal(status, 0);
@@ -191,7 +191,7 @@ test('no op-fast on PATH → silent no-op', zshOnly, () => {
   assert.equal(stderr, '');
 });
 
-test('no env.tmpl → silent no-op, op-fast never called', zshOnly, () => {
+test('no env.tmpl → silent no-op, op-agent never called', zshOnly, () => {
   const s = makeSandbox('X=y\n', { withTemplate: false });
   const { status, stderr, calls } = runLoader(s, { interactive: true });
   assert.equal(status, 0);

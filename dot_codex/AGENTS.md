@@ -3,7 +3,7 @@
 A repo's own AGENTS.md wins where it conflicts with this file, except for the confirmations and the secrets rule.
 
 - Confirm before spending money, messaging a person, deleting or overwriting anything, a production action, or stopping a service. Commits, pushes and PR merges need no confirmation.
-- Secrets come only from 1Password: `op run --env-file .env.op -- <cmd>`. Never put a secret value in a file, command or output.
+- Secrets come only from 1Password: `op-agent run --env-file .env.op -- <cmd>` reads the Agents vault with no prompt; anything outside it needs plain `op` and Jason's Touch ID. Never put a secret value in a file, command or output.
 - When a check ran, quote its result line. Run a thing once before calling it working; say so when no check could run.
 - Put a warning, risk or cost in the first line of a reply. Prose by default, no trailing recap.
 - Git: stage explicit paths, never `commit -a`. Merge PRs with `gh pr merge --merge`; never `--admin` past failing checks.
@@ -34,7 +34,7 @@ A repo's own AGENTS.md wins where it conflicts with this file, except for the co
 ## Secrets, git and CI
 
 - A secret seen in plaintext or printed in a transcript is exposed: say "rotate it" first; the new value goes into 1Password by Jason's hand, and the burned one is not migrated.
-- Check `op whoami` before `op run` or `op read`; if it fails, stop and hand Jason a `!` command. A secret that resolves empty stops the run.
+- If `op-agent` fails, or a needed item is outside the Agents vault, stop and hand Jason a `!` command rather than moving items yourself. A secret that resolves empty stops the run.
 - A hanging `git commit` or "failed to fill whole buffer" means 1Password is locked: ask Jason to unlock it; signing stays on 1Password.
 - Before making anything public, sweep for secrets and PII beyond gitleaks (tracked files, credential-shaped strings, long base64/hex, PEM headers, `/Users/` paths, full history file list) and report clean / mild PII / outstanding.
 - Merge only when `gh pr checks <pr> --json bucket` shows no pending, fail or cancel and at least one pass; `--watch` can exit early.

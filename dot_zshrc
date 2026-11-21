@@ -32,7 +32,7 @@ source "$HOME/google-cloud-sdk/completion.zsh.inc" 2>/dev/null
 # PATH — LM Studio
 export PATH="$PATH:$HOME/.cache/lm-studio/bin"
 
-# Secrets via 1Password CLI — op-fast caches in macOS Keychain to skip per-tty Touch ID.
+# Secrets via 1Password: op-agent (service account, Agents vault) resolves them with no Touch ID.
 # Covers non-login interactive shells, which never source .zprofile. In a normal
 # tab both run and the sentinel makes the second a no-op.
 [ -r "$HOME/.config/op/load-env.zsh" ] && source "$HOME/.config/op/load-env.zsh"
@@ -75,7 +75,7 @@ export PATH="$HOME/.local/bin:$PATH"
 # Starship prompt
 eval "$(starship init zsh)"
 
-# direnv — per-directory env (e.g. ~/Code/unifi secrets via 1Password/op-fast)
+# direnv — per-directory env (e.g. ~/Code/unifi secrets via 1Password)
 # Must stay after prompt setup (starship) per direnv docs.
 eval "$(direnv hook zsh)"
 

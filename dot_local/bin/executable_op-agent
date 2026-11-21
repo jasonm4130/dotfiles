@@ -1,0 +1,12 @@
+#!/bin/sh
+# `op` as the 1Password service account "agents": reads only the Agents and
+# K3s Runners vaults, with no Touch ID prompt. The token lives in the login
+# Keychain (service op-agents-token) and is set for this one command only, so
+# plain `op` keeps its full desktop-app access to every other vault.
+#   op-agent run --env-file .env.op -- <cmd>
+#   op-agent read op://Agents/<item>/<field>
+# Rotate: 1Password -> Developer -> Service Accounts -> agents, then
+#   security add-generic-password -U -a "$USER" -s op-agents-token -w
+tok=$(security find-generic-password -s op-agents-token -w 2>/dev/null) || {
+  echo "op-agent: no op-agents-token in Keychain (see the comment in $0)" >&2; exit 1; }
+OP_SERVICE_ACCOUNT_TOKEN=$tok exec /opt/homebrew/bin/op "$@"
