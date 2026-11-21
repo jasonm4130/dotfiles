@@ -1,4 +1,3 @@
-# Shared build output directory for all Cargo projects.
-# Dependencies built once are reused across projects, and cleanup is one location.
-[build]
-target-dir = "{{ .chezmoi.homeDir }}/.cache/cargo/target"
+# No machine-wide [build] target-dir: each project and worktree builds into its
+# own target/. A shared dir let parallel worktrees overwrite each other's
+# binaries and saved little; transcoder's docs/agent-notes.md has the numbers.
