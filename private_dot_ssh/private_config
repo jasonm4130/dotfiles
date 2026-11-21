@@ -10,7 +10,7 @@ Host *
 # brok and the Dells accept only the personal key. Without IdentitiesOnly the
 # agent offers its deploy keys first, sshd logs each as "Failed publickey",
 # and that noise used to trip BrokSshAuthFailures on ordinary logins.
-Host brok 100.124.98.78 192.168.5.10 192.168.5.20 192.168.5.21 192.168.5.22
+Host brok brok.jasonmatthew.me brok.local 100.124.98.78 192.168.5.10 192.168.5.20 192.168.5.21 192.168.5.22
   IdentityFile ~/.ssh/github-jasonm4130.pub
   IdentitiesOnly yes
 
