@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# gh-merge-green <pr> [timeout-seconds]
+# Merge a PR with `gh pr merge --merge` only once `gh pr checks` shows no
+# pending, fail or cancel bucket and at least one pass. Waits up to the timeout
+# (default 900s) for pending checks; on timeout it refuses, it never merges.
+# Why: on 2026-11-24 an agent wait loop timed out and fell through to a merge
+# with three checks still pending (brok-stacks #1266).
+set -euo pipefail
+pr=${1:?usage: gh-merge-green <pr> [timeout-seconds]}
+timeout=${2:-900}
+deadline=$(( $(date +%s) + timeout ))
+while :; do
+  buckets=$(gh pr checks "$pr" --json bucket -q '[.[].bucket]|unique|join(" ")' 2>/dev/null || true)
+  case " $buckets " in
+    *" fail "*|*" cancel "*) echo "gh-merge-green: refusing, checks: $buckets" >&2; exit 1 ;;
+    *" pending "*|"  ")
+      if [ "$(date +%s)" -ge "$deadline" ]; then
+        echo "gh-merge-green: refusing, still pending after ${timeout}s: $buckets" >&2; exit 2
+      fi
+      sleep 15 ;;
+    *" pass "*) break ;;
+    *) echo "gh-merge-green: refusing, no passing check: $buckets" >&2; exit 1 ;;
+  esac
+done
+echo "gh-merge-green: checks: $buckets"
+exec gh pr merge "$pr" --merge
