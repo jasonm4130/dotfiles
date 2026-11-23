@@ -62,7 +62,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Agent|SendMessage",
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
