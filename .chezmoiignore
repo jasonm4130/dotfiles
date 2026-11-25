@@ -36,6 +36,8 @@ CLAUDE.md
 !.claude/skills/
 !.claude/skills/quota/
 !.claude/skills/quota/**/**
+!.claude/skills/herdr-route/
+!.claude/skills/herdr-route/**/**
 
 # Belt-and-braces: explicit re-ignores (parent ignore covers them, but be loud)
 .claude/.claude.json
