@@ -21,7 +21,7 @@ Each Claude Code pane is named after the area it first worked in (`homelab`, `to
 herdr agent prompt <name> "From <your pane name or area> (<topic>): <message>. Reply to: herdr agent prompt <your name> \"...\""
 ```
 
-- Name yourself as the sender, with the address to reply to. Find your own name with `herdr agent get "$HERDR_PANE_ID" | jq -r .result.agent.name`.
+- Name yourself as the sender, with the address to reply to. Find your own name with `herdr agent get "$HERDR_PANE_ID" | jq -r '.result.agent.name // empty'`; if it prints nothing, give `$HERDR_PANE_ID` as the reply address.
 - The message must stand alone: the receiver has none of your context. Give paths, branch and PR numbers.
 - Don't use `--wait` when sending to a working agent. Claude Code queues the prompt behind the current task, and a wait would block you.
 - If the prompt fails with `agent_blocked`, the receiver is at an approval or question dialog. Never answer another agent's dialog, and never send keys to it. Tell Jason which session is blocked.
@@ -31,5 +31,5 @@ herdr agent prompt <name> "From <your pane name or area> (<topic>): <message>. R
 
 A message in a pane can be lost to a crash, `/clear` or compaction. Messages between agent-team teammates have also gone missing. So for a report, handoff or result that must survive, also write it to a file, and put the path in the message:
 
-- Teammates and helpers: write the report to the lead's scratchpad (or a path the lead names) before sending, then send only the path and a one-line summary.
-- Between sessions: write a Markdown file under `/tmp` or the receiving repo's scratch area, and name it in the prompt.
+- Teammates and helpers: write the report to the path the lead names, or else the lead's scratchpad, before sending. Then send only the absolute path and a one-line summary.
+- Between sessions, or anything that must outlive a reboot: write `~/.local/state/agent-reports/<YYYY-MM-DD>-<from>-<topic>.md` and give its full path in the prompt. Scratchpads are cleared on reboot.
