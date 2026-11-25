@@ -34,8 +34,8 @@ CLAUDE.md
 !.claude/local-marketplace/**/**
 # Only repo-owned skills: skills/synced belongs to claude.ai.
 !.claude/skills/
-!.claude/skills/usage/
-!.claude/skills/usage/**/**
+!.claude/skills/quota/
+!.claude/skills/quota/**/**
 
 # Belt-and-braces: explicit re-ignores (parent ignore covers them, but be loud)
 .claude/.claude.json

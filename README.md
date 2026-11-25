@@ -90,7 +90,7 @@ Run `chezmoi managed` for the authoritative file list.
 | Pull + apply remote changes | `chezmoi update` |
 | Settle source↔destination drift interactively | `chezmoi-drift` |
 | Check the language servers are actually up | `lsp-doctor` (add `--repair` to fix) |
-| Read subscription usage and reset times | `claude-usage`, `codex-usage`, `grok-usage` (add `--json`; the `usage` skill runs all three) |
+| Read subscription usage and reset times | `claude-usage`, `codex-usage`, `grok-usage` (add `--json`; the `quota` skill runs all three) |
 
 ## Design
 
