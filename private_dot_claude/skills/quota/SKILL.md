@@ -1,5 +1,5 @@
 ---
-name: usage
+name: quota
 description: Read how much of the Claude, Codex and Grok subscription allowances is used and when each resets. Use before handing work to another provider, before a long or parallel run, or when asked about usage, limits, quota or resets.
 ---
 
