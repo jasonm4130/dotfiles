@@ -38,7 +38,8 @@
     ],
     "ask": [
       "Bash(gh pr merge *--admin*)",
-      "Bash(git push *--force*)",
+      "Bash(git push *--force)",
+      "Bash(git push *--force *)",
       "Bash(git push -f *)",
       "Bash(git push * -f)",
       "Bash(git push * -f *)",
@@ -133,7 +134,7 @@
       "$defaults",
       "**Trusted repo**: any git checkout under ~/Code whose origin is under github.com/jasonm4130 or github.com/jasonm4130-labs, plus the chezmoi source at ~/.local/share/chezmoi (origin github.com/jasonm4130/dotfiles) and the files it renders under $HOME",
       "**Secrets management**: 1Password; secrets reach commands via `op run --env-file .env.op -- <command>`, never plaintext",
-      "**Additional context**: Solo developer on a private laptop; no employer data on this machine. Commits, pushes and `gh pr merge --merge` on the trusted repos are routine; `--admin` merges and force pushes are not"
+      "**Additional context**: Solo developer on a private laptop; no employer data on this machine. Commits, pushes and `gh pr merge --merge` on the trusted repos are routine; `--admin` merges are not. `git push --force-with-lease` to a non-default branch after a rebase is routine; a bare `--force`/`-f`, a `+refspec`, or any force push to a default branch (main/master) is not"
     ]
   },
   "pluginConfigs": {
